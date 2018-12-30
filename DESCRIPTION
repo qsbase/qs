@@ -1,0 +1,15 @@
+Package: qs
+Type: Package
+Title: Quick Serialization of R Objects
+Version: 0.1
+Date: 2018-12-26
+Author: Travers Ching
+Maintainer: Travers Ching <traversc@gmail.com>
+Description: Provides functions for serializing and reading R objects to and from disk fast, using the Rcpp interface and the Zstd compresion library. 
+License: GPL (>= 2)
+Imports: 
+    Rcpp
+LinkingTo: Rcpp
+RoxygenNote: 6.1.1
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr

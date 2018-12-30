@@ -1,0 +1,11 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+.travis.yml
+rebuild.sh
+.*\.tar\.gz
+^local
+^tests
+^benchmark_results
+rticle
+.Rhistory
+LICENSE

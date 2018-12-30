@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+src/*.o
+src/*.so
+src/*.dll
+qs*.tar.gz
+*.Rcheck
+..Rcheck
+rebuild.sh
+local
+.DS_Store
