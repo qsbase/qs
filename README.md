@@ -43,7 +43,10 @@ Benchmarks for serializing and de-serializing large data.frames (5 million rows)
 | saveRDS        | 14.377122      | 12.467517     |
 
 #### Serialization speed with different parameters
-<p align="center"><img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/dataframe_bench.png" width="576"></p>
+
+The numbers in the figure reflect the compression parameter used.  `qs` uses the `zstd` compression library, and compression parameters range from -50 to 22 (`qs` uses a default value of -1).  `fst` defines it's own compression range through a combination of `zstd` and `lz4` algorithms, ranging from 0 to 100 (default: 0).  
+
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/dataframe_bench.png" width="576">
 
 ### Nested List benchmark
 Benchmarks for serialization of random nested lists with random attributes (approximately 50 Mb).  See the nested list example in the tests folder.  
@@ -54,4 +57,4 @@ Benchmarks for serialization of random nested lists with random attributes (appr
 | qs      | 0.17840716     | 0.19489372    |
 | saveRDS | 3.484225       | 0.58762548    |
 
-<p align="center"><img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/nested_list_bench.png" width="576"></p>
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/nested_list_bench.png" width="576">
