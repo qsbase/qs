@@ -7,7 +7,7 @@ author: Travers Ching
 
 Quick serialization of R objects
 
-Inspired by the `fst` package, this package aims to provide functions for quickly writing (serializing) and reading (de-serializing) R objects to and from disk.  In comparison, this package takes a more general approach for attributes and object references, allowing for serialization of lists, nested lists and attributes.  Hence, any S3 object built on common data types can also be serialized (e.g., `tibble`s, time-stamps, `bit64`, etc.)  
+The goal of this package is to provide an interface for quickly writing (serializing) and reading (de-serializing) R objects to and from disk.  Inspired by `fst`, this package takes a more general approach for attributes and object references while providing comparable serialization speed.  This more general approach allows for serialization of lists, nested lists and attributes.  Hence, any S3 object built on common data types can also be serialized (e.g., `tibble`s, time-stamps, `bit64`, etc.)  
 
 ## Features
 The table below compares the features of different serialization approaches in R.
@@ -43,7 +43,7 @@ Benchmarks for serializing and de-serializing large data.frames (5 million rows)
 | saveRDS        | 14.377122      | 12.467517     |
 
 #### Serialization speed with different parameters
-![dataframe_bench](https://raw.githubusercontent.com/traversc/qs/master/vignettes/dataframe_bench.png "dataframe_benchmark"){width=432px}
+<p align="center"><img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/dataframe_bench.png" width="576"></p>
 
 ### Nested List benchmark
 Benchmarks for serialization of random nested lists with random attributes (approximately 50 Mb).  See the nested list example in the tests folder.  
@@ -54,4 +54,4 @@ Benchmarks for serialization of random nested lists with random attributes (appr
 | qs      | 0.17840716     | 0.19489372    |
 | saveRDS | 3.484225       | 0.58762548    |
 
-![nested_list_bench](https://raw.githubusercontent.com/traversc/qs/master/vignettes/nested_list_bench.png "nested_list_bench"){width=432px}
+<p align="center"><img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/nested_list_bench.png" width="576"></p>
