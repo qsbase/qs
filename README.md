@@ -7,7 +7,9 @@ author: Travers Ching
 
 Quick serialization of R objects
 
-Inspired by the `fst` package, this package aims to provide functions for quickly writing (serializing) and reading (de-serializing) R objects to and from disk.  In comparison, this package takes a more general approach for attributes and object references, allowing for serialization of lists, nested lists and attributes.  Hence, any S3 object built on common data types can also be serialized (e.g., `tibble`s, time-stamps, `bit64`, etc.)  
+This package provides an interface for quickly writing (serializing) and reading (de-serializing) objects to and from disk.  The goal of this package is to provide a lightning-fast and complete replacement for the `saveRDS` and `readRDS` functions in R.  
+
+Inspired by the `fst` package, `qs` uses a similar block-compression approach using the `zstd` library and direct "in memory" compression, which allows for lightning quick serialization.  It differs in that it uses a more general approach for attributes and object references for common data types (numeric data, strings, lists, etc.), meaning any S3 object built on common data types, e.g., `tibble`s, time-stamps, `bit64`, etc. can be serialized.  For less common data types (formulas, environments, functions, etc.), `qs` relies on built in R serialization functions via the `RApiSerialize` package followed by block-compression.  
 
 ## Features
 The table below compares the features of different serialization approaches in R.
@@ -28,7 +30,85 @@ The table below compares the features of different serialization approaches in R
 | Lists / Nested Lists| &#10004;   |  &#10060;     | &#10004;  |
 | Multi-threaded     | &#10060; (Not Yet) | &#10004;      |  &#10060;   |
 
-## Benchmarks
+## Summary Benchmarks
+The table below lists serialization speed for several different data types.  
+<table>
+  <tr>
+    <th></th>
+    <th colspan="2">qs</th>
+    <th colspan="2">saveRDS</th>
+    <th colspan="2">fst<br>1 thread</th>
+    <th colspan="2">fst<br>4 threads</th>
+  </tr>
+  <tr>
+    <td></td>
+    <td>Write</td>
+    <td>Read</td>
+    <td>Write</td>
+    <td>Read</td>
+    <td>Write</td>
+    <td>Read</td>
+    <td>Write</td>
+    <td>Read</td>
+  </tr>
+  <tr>
+    <td><b>Integer Vector</b><br>sample(1e8)</td>
+    <td>696.7 MB/s<br></td>
+    <td>748.0 MB/s</td>
+    <td>27.1 MB/s</td>
+    <td>135.5 MB/s</td>
+    <td>686.6 MB/s</td>
+    <td>442.4 MB/s</td>
+    <td>699.1 MB/s</td>
+    <td>567.9 MB/s</td>
+  </tr>
+  <tr>
+    <td><b>Numeric Vector</b><br>runif(1e8)</td>
+    <td>693.2 MB/s</td>
+    <td>816.5 MB/s</td>
+    <td>24.3 MB/s</td>
+    <td>131.9 MB/s</td>
+    <td>744.0 MB/s</td>
+    <td>638.7 MB/s</td>
+    <td>754.4 MB/s</td>
+    <td>848.0 MB/s</td>
+  </tr>
+  <tr>
+    <td><b>Character Vector</b><br>qs::randomStrings(1e7)</td>
+    <td>1357.8 MB/s</td>
+    <td>60.2 MB/s</td>
+    <td>49.1 MB/s</td>
+    <td>43.9 MB/s</td>
+    <td>1440.9 MB/s</td>
+    <td>59.5 MB/s</td>
+    <td>1536.3 MB/s</td>
+    <td>59.3 MB/s</td>
+  </tr>
+  <tr>
+    <td><b>List</b><br>map(1:1e5,sample(100))</td>
+    <td>194.6 MB/s<br></td>
+    <td>263.7 MB/s</td>
+    <td>7.7 MB/s</td>
+    <td>123.5 MB/s</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td><b>Environment</b><br>map(1:1e5,sample(100))<br>names(x)&lt;-1:1e5<br>as.environment(x)</td>
+    <td>58.8 MB/s</td>
+    <td>125.3 MB/s</td>
+    <td>7.7 MB/s</td>
+    <td>89.6 MB/s</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+  </tr>
+</table>
+
+## Additional Benchmarks
 
 ### Data.Frame benchmark
 
@@ -43,7 +123,10 @@ Benchmarks for serializing and de-serializing large data.frames (5 million rows)
 | saveRDS        | 14.377122      | 12.467517     |
 
 #### Serialization speed with different parameters
-![dataframe_bench](https://raw.githubusercontent.com/traversc/qs/master/vignettes/dataframe_bench.png "dataframe_benchmark"){width=432px}
+
+The numbers in the figure reflect the compression parameter used.  `qs` uses the `zstd` compression library, and compression parameters range from -50 to 22 (`qs` uses a default value of -1).  `fst` defines it's own compression range through a combination of `zstd` and `lz4` algorithms, ranging from 0 to 100 (default: 0).  
+
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/dataframe_bench.png" width="576">
 
 ### Nested List benchmark
 Benchmarks for serialization of random nested lists with random attributes (approximately 50 Mb).  See the nested list example in the tests folder.  
@@ -54,4 +137,4 @@ Benchmarks for serialization of random nested lists with random attributes (appr
 | qs      | 0.17840716     | 0.19489372    |
 | saveRDS | 3.484225       | 0.58762548    |
 
-![nested_list_bench](https://raw.githubusercontent.com/traversc/qs/master/vignettes/nested_list_bench.png "nested_list_bench"){width=432px}
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/nested_list_bench.png" width="576">
