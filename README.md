@@ -53,43 +53,43 @@ The table below lists serialization speed for several different data types.
   </tr>
   <tr>
     <td><b>Integer Vector</b><br>sample(1e8)</td>
-    <td>696.7 Mb/s<br></td>
-    <td>748.0 Mb/s</td>
-    <td>27.1 Mb/s</td>
-    <td>135.5 Mb/s</td>
-    <td>686.6 Mb/s</td>
-    <td>442.4 Mb/s</td>
-    <td>699.1 Mb/s</td>
-    <td>567.9 Mb/s</td>
+    <td>696.7 MB/s<br></td>
+    <td>748.0 MB/s</td>
+    <td>27.1 MB/s</td>
+    <td>135.5 MB/s</td>
+    <td>686.6 MB/s</td>
+    <td>442.4 MB/s</td>
+    <td>699.1 MB/s</td>
+    <td>567.9 MB/s</td>
   </tr>
   <tr>
     <td><b>Numeric Vector</b><br>runif(1e8)</td>
-    <td>693.2 Mb/s</td>
-    <td>816.5 Mb/s</td>
-    <td>24.3 Mb/s</td>
-    <td>131.9 Mb/s</td>
-    <td>744.0 Mb/s</td>
-    <td>638.7 Mb/s</td>
-    <td>754.4 Mb/s</td>
-    <td>848.0 Mb/s</td>
+    <td>693.2 MB/s</td>
+    <td>816.5 MB/s</td>
+    <td>24.3 MB/s</td>
+    <td>131.9 MB/s</td>
+    <td>744.0 MB/s</td>
+    <td>638.7 MB/s</td>
+    <td>754.4 MB/s</td>
+    <td>848.0 MB/s</td>
   </tr>
   <tr>
     <td><b>Character Vector</b><br>qs::randomStrings(1e7)</td>
-    <td>1357.8 Mb/s</td>
-    <td>60.2 Mb/s</td>
-    <td>49.1 Mb/s</td>
-    <td>43.9 Mb/s</td>
-    <td>1440.9 Mb/s</td>
-    <td>59.5 Mb/s</td>
-    <td>1536.3 Mb/s</td>
-    <td>59.3 Mb/s</td>
+    <td>1357.8 MB/s</td>
+    <td>60.2 MB/s</td>
+    <td>49.1 MB/s</td>
+    <td>43.9 MB/s</td>
+    <td>1440.9 MB/s</td>
+    <td>59.5 MB/s</td>
+    <td>1536.3 MB/s</td>
+    <td>59.3 MB/s</td>
   </tr>
   <tr>
     <td><b>List</b><br>map(1:1e5,sample(100))</td>
-    <td>194.6 Mb/s<br></td>
-    <td>263.7 Mb/s</td>
-    <td>7.7 Mb/s</td>
-    <td>123.5 Mb/s</td>
+    <td>194.6 MB/s<br></td>
+    <td>263.7 MB/s</td>
+    <td>7.7 MB/s</td>
+    <td>123.5 MB/s</td>
     <td>N/A</td>
     <td>N/A</td>
     <td>N/A</td>
@@ -97,10 +97,10 @@ The table below lists serialization speed for several different data types.
   </tr>
   <tr>
     <td><b>Environment</b><br>map(1:1e5,sample(100))<br>names(x)&lt;-1:1e5<br>as.environment(x)</td>
-    <td>58.8 Mb/s</td>
-    <td>125.3 Mb/s</td>
-    <td>7.7 Mb/s</td>
-    <td>89.6 Mb/s</td>
+    <td>58.8 MB/s</td>
+    <td>125.3 MB/s</td>
+    <td>7.7 MB/s</td>
+    <td>89.6 MB/s</td>
     <td>N/A</td>
     <td>N/A</td>
     <td>N/A</td>
