@@ -1,3 +1,4 @@
+import(RApiSerialize)
 importFrom(Rcpp,sourceCpp)
 useDynLib(qs, .registration = TRUE)
 exportPattern("^[[:alpha:]]+")

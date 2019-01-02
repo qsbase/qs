@@ -134,36 +134,39 @@ RObject qread(std::string file) {
           attribute_length = r_array_len;
           readHeader(block.data(), obj_type, r_array_len, data_offset);
         }
-        if(obj_type == S4SXP) { // unsupported types
-          NsObj_Future nsf = addNewNsNodeToParent(current_node, r_array_len);
+        size_t type_char_width;
+        switch(obj_type) {
+        case S4SXP:
+          fobjs.push_back(addNewNsNodeToParent(current_node, r_array_len));
           next_obj = R_NilValue;
           if(r_array_len == 0) { continue; }
-          size_t type_char_width = 1;
-          outp = nsf.dataPtr();
+          type_char_width = 1;
+          outp = fobjs.back().dataPtr();
           if(block_size - data_offset >= (r_array_len * type_char_width) ) {
             memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
             data_offset += r_array_len * type_char_width;
           } else {
             setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
           }
-          fobjs.push_back(std::move(nsf));
-        } else {
-        next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
-          if(obj_type == VECSXP) {
-            // do nothing
-          } else if(obj_type == STRSXP) {
-            number_of_strings_processed = 0;
-          } else { // all "Atomic" R types go here -- numeric, integer, logical vectors and String and NILSXP
-            if(r_array_len == 0) { continue; }
-            size_t type_char_width;
-            outp = getObjDataPointer(next_obj, obj_type, type_char_width);
-            if(block_size - data_offset >= (r_array_len * type_char_width) ) {
-              memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
-              data_offset += r_array_len * type_char_width;
-            } else {
-              setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
-            }
+          break;
+        case VECSXP:
+          next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
+          break;
+        case STRSXP:
+          next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
+          number_of_strings_processed = 0;
+          break;
+        default:
+          next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
+          if(r_array_len == 0) { continue; }
+          outp = getObjDataPointer(next_obj, obj_type, type_char_width);
+          if(block_size - data_offset >= (r_array_len * type_char_width) ) {
+            memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
+            data_offset += r_array_len * type_char_width;
+          } else {
+            setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
           }
+          break;
         }
         if(attribute_length > 0) fattributes.push_back(current_node);
       }

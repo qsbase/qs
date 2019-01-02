@@ -10,7 +10,6 @@ License: GPL (>= 2)
 Imports: 
     Rcpp, RApiSerialize
 LinkingTo: Rcpp, RApiSerialize
-Depends: RApiSerialize
 RoxygenNote: 6.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
