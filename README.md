@@ -52,17 +52,6 @@ The table below lists serialization speed for several different data types.
     <td>Read</td>
   </tr>
   <tr>
-    <td><b>Character Vector</b><br>qs::randomStrings(1e7)</td>
-    <td>1357.8 Mb/s<br></td>
-    <td>60.2 Mb/s</td>
-    <td>49.1 Mb/s</td>
-    <td>43.9 Mb/s</td>
-    <td>1440.9 Mb/s</td>
-    <td>59.5 Mb/s</td>
-    <td>1536.3 Mb/s</td>
-    <td>59.3 Mb/s</td>
-  </tr>
-  <tr>
     <td><b>Integer Vector</b><br>sample(1e8)</td>
     <td>696.7 Mb/s<br></td>
     <td>748.0 Mb/s</td>
