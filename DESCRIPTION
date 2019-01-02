@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.1
-Date: 2018-12-26
+Version: 0.11
+Date: 2019-1-2
 Author: Travers Ching
 Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for quickly serializing and reading R objects to and from disk using the Rcpp interface and the Zstd compression library. 
