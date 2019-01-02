@@ -51,10 +51,10 @@ The table below lists serialization speed for several different data types (list
 See `tests/correctness_testing.r` for more examples.  Below is an example serializing a large `data.frame` to disk.  
 ```{r}
 library(qs)
-x1 <- data.frame(int = sample(5e6, replace=T), num = rnorm(5e6), char = randomStrings(5e6), stringsAsFactors = F)
-qsave(x1, "/tmp/mydata.qs")
+x1 <- data.frame(int = sample(1e3, replace=T), num = rnorm(1e3), char = qs::randomStrings(1e3), stringsAsFactors = F)
+qsave(x1, "mydata.qs")
 
-x2 <- qread("/tmp/mydata.qs")
+x2 <- qread("mydata.qs")
 identical(x1, x2) # returns true
 ```
 

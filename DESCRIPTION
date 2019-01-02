@@ -5,7 +5,7 @@ Version: 0.1
 Date: 2018-12-26
 Author: Travers Ching
 Maintainer: Travers Ching <traversc@gmail.com>
-Description: Provides functions for serializing and reading R objects to and from disk fast, using the Rcpp interface and the Zstd compresion library. 
+Description: Provides functions for quickly serializing and reading R objects to and from disk using the Rcpp interface and the Zstd compression library. 
 License: GPL (>= 2)
 Imports: 
     Rcpp, RApiSerialize

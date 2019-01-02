@@ -20,7 +20,7 @@
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -33,11 +33,13 @@ code.sourceCode { white-space: pre-wrap; }
 a.sourceLine { text-indent: -1em; padding-left: 1em; }
 }
 pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
 pre.numberSource a.sourceLine::before
   { content: attr(data-line-number);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -489,13 +491,12 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="example" class="section level2">
 <h2>Example:</h2>
 <p>See <code>tests/correctness_testing.r</code> for more examples. Below is an example serializing a large <code>data.frame</code> to disk.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(qs)</a></code></pre></div>
-<pre><code>## Loading required package: RApiSerialize</code></pre>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">x1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">int =</span> <span class="kw">sample</span>(<span class="fl">5e6</span>, <span class="dt">replace=</span>T), <span class="dt">num =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), <span class="dt">char =</span> <span class="kw">randomStrings</span>(<span class="fl">5e6</span>), <span class="dt">stringsAsFactors =</span> F)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">qsave</span>(x1, <span class="st">&quot;/tmp/mydata.qs&quot;</span>)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">x2 &lt;-<span class="st"> </span><span class="kw">qread</span>(<span class="st">&quot;/tmp/mydata.qs&quot;</span>)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="kw">identical</span>(x1, x2) <span class="co"># returns true</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(qs)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">x1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">int =</span> <span class="kw">sample</span>(<span class="fl">1e3</span>, <span class="dt">replace=</span>T), <span class="dt">num =</span> <span class="kw">rnorm</span>(<span class="fl">1e3</span>), <span class="dt">char =</span> qs<span class="op">::</span><span class="kw">randomStrings</span>(<span class="fl">1e3</span>), <span class="dt">stringsAsFactors =</span> F)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">qsave</span>(x1, <span class="st">&quot;mydata.qs&quot;</span>)</a>
+<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">x2 &lt;-<span class="st"> </span><span class="kw">qread</span>(<span class="st">&quot;mydata.qs&quot;</span>)</a>
+<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">identical</span>(x1, x2) <span class="co"># returns true</span></a></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 </div>
 <div id="additional-benchmarks" class="section level2">

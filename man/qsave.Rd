@@ -15,8 +15,8 @@ The de-serialized object
 Saves (serializes) an object to disk.
 }
 \examples{
-x1 <- data.frame(int = sample(1e5, replace=TRUE), 
-                 num = rnorm(1e5), 
-                 char = randomStrings(1e5), stringsAsFactors = FALSE)
-qsave(x1, "/tmp/mydata.qs")
+x1 <- data.frame(int = sample(1e3, replace=TRUE), 
+                 num = rnorm(1e3), 
+                 char = randomStrings(1e3), stringsAsFactors = FALSE)
+qsave(x1, "mydata.qs")
 }
