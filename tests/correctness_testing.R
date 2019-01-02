@@ -4,7 +4,7 @@ suppressMessages(library(data.table))
 suppressMessages(library(qs))
 options(warn=1)
 
-Sys.setenv("PKG_CXXFLAGS"="-std=c++14")
+Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
 cppFunction("CharacterVector splitstr(std::string x, std::vector<double> cuts){
             CharacterVector ret(cuts.size() - 1);
             for(uint64_t i=1; i<cuts.size(); i++) {
