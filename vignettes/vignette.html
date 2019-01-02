@@ -302,7 +302,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <div id="qs-quick-serialization-of-r-objects" class="section level1">
 <h1>qs – quick serialization of R objects</h1>
-<p>Inspired by the <code>fst</code> package, this package aims to provide functions for quickly writing (serialization) and reading (de-serialization) R objects to and from disk. In comparison, this package takes a more general approach for attributes and object references, allowing for serialization of various data structures, such as lists, nested lists and attributes Because of this more general approach, any S3 object built on common data types can also be serialized. E.g., <code>tibble</code>s, time-stamps, <code>bit64</code>, etc.</p>
+<p>This package provides an interface for quickly writing (serializing) and reading (de-serializing) objects to and from disk. The goal of this package is to provide a lightning-fast and complete replacement for the saveRDS and readRDS functions in R.</p>
+<p>Inspired by the fst package, qs uses a similar block-compression approach using the zstd library and direct “in memory” compression, which allows for lightning quick serialization. It differs in that it uses a more general approach for attributes and object references for common data types (numeric data, strings, lists, etc.), meaning any S3 object built on common data types, e.g., tibbles, time-stamps, bit64, etc. can be serialized. For less common data types (formulas, environments, functions, etc.), qs relies on built in R serialization functions via the RApiSerialize package followed by block-compression.</p>
 <div id="features" class="section level2">
 <h2>Features</h2>
 <p>The table below compares the features of different serialization approaches in R.</p>
@@ -391,6 +392,94 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </tbody>
 </table>
 </div>
+<div id="summary-benchmarks" class="section level2">
+<h2>Summary Benchmarks</h2>
+<p>The table below lists serialization speed for several different data types (listed in MB/s).</p>
+<table style="width:100%;">
+<colgroup>
+<col width="49%"></col>
+<col width="6%"></col>
+<col width="5%"></col>
+<col width="5%"></col>
+<col width="5%"></col>
+<col width="6%"></col>
+<col width="5%"></col>
+<col width="7%"></col>
+<col width="5%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>qs::qwrite</th>
+<th>qs::qread</th>
+<th>saveRDS</th>
+<th>readRDS</th>
+<th>fst::write_fst (1 thread)</th>
+<th>fst::read_fst (1 thread)</th>
+<th>fst::write_fst (4 threads)</th>
+<th>fst::read_fst (4 threads)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Integer Vector <code>sample(1e8)</code></td>
+<td>696.7</td>
+<td>748.0</td>
+<td>27.1</td>
+<td>135.5</td>
+<td>686.6</td>
+<td>442.4</td>
+<td>699.1</td>
+<td>567.9</td>
+</tr>
+<tr class="even">
+<td>Numeric Vector <code>runif(1e8)</code></td>
+<td>693.2</td>
+<td>816.5</td>
+<td>24.3</td>
+<td>131.9</td>
+<td>744.0</td>
+<td>638.7</td>
+<td>754.4</td>
+<td>848.0</td>
+</tr>
+<tr class="odd">
+<td>Character Vector <code>qs::randomStrings(1e7)</code></td>
+<td>1357.8</td>
+<td>60.2</td>
+<td>49.1</td>
+<td>43.9</td>
+<td>1440.9</td>
+<td>59.5</td>
+<td>1536.3</td>
+<td>59.3</td>
+</tr>
+<tr class="even">
+<td>List <code>map(1:1e5,sample(100))</code></td>
+<td>194.6</td>
+<td>263.7</td>
+<td>7.7</td>
+<td>123.5</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr class="odd">
+<td>Environment <code>map(1:1e5,sample(100)); names(x)&lt;-1:1e5; as.environment(x)</code></td>
+<td>58.8</td>
+<td>125.3</td>
+<td>7.7</td>
+<td>89.6</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<p>&quot;</p>
+</div>
 <div id="installation" class="section level2">
 <h2>Installation:</h2>
 <ol style="list-style-type: decimal">
@@ -400,16 +489,17 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="example" class="section level2">
 <h2>Example:</h2>
 <p>See <code>tests/correctness_testing.r</code> for more examples. Below is an example serializing a large <code>data.frame</code> to disk.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(qs)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2">x1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">int =</span> <span class="kw">sample</span>(<span class="fl">5e6</span>, <span class="dt">replace=</span>T), <span class="dt">num =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), <span class="dt">char =</span> <span class="kw">randomStrings</span>(<span class="fl">5e6</span>), <span class="dt">stringsAsFactors =</span> F)</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">qsave</span>(x1, <span class="st">&quot;/tmp/mydata.qs&quot;</span>)</a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb1-5" data-line-number="5">x2 &lt;-<span class="st"> </span><span class="kw">qread</span>(<span class="st">&quot;/tmp/mydata.qs&quot;</span>)</a>
-<a class="sourceLine" id="cb1-6" data-line-number="6"><span class="kw">identical</span>(x1, x2) <span class="co"># returns true</span></a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(qs)</a></code></pre></div>
+<pre><code>## Loading required package: RApiSerialize</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">x1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">int =</span> <span class="kw">sample</span>(<span class="fl">5e6</span>, <span class="dt">replace=</span>T), <span class="dt">num =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), <span class="dt">char =</span> <span class="kw">randomStrings</span>(<span class="fl">5e6</span>), <span class="dt">stringsAsFactors =</span> F)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">qsave</span>(x1, <span class="st">&quot;/tmp/mydata.qs&quot;</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">x2 &lt;-<span class="st"> </span><span class="kw">qread</span>(<span class="st">&quot;/tmp/mydata.qs&quot;</span>)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="kw">identical</span>(x1, x2) <span class="co"># returns true</span></a></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 </div>
-<div id="benchmarks" class="section level2">
-<h2>Benchmarks</h2>
+<div id="additional-benchmarks" class="section level2">
+<h2>Additional Benchmarks</h2>
 <div id="data.frame-benchmark" class="section level3">
 <h3>Data.Frame benchmark</h3>
 <p>Benchmarks for serializing and de-serializing large data.frames (5 million rows) composed of a numeric column (<code>rnorm</code>), an integer column (<code>sample(5e6)</code>), and a character vector column (random alphanumeric strings of length 50). See <code>vignettes/dataframe_bench.png</code> for a comparison using different compression parameters.</p>

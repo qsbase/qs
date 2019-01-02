@@ -4,14 +4,14 @@ language: c
 
 sudo: required
 
-dist: xenial
+dist: trusty
 
 before_install:
   - curl -OLs https://eddelbuettel.github.io/r-travis/run.sh && chmod 0755 run.sh
   - ./run.sh bootstrap
 
 install:
-  - ./run.sh install_aptget r-cran-rcpp r-cran-knitr r-cran-rmarkdown r-cran-dplyr && ./run.sh install_github traversc/qs
+  - ./run.sh install_aptget r-cran-rcpp r-cran-knitr r-cran-rmarkdown r-cran-dplyr r-cran-data.table r-cran-rapiserialize && ./run.sh install_github traversc/qs
 
 script:
   - ./run.sh run_tests && Rscript tests/correctness_testing_mini.R

@@ -8,8 +8,9 @@ Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for serializing and reading R objects to and from disk fast, using the Rcpp interface and the Zstd compresion library. 
 License: GPL (>= 2)
 Imports: 
-    Rcpp
-LinkingTo: Rcpp
+    Rcpp, RApiSerialize
+LinkingTo: Rcpp, RApiSerialize
+Depends: RApiSerialize
 RoxygenNote: 6.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr

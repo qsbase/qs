@@ -1,7 +1,8 @@
 suppressMessages(library(Rcpp))
 suppressMessages(library(dplyr))
 suppressMessages(library(data.table))
-library(qs)
+suppressMessages(library(qs))
+options(warn=1)
 
 Sys.setenv("PKG_CXXFLAGS"="-std=c++14")
 cppFunction("CharacterVector splitstr(std::string x, std::vector<double> cuts){
@@ -45,9 +46,7 @@ cppFunction('List generateList(std::vector<int> list_elements){
             return ret;
             }')
 
-suppressMessages(library(dplyr))
-
-obj_size <- 0; max_size <- 5e7
+obj_size <- 0; max_size <- 1e7
 get_obj_size <- function() {
   get("obj_size", envir=globalenv())
 }
@@ -69,6 +68,7 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
     else if(otype == 4) { z <- (sample(256, size=1e4, replace=T)-1) %>% as.raw; set_obj_size(z); }
     else if(otype == 5) { z <- replicate(sample(1e4,size=1), {rep(letters, length.out=sample(10, size=1)) %>% paste(collapse="")}); set_obj_size(z); }
     else if(otype == 6) { z <- rep(letters, length.out=sample(1e4, size=1)) %>% paste(collapse=""); set_obj_size(z); }
+    else if(otype == 7) { z <- as.formula("y ~ a + b + c : d", env=globalenv()); attr(z, "blah") <-sample(1e4)-5e2; set_obj_size(z); }
     else { z <- random_object_generator(N) }
     if(is_attribute) {
       attr(ret[[i-1]], runif(1) %>% as.character()) <- z
@@ -78,7 +78,6 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
   }
   return(ret)
 }
-
 
 test_points <- c(2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
 extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
@@ -282,7 +281,7 @@ time[i] <- Sys.time() - time[i]
 }
 print(sprintf("Nested attributes: %s s", signif(mean(time),4)))
 
-# alt-rep -- should serialize the unpackaged object
+# alt-rep -- should serialize the unpacked object
 time <- vector("numeric", length=3)
 for(i in 1:3) {
   x1 <- 1:1e7
@@ -293,3 +292,21 @@ for(i in 1:3) {
   time[i] <- Sys.time() - time[i]
 }
 print(sprintf("Alt rep integer: %s s", signif(mean(time),4)))
+
+
+# Environment test
+time <- vector("numeric", length=3)
+for(i in 1:3) {
+  x1 <- new.env()
+  x1[["a"]] <- 1:1e7
+  x1[["b"]] <- runif(1e7)
+  x1[["c"]] <- qs::randomStrings(1e4)
+  time[i] <- Sys.time()
+  qsave(x1, file="/tmp/test.z", 3)
+  z <- qread(file="/tmp/test.z")
+  stopifnot(identical(z[["a"]], x1[["a"]]))
+  stopifnot(identical(z[["b"]], x1[["b"]]))
+  stopifnot(identical(z[["c"]], x1[["c"]]))
+  time[i] <- Sys.time() - time[i]
+}
+print(sprintf("Environment test: %s s", signif(mean(time),4)))

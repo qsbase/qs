@@ -33,7 +33,8 @@ RObject qread(std::string file) {
   size_t zsize;
   std::vector<char> zblock(ZSTD_compressBound(BLOCKSIZE));
   std::vector<char> block(BLOCKSIZE);
-  std::vector<String_Future> fstrings;
+  std::vector<String_Future> fstrings; // string futures
+  std::vector<NsObj_Future> fobjs; // ns object futures
   std::vector<ObjNode*> fattributes; // attribute futures
   
   // singleton objects for OMP ordered section that persist through loop
@@ -133,23 +134,35 @@ RObject qread(std::string file) {
           attribute_length = r_array_len;
           readHeader(block.data(), obj_type, r_array_len, data_offset);
         }
-        next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
-        if(obj_type == VECSXP) {
-          // do nothing
-        } else if(obj_type == STRSXP) {
-          number_of_strings_processed = 0;
-          // next_cv = CharacterVector(next_obj); // do we really need this?
-        } else { // all "Atomic" R types go here -- numeric, integer, logical vectors and String and NILSXP
+        if(obj_type == S4SXP) { // unsupported types
+          NsObj_Future nsf = addNewNsNodeToParent(current_node, r_array_len);
+          next_obj = R_NilValue;
           if(r_array_len == 0) { continue; }
-          size_t type_char_width;
-          outp = getObjDataPointer(next_obj, obj_type, type_char_width);
+          size_t type_char_width = 1;
+          outp = nsf.dataPtr();
           if(block_size - data_offset >= (r_array_len * type_char_width) ) {
             memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
             data_offset += r_array_len * type_char_width;
           } else {
-            
             setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
-            
+          }
+          fobjs.push_back(std::move(nsf));
+        } else {
+        next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
+          if(obj_type == VECSXP) {
+            // do nothing
+          } else if(obj_type == STRSXP) {
+            number_of_strings_processed = 0;
+          } else { // all "Atomic" R types go here -- numeric, integer, logical vectors and String and NILSXP
+            if(r_array_len == 0) { continue; }
+            size_t type_char_width;
+            outp = getObjDataPointer(next_obj, obj_type, type_char_width);
+            if(block_size - data_offset >= (r_array_len * type_char_width) ) {
+              memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
+              data_offset += r_array_len * type_char_width;
+            } else {
+              setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
+            }
           }
         }
         if(attribute_length > 0) fattributes.push_back(current_node);
@@ -160,6 +173,10 @@ RObject qread(std::string file) {
   // if parse all String_Future objects
   for(size_t q=0; q<fstrings.size(); q++) {
     fstrings[q].push_string();
+  }
+  // parse all unsupported types
+  for(size_t q=0; q<fobjs.size(); q++) {
+    fobjs[q].push();
   }
   // append all attributes to the correct object
   for(size_t q=0; q<fattributes.size(); q++) {
