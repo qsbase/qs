@@ -17,18 +17,18 @@ The table below compares the features of different serialization approaches in R
 
 |                    | qs         | fst           | saveRDS  |
 |--------------------|:-----------:|:---------------:|:----------:|
-| Not Slow             | &#10004;   | &#10004;       | &#10060; |
+| Not Slow             | &#10004;   | &#10004;       | X |
 | Numeric Vectors    | &#10004;   | &#10004;       | &#10004;  |
 | Integer Vectors    | &#10004;   | &#10004;       | &#10004;  |
 | Logical Vectors    | &#10004;   | &#10004;       | &#10004;  |
 | Character Vectors  | &#10004;   | &#10004;       | &#10004;  |
 | Character Encoding | &#10004;   | (vector-wide only) | &#10004;  |
-| Complex Vectors    | &#10004;   | &#10060;      | &#10004;  |
+| Complex Vectors    | &#10004;   | X      | &#10004;  |
 | Data.Frames        | &#10004;   | &#10004;       | &#10004;  |
-| On disk row access | &#10060;  | &#10004;       | &#10060; |
+| On disk row access | X  | &#10004;       | X |
 | Attributes         | &#10004;   | Some          | &#10004;  |
-| Lists / Nested Lists| &#10004;   |  &#10060;     | &#10004;  |
-| Multi-threaded     | &#10060; (Not Yet) | &#10004;      |  &#10060;   |
+| Lists / Nested Lists| &#10004;   |  X     | &#10004;  |
+| Multi-threaded     | X (Not Yet) | &#10004;      |  X   |
 
 ## Summary Benchmarks
 The table below lists serialization speed for several different data types.  
