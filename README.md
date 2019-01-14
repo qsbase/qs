@@ -13,6 +13,11 @@ Inspired by the `fst` package, `qs` uses a similar block-compression approach us
 
 For character vectors, `qs` also uses the alt-rep system to quickly read in string data.  
 
+## Installation
+`devtools::install_git("traversc/qs")`
+
+(Requires R version 3.5 or higher)
+
 ## Features
 The table below compares the features of different serialization approaches in R.
 
