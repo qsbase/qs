@@ -39,7 +39,8 @@ bool is_big_endian()
 
 // [[Rcpp::export]]
 SEXP qread(std::string file) {
-  Data_Context dc = Data_Context(file);
+  std::ifstream myFile(file, std::ios::in | std::ios::binary);
+  Data_Context dc = Data_Context(myFile);
   return dc.processBlock();
 }
 
