@@ -1,3 +1,23 @@
+/* qs - Quick Serialization of R Objects
+  Copyright (C) 2019-prsent Travers Ching
+  
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+  
+  You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+ You can contact the author at:
+ https://github.com/traversc/qs
+*/
+
 #include "qs_header.h"
 
 // [[Rcpp::export]]
@@ -18,182 +38,10 @@ bool is_big_endian()
 }
 
 // [[Rcpp::export]]
-RObject qread(std::string file) {
-  std::ifstream myFile(file.c_str(), std::ios::in | std::ios::binary);
-  std::array<char,4> reserve_bits = {0,0,0,0};
-  myFile.read(reserve_bits.data(),4);
-  char sys_endian = is_big_endian() ? 1 : 0;
-  if(reserve_bits[3] != sys_endian) throw exception("Endian of system doesn't match file endian");
-  
-  size_t number_of_blocks = readSizeFromFile8(myFile);
-  
-  std::vector< std::pair<char*, size_t> > block_pointers(number_of_blocks);
-  std::array<char,4> zsize_ar = {0,0,0,0};
-  size_t block_size;
-  size_t zsize;
-  std::vector<char> zblock(ZSTD_compressBound(BLOCKSIZE));
-  std::vector<char> block(BLOCKSIZE);
-  std::vector<String_Future> fstrings; // string futures
-  std::vector<NsObj_Future> fobjs; // ns object futures
-  std::vector<ObjNode*> fattributes; // attribute futures
-  
-  // singleton objects for OMP ordered section that persist through loop
-  std::unique_ptr<ObjNode> root_node = std::make_unique<ObjNode>();
-  root_node->parent = root_node.get();
-  ObjNode * current_node = root_node.get();
-  SEXPTYPE obj_type;
-  RObject next_obj;
-  // CharacterVector next_cv; // should be equal to next_obj for Character Vectors -- helper variable to avoid tons of ROjbect to CharacterVector casts
-  size_t r_array_len = 0; // persistence only important for STRSXP
-  size_t number_of_strings_processed = 0;  // for STRSXP/CHARSXP
-  std::string temp_string(256, '\0'); // temporary string to fill for R String constructor -- local conceptually, but should be faster to avoid too many re-allocs?
-  char* outp = &temp_string[0];  // this could be local too -- output buffer for atomics, strings
-  size_t data_offset = 0; // offset of current block
-  
-  for(size_t i=0; i<number_of_blocks; i++) {
-    // Read compressed data
-    myFile.read(zsize_ar.data(), 4);
-    zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
-    myFile.read(zblock.data(), zsize);
-    if(block_pointers[i].first == nullptr || block_pointers[i].second != BLOCKSIZE) {
-      block_size = ZSTD_decompress(block.data(), BLOCKSIZE, zblock.data(), zsize);
-    } else {
-      block_size = ZSTD_decompress(block_pointers[i].first, block_pointers[i].second, zblock.data(), zsize);
-      continue;
-    }
-    
-    // Here will be the OMP ordered section -- process block assigned to temporary block buffer
-    
-    // If block fully belongs to previous R object -- memcpy into previous R object and go to next block
-    if(block_pointers[i].first != nullptr && block_pointers[i].second == BLOCKSIZE) {
-      memcpy(block_pointers[i].first, block.data(), block_pointers[i].second);
-      continue;
-    } 
-    
-    if(block_pointers[i].first != nullptr) {
-      memcpy(block_pointers[i].first, block.data(), block_pointers[i].second);
-      data_offset = block_pointers[i].second;
-    } else {
-      data_offset = 0;
-    }
-    
-    // parse the remaining part of the block, starting from offset
-    // there may be objects fully within a block (contained objects)
-    // parse all contained objects, then set block_pointers for subsequent blocks
-    while(data_offset < block_size) {
-      // std::cout << number_of_strings_processed << " " << r_array_len << "\n";
-      if(number_of_strings_processed < r_array_len && obj_type == STRSXP) {
-        uint32_t r_string_len;
-        cetype_t string_encoding;
-        readStringHeader(block.data(), r_string_len, string_encoding, data_offset);
-        if(r_string_len == NA_STRING_LENGTH) {
-          // next_cv[number_of_strings_processed] = NA_STRING;
-          SET_STRING_ELT(next_obj, number_of_strings_processed, NA_STRING);
-        } else if(r_string_len == 0) {
-          // next_cv[number_of_strings_processed-1] = Rf_mkCharLen("", 0);
-          SET_STRING_ELT(next_obj, number_of_strings_processed, Rf_mkCharLen("", 0));
-        } else if(r_string_len > 0) {
-          if(block_size - data_offset >= r_string_len ) {
-            if(r_string_len > temp_string.size()) {
-              temp_string.resize(r_string_len);
-            }
-            outp = &temp_string[0];
-            memcpy(outp,block.data()+data_offset, r_string_len);
-            data_offset += r_string_len;
-            SET_STRING_ELT(next_obj, number_of_strings_processed, Rf_mkCharLenCE(outp, r_string_len, string_encoding));
-          } else {
-            String_Future sf = String_Future(next_obj, number_of_strings_processed, r_string_len, string_encoding);
-            outp = sf.dataPtr();
-            
-            setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_string_len, 1, i);
-            
-            fstrings.push_back(std::move(sf));
-          }
-        }
-        number_of_strings_processed++;
-      } else if( (TYPEOF(current_node->obj) != VECSXP || current_node->remaining_children == 0) &&
-                 current_node->remaining_attributes != 0 && 
-                 current_node->attributes.size() == current_node->attributes_names.size() ) {
-        // ^ if next object is an attribute name = if all children processed && # of attributes processed < total # of attributes and attribute names size == attributes size
-        uint32_t r_string_len;
-        cetype_t string_encoding;
-        readStringHeader(block.data(), r_string_len, string_encoding, data_offset);
-        if(r_string_len == 0 || r_string_len == NA_STRING_LENGTH) throw exception("attribute name should be a non-zero/non-null string");
-        current_node->attributes_names.push_back(std::string(r_string_len, '\0'));
-        outp = &current_node->attributes_names.back()[0];
-        if(block_size - data_offset >= r_string_len ) {
-          memcpy(outp,block.data()+data_offset, r_string_len);
-          data_offset += r_string_len;
-        } else {
-          setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_string_len, 1, i); 
-        }
-      } else {
-        readHeader(block.data(), obj_type, r_array_len, data_offset);
-        size_t attribute_length = 0;
-        if(obj_type == ANYSXP) {
-          attribute_length = r_array_len;
-          readHeader(block.data(), obj_type, r_array_len, data_offset);
-        }
-        size_t type_char_width;
-        switch(obj_type) {
-        case S4SXP:
-          fobjs.push_back(addNewNsNodeToParent(current_node, r_array_len));
-          next_obj = R_NilValue;
-          if(r_array_len == 0) { continue; }
-          type_char_width = 1;
-          outp = fobjs.back().dataPtr();
-          if(block_size - data_offset >= (r_array_len * type_char_width) ) {
-            memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
-            data_offset += r_array_len * type_char_width;
-          } else {
-            setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
-          }
-          break;
-        case VECSXP:
-          next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
-          break;
-        case STRSXP:
-          next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
-          number_of_strings_processed = 0;
-          break;
-        default:
-          next_obj = addNewNodeToParent(current_node, obj_type, r_array_len, attribute_length);
-          if(r_array_len == 0) { continue; }
-          outp = getObjDataPointer(next_obj, obj_type, type_char_width);
-          if(block_size - data_offset >= (r_array_len * type_char_width) ) {
-            memcpy(outp,block.data()+data_offset, r_array_len * type_char_width);
-            data_offset += r_array_len * type_char_width;
-          } else {
-            setBlockPointers(outp, block, data_offset, block_pointers, block_size, r_array_len, type_char_width, i);
-          }
-          break;
-        }
-        if(attribute_length > 0) fattributes.push_back(current_node);
-      }
-    }
-    // end OMP ordered section
-  }
-  // if parse all String_Future objects
-  for(size_t q=0; q<fstrings.size(); q++) {
-    fstrings[q].push_string();
-  }
-  // parse all unsupported types
-  for(size_t q=0; q<fobjs.size(); q++) {
-    fobjs[q].push();
-  }
-  // append all attributes to the correct object
-  for(size_t q=0; q<fattributes.size(); q++) {
-    for(size_t v=0; v<fattributes[q]->attributes_names.size(); v++) {
-      if(fattributes[q]->attributes[v]->obj != R_NilValue) {
-        fattributes[q]->obj.attr(fattributes[q]->attributes_names[v]) = fattributes[q]->attributes[v]->obj;
-      }
-    }
-  }
-  
-  myFile.close();
-  return root_node->children[0]->obj;
+SEXP qread(std::string file) {
+  Data_Context dc = Data_Context(file);
+  return dc.processBlock();
 }
-
 
 // [[Rcpp::export]]
 RObject qdump(std::string file) {
@@ -203,16 +51,16 @@ RObject qdump(std::string file) {
   char sys_endian = is_big_endian() ? 1 : 0;
   if(reserve_bits[3] != sys_endian) throw exception("Endian of system doesn't match file endian");
   
-  size_t number_of_blocks = readSizeFromFile8(myFile);
+  uint64_t number_of_blocks = readSizeFromFile8(myFile);
   // std::cout << number_of_blocks << "\n";
-  std::vector< std::pair<char*, size_t> > block_pointers(number_of_blocks);
+  std::vector< std::pair<char*, uint64_t> > block_pointers(number_of_blocks);
   std::array<char,4> zsize_ar;
-  size_t block_size;
-  size_t zsize;
+  uint64_t block_size;
+  uint64_t zsize;
   std::vector<char> zblock(ZSTD_compressBound(BLOCKSIZE));
   std::vector<char> block(BLOCKSIZE);
   List ret = List(number_of_blocks);
-  for(size_t i=0; i<number_of_blocks; i++) {
+  for(uint64_t i=0; i<number_of_blocks; i++) {
     myFile.read(zsize_ar.data(), 4);
     zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
     // std::cout << zsize << "\n";
@@ -240,8 +88,8 @@ void qsave(RObject x, std::string file, int compress_level=-1) {
 }
 
 // [[Rcpp::export]]
-void qs_show_warnings(bool s) {
-  show_warnings = s;
+void qs_use_alt_rep(bool s) {
+  use_alt_rep_bool = s;
 }
 
 // [[Rcpp::export]]
@@ -264,7 +112,7 @@ std::vector<std::string> randomStrings(int N, int string_size = 50) {
 
 // [[Rcpp::export]]
 std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level) {
-  size_t zsize = ZSTD_compressBound(x.size());
+  uint64_t zsize = ZSTD_compressBound(x.size());
   char* xdata = reinterpret_cast<char*>(RAW(x));
   std::vector<unsigned char> ret(zsize);
   char* retdata = reinterpret_cast<char*>(ret.data());
@@ -275,11 +123,47 @@ std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level) {
 
 // [[Rcpp::export]]
 RawVector zstd_decompress_raw(RawVector x) {
-  size_t zsize = x.size();
+  uint64_t zsize = x.size();
   char* xdata = reinterpret_cast<char*>(RAW(x));
-  size_t retsize = ZSTD_getFrameContentSize(xdata, x.size());
+  uint64_t retsize = ZSTD_getFrameContentSize(xdata, x.size());
   RawVector ret(zsize);
   char* retdata = reinterpret_cast<char*>(RAW(ret));
   ZSTD_decompress(retdata, retsize, xdata, zsize);
   return ret;
+}
+
+
+
+// [[Rcpp::export]]
+SEXP convertToAlt(CharacterVector x) {
+  auto ret = new stdvec_data(x.size());
+  for(uint64_t i=0; i < x.size(); i++) {
+    SEXP xi = x[i];
+    if(xi == NA_STRING) {
+      ret->encodings[i] = '\5';
+    } else {
+      switch(Rf_getCharCE(xi)) {
+      case CE_NATIVE:
+        ret->encodings[i] = 1;
+        ret->strings[i] = Rcpp::as<std::string>(xi);
+        break;
+      case CE_UTF8:
+        ret->encodings[i] = 2;
+        ret->strings[i] = Rcpp::as<std::string>(xi);
+        break;
+      case CE_LATIN1:
+        ret->encodings[i] = 3;
+        ret->strings[i] = Rcpp::as<std::string>(xi);
+        break;
+      case CE_BYTES:
+        ret->encodings[i] = 4;
+        ret->strings[i] = Rcpp::as<std::string>(xi);
+        break;
+      default:
+        ret->encodings[i] = 5;
+      break;
+      }
+    }
+  }
+  return stdvec_string::Make(ret, true);
 }

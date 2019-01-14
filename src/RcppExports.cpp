@@ -27,7 +27,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // qread
-RObject qread(std::string file);
+SEXP qread(std::string file);
 RcppExport SEXP _qs_qread(SEXP fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -60,13 +60,13 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// qs_show_warnings
-void qs_show_warnings(bool s);
-RcppExport SEXP _qs_qs_show_warnings(SEXP sSEXP) {
+// qs_use_alt_rep
+void qs_use_alt_rep(bool s);
+RcppExport SEXP _qs_qs_use_alt_rep(SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< bool >::type s(sSEXP);
-    qs_show_warnings(s);
+    qs_use_alt_rep(s);
     return R_NilValue;
 END_RCPP
 }
@@ -115,6 +115,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// convertToAlt
+SEXP convertToAlt(CharacterVector x);
+RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< CharacterVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(convertToAlt(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_qs_zstd_compressBound", (DL_FUNC) &_qs_zstd_compressBound, 1},
@@ -122,15 +133,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_qread", (DL_FUNC) &_qs_qread, 1},
     {"_qs_qdump", (DL_FUNC) &_qs_qdump, 1},
     {"_qs_qsave", (DL_FUNC) &_qs_qsave, 3},
-    {"_qs_qs_show_warnings", (DL_FUNC) &_qs_qs_show_warnings, 1},
+    {"_qs_qs_use_alt_rep", (DL_FUNC) &_qs_qs_use_alt_rep, 1},
     {"_qs_qs_set_blocksize", (DL_FUNC) &_qs_qs_set_blocksize, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_raw", (DL_FUNC) &_qs_zstd_compress_raw, 2},
     {"_qs_zstd_decompress_raw", (DL_FUNC) &_qs_zstd_decompress_raw, 1},
+    {"_qs_convertToAlt", (DL_FUNC) &_qs_convertToAlt, 1},
     {NULL, NULL, 0}
 };
 
+void init_stdvec_double(DllInfo* dll);
 RcppExport void R_init_qs(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
+    init_stdvec_double(dll);
 }

@@ -11,7 +11,9 @@ vignette: >
 
 This package provides an interface for quickly writing (serializing) and reading (de-serializing) objects to and from disk. The goal of this package is to provide a lightning-fast and complete replacement for the saveRDS and readRDS functions in R.
 
-Inspired by the fst package, qs uses a similar block-compression approach using the zstd library and direct "in memory" compression, which allows for lightning quick serialization. It differs in that it uses a more general approach for attributes and object references for common data types (numeric data, strings, lists, etc.), meaning any S3 object built on common data types, e.g., tibbles, time-stamps, bit64, etc. can be serialized. For less common data types (formulas, environments, functions, etc.), qs relies on built in R serialization functions via the RApiSerialize package followed by block-compression.
+Inspired by the fst package, qs uses a similar block-compression approach using the zstd library and direct "in memory" compression, which allows for lightning quick serialization. It differs in that it uses a more general approach for attributes and object references for common data types (numeric data, strings, lists, etc.), meaning any S3 object built on common data types, e.g., tibbles, time-stamps, bit64, etc. can be serialized. For less common data types (formulas, environments, functions, etc.), qs relies on built in R serialization functions via the RApiSerialize package followed by block-compression.  
+
+For character vectors, `qs` also uses the alt-rep system to quickly read in string data.  
 
 ## Features
 The table below compares the features of different serialization approaches in R.
@@ -33,15 +35,15 @@ The table below compares the features of different serialization approaches in R
 | Multi-threaded     | &#10060; (Not Yet) | &#10004;      |  &#10060;   |
 
 ## Summary Benchmarks
-The table below lists serialization speed for several different data types (listed in MB/s).
+The table below lists serialization speed for several different data types (listed in MB/s).  
 
 |        | qs::qwrite   | qs::qread   | saveRDS    | readRDS       | fst::write_fst (1 thread) | fst::read_fst (1 thread)       | fst::write_fst (4 threads)        | fst::read_fst (4 threads)      |
 |---------------------------------------------------------------------------------------------------|-------------|------------|-----------|------------|--------------|------------|---------------|------------|
-| Integer Vector `sample(1e8)`                                                                      | 696.7  | 748.0 | 27.1 | 135.5 | 686.6   | 442.4 | 699.1    | 567.9 |
-| Numeric Vector `runif(1e8)`                                                                       | 693.2  | 816.5 | 24.3 | 131.9 | 744.0   | 638.7 | 754.4    | 848.0 |
-| Character Vector `qs::randomStrings(1e7)`                                                         | 1357.8 | 60.2  | 49.1 | 43.9  | 1440.9  | 59.5  | 1536.3   | 59.3  |
-| List `map(1:1e5,sample(100))`                                                          | 194.6  | 263.7 | 7.7  | 123.5 | N/A          | N/A        | N/A           | N/A        |
-| Environment `map(1:1e5,sample(100)); names(x)<-1:1e5; as.environment(x)` | 58.8   | 125.3 | 7.7  | 89.6  | N/A          | N/A        | N/A           | N/A        |
+| Integer Vector `sample(1e8)`                                                                      | 1015.2  | 889.8 | 27.1 | 135.5 | 686.6   | 442.4 | 699.1    | 567.9 |
+| Numeric Vector `runif(1e8)`                                                                       | 861.2  | 954.0 | 24.3 | 131.9 | 744.0   | 638.7 | 754.4    | 848.0 |
+| Character Vector `qs::randomStrings(1e7)`                                                         | 1312.9 | 715.8*  | 49.1 | 43.9  | 1440.9  | 59.5  | 1536.3   | 59.3  |
+| List `map(1:1e5,sample(100))`                                                          | 197.2  | 311.5 | 7.7  | 123.5 | N/A          | N/A        | N/A           | N/A        |
+| Environment `map(1:1e5,sample(100)); names(x)<-1:1e5; as.environment(x)` | 56.0   | 117.5 | 7.7  | 89.6  | N/A          | N/A        | N/A           | N/A        |
 "
 
 ## Installation:
@@ -63,6 +65,8 @@ identical(x1, x2) # returns true
 ### Data.Frame benchmark
 
 Benchmarks for serializing and de-serializing large data.frames (5 million rows) composed of a numeric column (`rnorm`), an integer column (`sample(5e6)`), and a character vector column (random alphanumeric strings of length 50).  See `vignettes/dataframe_bench.png` for a comparison using different compression parameters.  
+
+This benchmark also includes materialization of alt-rep data, for an apples-to-apples comparison.  
 
 #### Serialization speed with default parameters:
 | Method         | write time (s) | read time (s) |

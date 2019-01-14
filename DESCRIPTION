@@ -1,15 +1,24 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.11
-Date: 2019-1-2
-Author: Travers Ching
+Version: 0.12
+Date: 2019-1-14
+Authors@R: c(
+    person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
+    person("Yann", "Collet", role = c("aut", "ctb"), comment = "Yann Collet is the author of the bundled zstd code"),
+    person("Facebook, Inc.", role = "cph", comment = "Facebook is the copyright holder of the bundled zstd code"))
 Maintainer: Travers Ching <traversc@gmail.com>
-Description: Provides functions for quickly serializing and reading R objects to and from disk using the Rcpp interface and the Zstd compression library. 
-License: GPL (>= 2)
+Description: Provides functions for quickly writing and reading any R object to and from disk.  This package makes use of the 'zstd' library for compression and decompression.  'zstd' is created by Yann Collet and owned by Facebook, Inc. 
+License: AGPL-3 | file LICENSE
 Imports: 
     Rcpp, RApiSerialize
 LinkingTo: Rcpp, RApiSerialize
+Depends: 
+    R (>= 3.5.0)
 RoxygenNote: 6.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
+Copyright: This package includes code from the ZSTD library owned by Facebook, Inc. and created by Yann Collet.
+URL: https://github.com/traversc/qs
+BugReports: https://github.com/traversc/qs/issues
+

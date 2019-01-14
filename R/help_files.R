@@ -1,3 +1,24 @@
+# qs - Quick Serialization of R Objects
+# Copyright (C) 2019-prsent Travers Ching
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# 
+# You can contact the author at:
+#   https://github.com/traversc/qs
+
+
+
 #' qsave
 #' 
 #' Saves (serializes) an object to disk.  
@@ -46,11 +67,11 @@ NULL
 #' @name qs_set_blocksize
 NULL
 
-#' Show Warnings
+#' Use alt-rep
 #' 
-#' Show warnings during compression.  
-#' @param show_warnings A boolean showing a warning when attempting to serialize an unsupported object type.  Default: TRUE.  
-#' @name qs_show_warnings
+#' Changes whether qread uses the alt-rep system
+#' @param s A boolean to determine whether `qread` uses alt-rep.  Default: TRUE.  
+#' @name qs_use_alt_rep
 NULL
 
 
@@ -97,4 +118,13 @@ NULL
 #' @return A character vector of random alpha-numeric strings.    
 #' @name randomStrings
 NULL
+
+#' Convert character vector to alt-rep
+#' 
+#' A function for generating a alt rep object from a character vector, for testing purposes.  
+#' @param x The character vector
+#' @return The character vector in alt-rep form
+#' @name convertToAlt
+NULL
+
 
