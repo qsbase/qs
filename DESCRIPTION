@@ -8,7 +8,7 @@ Authors@R: c(
     person("Yann", "Collet", role = c("aut", "ctb"), comment = "Yann Collet is the author of the bundled zstd code"),
     person("Facebook, Inc.", role = "cph", comment = "Facebook is the copyright holder of the bundled zstd code"))
 Maintainer: Travers Ching <traversc@gmail.com>
-Description: Provides functions for quickly writing and reading any R object to and from disk.  This package makes use of the 'zstd' library for compression and decompression.  'zstd' is created by Yann Collet and owned by Facebook, Inc. 
+Description: Provides functions for quickly writing and reading any R object to and from disk.  This package makes use of the 'zstd' library for compression and decompression.  'zstd' is created by 'Yann Collet' and owned by Facebook, Inc. 
 License: AGPL-3 | file LICENSE
 Imports: 
     Rcpp, RApiSerialize
@@ -18,7 +18,7 @@ Depends:
 RoxygenNote: 6.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
-Copyright: This package includes code from the ZSTD library owned by Facebook, Inc. and created by Yann Collet.
+Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by 'Yann Collet'.
 URL: https://github.com/traversc/qs
 BugReports: https://github.com/traversc/qs/issues
 

@@ -138,7 +138,7 @@ RawVector zstd_decompress_raw(RawVector x) {
 // [[Rcpp::export]]
 SEXP convertToAlt(CharacterVector x) {
   auto ret = new stdvec_data(x.size());
-  for(uint64_t i=0; i < x.size(); i++) {
+  for(int i=0; i < x.size(); i++) {
     SEXP xi = x[i];
     if(xi == NA_STRING) {
       ret->encodings[i] = '\5';
