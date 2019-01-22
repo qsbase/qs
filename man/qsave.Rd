@@ -3,7 +3,12 @@
 \name{qsave}
 \alias{qsave}
 \title{qsave}
+\usage{
+qsave(x, file)
+}
 \arguments{
+\item{x}{the object to serialize.}
+
 \item{file}{the file name/path.}
 
 \item{compress_level}{The compression level (-50 to 22).  Default -1.  Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  Values with good compression/speed tradeoffs seem to be -1, 1 and 4.}
@@ -18,5 +23,5 @@ Saves (serializes) an object to disk.
 x1 <- data.frame(int = sample(1e3, replace=TRUE), 
                  num = rnorm(1e3), 
                  char = randomStrings(1e3), stringsAsFactors = FALSE)
-qsave(x1, "mydata.qs")
+qsave(x1, tempfile())
 }

@@ -3,6 +3,9 @@
 \name{zstd_compress_raw}
 \alias{zstd_compress_raw}
 \title{Zstd compression}
+\usage{
+zstd_compress_raw(x, compress_level)
+}
 \arguments{
 \item{x}{A Raw Vector}
 

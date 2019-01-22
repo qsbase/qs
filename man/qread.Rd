@@ -3,6 +3,9 @@
 \name{qread}
 \alias{qread}
 \title{qread}
+\usage{
+qread(file)
+}
 \arguments{
 \item{file}{the file name/path}
 }
@@ -16,7 +19,8 @@ Reads a object in a file serialized to disk
 x1 <- data.frame(int = sample(1e3, replace=TRUE), 
                  num = rnorm(1e3), 
                  char = randomStrings(1e3), stringsAsFactors = FALSE)
-qsave(x1, "mydata.qs")
-x2 <- qread("mydata.qs")
+myfile <- tempfile()
+qsave(x1, myfile)
+x2 <- qread(myfile)
 identical(x1, x2) # returns true
 }

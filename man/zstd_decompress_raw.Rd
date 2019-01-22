@@ -3,6 +3,9 @@
 \name{zstd_decompress_raw}
 \alias{zstd_decompress_raw}
 \title{Zstd decompression}
+\usage{
+zstd_decompress_raw(x)
+}
 \arguments{
 \item{x}{A Raw Vector}
 }

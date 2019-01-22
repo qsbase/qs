@@ -15,7 +15,7 @@ Imports:
 LinkingTo: Rcpp, RApiSerialize
 Depends: 
     R (>= 3.5.0)
-RoxygenNote: 6.1.1
+RoxygenNote: 6.0.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by 'Yann Collet'.

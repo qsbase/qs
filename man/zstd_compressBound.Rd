@@ -3,6 +3,9 @@
 \name{zstd_compressBound}
 \alias{zstd_compressBound}
 \title{Zstd CompressBound}
+\usage{
+zstd_compressBound(x)
+}
 \arguments{
 \item{x}{An integer size}
 }

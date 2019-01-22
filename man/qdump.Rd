@@ -3,6 +3,9 @@
 \name{qdump}
 \alias{qdump}
 \title{qdump}
+\usage{
+qdump(file)
+}
 \arguments{
 \item{file}{the file name/path.}
 }
