@@ -4,14 +4,14 @@
 \alias{zstd_compressBound}
 \title{Zstd CompressBound}
 \usage{
-zstd_compressBound(x)
+zstd_compressBound(size)
 }
 \arguments{
-\item{x}{An integer size}
+\item{size}{An integer size}
 }
 \value{
 maximum compressed size
 }
 \description{
-Returns the maximum compressed size of an object of length `x`
+Returns the maximum compressed size of an object of length `size`
 }

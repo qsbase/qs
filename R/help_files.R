@@ -22,16 +22,16 @@
 #' qsave
 #' 
 #' Saves (serializes) an object to disk.  
-#' @usage qsave(x, file)
+#' @usage qsave(x, file, compress_level)
 #' @param x the object to serialize.
 #' @param file the file name/path.
 #' @param compress_level The compression level (-50 to 22).  Default -1.  Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  Values with good compression/speed tradeoffs seem to be -1, 1 and 4.  
 #' @return The de-serialized object
 #' @examples 
-#' x1 <- data.frame(int = sample(1e3, replace=TRUE), 
+#' x <- data.frame(int = sample(1e3, replace=TRUE), 
 #'                  num = rnorm(1e3), 
 #'                  char = randomStrings(1e3), stringsAsFactors = FALSE)
-#' qsave(x1, tempfile())
+#' qsave(x, tempfile())
 #' @name qsave
 NULL
 
@@ -46,9 +46,9 @@ NULL
 #'                  num = rnorm(1e3), 
 #'                  char = randomStrings(1e3), stringsAsFactors = FALSE)
 #' myfile <- tempfile()
-#' qsave(x1, myfile)
+#' qsave(x, myfile)
 #' x2 <- qread(myfile)
-#' identical(x1, x2) # returns true
+#' identical(x, x2) # returns true
 #' @name qread
 NULL
 
@@ -66,8 +66,8 @@ NULL
 #' 
 #' Changes the compression blocksize.  Default: 2^19 (512 Kb).  Mostly for testing purposes, don't change otherwise.  
 #' If you change the blocksize, you'll need to set it every time you load an object otherwise it will break.  
-#' @usage qs_set_blocksize(100000)
-#' @param blocksize The blocksize in bytes
+#' @usage qs_set_blocksize(s)
+#' @param s The blocksize in bytes
 #' @name qs_set_blocksize
 NULL
 
@@ -82,9 +82,9 @@ NULL
 
 #' Zstd CompressBound
 #' 
-#' Returns the maximum compressed size of an object of length `x`
-#' @usage zstd_compressBound(x)
-#' @param x An integer size
+#' Returns the maximum compressed size of an object of length `size`
+#' @usage zstd_compressBound(size)
+#' @param size An integer size
 #' @return maximum compressed size
 #' @name zstd_compressBound
 NULL

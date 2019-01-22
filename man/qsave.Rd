@@ -4,7 +4,7 @@
 \alias{qsave}
 \title{qsave}
 \usage{
-qsave(x, file)
+qsave(x, file, compress_level)
 }
 \arguments{
 \item{x}{the object to serialize.}
@@ -20,8 +20,8 @@ The de-serialized object
 Saves (serializes) an object to disk.
 }
 \examples{
-x1 <- data.frame(int = sample(1e3, replace=TRUE), 
+x <- data.frame(int = sample(1e3, replace=TRUE), 
                  num = rnorm(1e3), 
                  char = randomStrings(1e3), stringsAsFactors = FALSE)
-qsave(x1, tempfile())
+qsave(x, tempfile())
 }

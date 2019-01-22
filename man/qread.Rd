@@ -20,7 +20,7 @@ x1 <- data.frame(int = sample(1e3, replace=TRUE),
                  num = rnorm(1e3), 
                  char = randomStrings(1e3), stringsAsFactors = FALSE)
 myfile <- tempfile()
-qsave(x1, myfile)
+qsave(x, myfile)
 x2 <- qread(myfile)
-identical(x1, x2) # returns true
+identical(x, x2) # returns true
 }
