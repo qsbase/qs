@@ -25,10 +25,6 @@ qs_use_alt_rep <- function(s) {
     invisible(.Call(`_qs_qs_use_alt_rep`, s))
 }
 
-qs_set_blocksize <- function(s) {
-    invisible(.Call(`_qs_qs_set_blocksize`, s))
-}
-
 randomStrings <- function(N, string_size = 50L) {
     .Call(`_qs_randomStrings`, N, string_size)
 }

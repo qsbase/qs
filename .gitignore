@@ -11,3 +11,4 @@ qs*.tar.gz
 rebuild.sh
 local
 .DS_Store
+src/ZSTD/LICENSCE.txt

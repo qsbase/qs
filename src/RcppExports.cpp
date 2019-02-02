@@ -70,16 +70,6 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// qs_set_blocksize
-void qs_set_blocksize(int s);
-RcppExport SEXP _qs_qs_set_blocksize(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type s(sSEXP);
-    qs_set_blocksize(s);
-    return R_NilValue;
-END_RCPP
-}
 // randomStrings
 std::vector<std::string> randomStrings(int N, int string_size);
 RcppExport SEXP _qs_randomStrings(SEXP NSEXP, SEXP string_sizeSEXP) {
@@ -134,7 +124,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_qdump", (DL_FUNC) &_qs_qdump, 1},
     {"_qs_qsave", (DL_FUNC) &_qs_qsave, 3},
     {"_qs_qs_use_alt_rep", (DL_FUNC) &_qs_qs_use_alt_rep, 1},
-    {"_qs_qs_set_blocksize", (DL_FUNC) &_qs_qs_set_blocksize, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_raw", (DL_FUNC) &_qs_zstd_compress_raw, 2},
     {"_qs_zstd_decompress_raw", (DL_FUNC) &_qs_zstd_decompress_raw, 1},

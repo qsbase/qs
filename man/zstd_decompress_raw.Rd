@@ -15,3 +15,9 @@ The uncompressed data
 \description{
 Decompresses of raw vector
 }
+\examples{
+x <- 1:1e6
+xserialized <- serialize(x, connection=NULL)
+xcompressed <- zstd_compress_raw(xserialized, compress_level = 1)
+xrecovered <- unserialize(zstd_decompress_raw(xcompressed))
+}

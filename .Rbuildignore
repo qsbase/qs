@@ -8,3 +8,4 @@ rebuild.sh
 ^benchmark_results
 rticle
 .Rhistory
+src/ZSTD/LICENSCE.txt

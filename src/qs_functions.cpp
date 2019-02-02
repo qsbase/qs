@@ -94,11 +94,6 @@ void qs_use_alt_rep(bool s) {
 }
 
 // [[Rcpp::export]]
-void qs_set_blocksize(int s) {
-  BLOCKSIZE = intToSize(s);
-}
-
-// [[Rcpp::export]]
 std::vector<std::string> randomStrings(int N, int string_size = 50) {
   std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   std::vector<std::string> ret(N);
@@ -127,7 +122,7 @@ RawVector zstd_decompress_raw(RawVector x) {
   uint64_t zsize = x.size();
   char* xdata = reinterpret_cast<char*>(RAW(x));
   uint64_t retsize = ZSTD_getFrameContentSize(xdata, x.size());
-  RawVector ret(zsize);
+  RawVector ret(retsize);
   char* retdata = reinterpret_cast<char*>(RAW(ret));
   ZSTD_decompress(retdata, retsize, xdata, zsize);
   return ret;
