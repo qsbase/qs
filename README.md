@@ -3,7 +3,7 @@ title: "README"
 author: Travers Ching
 ---
 
-  # qs [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs)
+  # qs [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs)
 
 Quick serialization of R objects
 
@@ -14,7 +14,7 @@ Inspired by the `fst` package, `qs` uses a similar block-compression approach us
 For character vectors, `qs` also uses the alt-rep system to quickly read in string data.  
 
 ## Installation
-`devtools::install_git("traversc/qs")`
+`install.packages("qs")` or `devtools::install_git("traversc/qs")`
 
 (Requires R version 3.5 or higher)
 
