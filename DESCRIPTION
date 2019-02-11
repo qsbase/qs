@@ -10,7 +10,7 @@ Authors@R: c(
     person("Reichardt", "Tino", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Skibinski", "Przemyslaw", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Mori", "Yuta", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
-    person("Francois", "Romain", role = c("ctb", "cph"), comment = "Derived example/tutorials for Alt-Rep structures"))
+    person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for Alt-Rep structures"))
 Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for quickly writing and reading any R object to and from disk.  This package makes use of the 'zstd' library for compression and decompression.  'zstd' is created by Yann Collet and owned by Facebook, Inc. 
 License: AGPL-3 | file LICENSE
