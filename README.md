@@ -14,7 +14,7 @@ Inspired by the `fst` package, `qs` uses a similar block-compression approach us
 For character vectors, `qs` also uses the alt-rep system to quickly read in string data.  
 
 ## Installation
-`install.packages("qs")` or `devtools::install_git("traversc/qs")`
+`install.packages("qs")` or `devtools::install_github("traversc/qs")`
 
 (Requires R version 3.5 or higher)
 
