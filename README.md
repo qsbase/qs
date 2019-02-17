@@ -10,8 +10,8 @@ For character vectors, `qs` also uses the alt-rep system to quickly read in stri
 
 ## Installation
 For R version 3.5 or higher:
-* `install.packages("qs")`
-* or `devtools::install_github("traversc/qs")`
+* `install.packages("qs")` or
+* `devtools::install_github("traversc/qs")`
 
 For R version 3.4 and lower:
 * `devtools::install_github("traversc/qs", ref = "qs34")`
