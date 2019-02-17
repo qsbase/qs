@@ -118,7 +118,7 @@ NULL
 #' @usage zstd_compressBound(size)
 #' @param size An integer size
 #' @return maximum compressed size
-#' #' @examples
+#' @examples
 #' zstd_compressBound(100000)
 #' #' zstd_compressBound(1e9)
 #' @name zstd_compressBound
