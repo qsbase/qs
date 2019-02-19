@@ -21,7 +21,7 @@ For R version 3.4 and lower:
 <img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/updated_mac_results_cran_v131.png" width="700">
 
 
-The table below lists a more complete benchmark of serialization speed for several different data types and methods.  
+The table below lists a more complete benchmark of serialization speeds for several different data types and methods.  
 <table>
   <tr>
     <th></th>
@@ -43,41 +43,41 @@ The table below lists a more complete benchmark of serialization speed for sever
   </tr>
   <tr>
     <td><b>Integer Vector</b><br>sample(1e8)</td>
-    <td>1015.2 MB/s<br></td>
-    <td>889.8 MB/s</td>
+    <td>900.5 MB/s<br></td>
+    <td>854.3 MB/s</td>
     <td>27.1 MB/s</td>
     <td>135.5 MB/s</td>
-    <td>686.6 MB/s</td>
-    <td>442.4 MB/s</td>
-    <td>699.1 MB/s</td>
-    <td>567.9 MB/s</td>
+    <td>1012.0 MB/s</td>
+    <td>421.8 MB/s</td>
+    <td>1111.6 MB/s</td>
+    <td>534.7 MB/s</td>
   </tr>
   <tr>
     <td><b>Numeric Vector</b><br>runif(1e8)</td>
-    <td>861.2 MB/s</td>
-    <td>954.0 MB/s</td>
+    <td>938.4 MB/s</td>
+    <td>963.4 MB/s</td>
     <td>24.3 MB/s</td>
     <td>131.9 MB/s</td>
-    <td>744.0 MB/s</td>
-    <td>638.7 MB/s</td>
-    <td>754.4 MB/s</td>
-    <td>848.0 MB/s</td>
+    <td>992.2 MB/s</td>
+    <td>629.8 MB/s</td>
+    <td>1072.4 MB/s</td>
+    <td>795.3 MB/s</td>
   </tr>
   <tr>
     <td><b>Character Vector</b><br>qs::randomStrings(1e7)</td>
-    <td>1312.9 MB/s</td>
-    <td>715.8 MB/s*</td>
+    <td>1446.8 MB/s</td>
+    <td>764.8 MB/s*</td>
     <td>49.1 MB/s</td>
     <td>43.9 MB/s</td>
-    <td>1440.9 MB/s</td>
-    <td>59.5 MB/s</td>
-    <td>1536.3 MB/s</td>
-    <td>59.3 MB/s</td>
+    <td>1663.5 MB/s</td>
+    <td>59.7 MB/s</td>
+    <td>1710.9 MB/s</td>
+    <td>58.8 MB/s</td>
   </tr>
   <tr>
     <td><b>List</b><br>map(1:1e5,sample(100))</td>
-    <td>197.2 MB/s<br></td>
-    <td>311.5 MB/s</td>
+    <td>192.7 MB/s<br></td>
+    <td>273.1 MB/s</td>
     <td>7.7 MB/s</td>
     <td>123.5 MB/s</td>
     <td>N/A</td>
@@ -87,8 +87,8 @@ The table below lists a more complete benchmark of serialization speed for sever
   </tr>
   <tr>
     <td><b>Environment</b><br>map(1:1e5,sample(100))<br>names(x)&lt;-1:1e5<br>as.environment(x)</td>
-    <td>56.0 MB/s</td>
-    <td>117.5 MB/s</td>
+    <td>57.8 MB/s</td>
+    <td>120.7 MB/s</td>
     <td>7.7 MB/s</td>
     <td>89.6 MB/s</td>
     <td>N/A</td>
