@@ -17,32 +17,9 @@ For R version 3.4 and lower:
 
 `devtools::install_github("traversc/qs", ref = "qs34")`
 
-
-
-
-## Features
-The table below compares the features of different serialization approaches in R.
-
-
-|                    | qs         | fst           | saveRDS  |
-|--------------------|:-----------:|:---------------:|:----------:|
-| Not Slow             | &#10004;   | &#10004;       | X |
-| Numeric Vectors    | &#10004;   | &#10004;       | &#10004;  |
-| Integer Vectors    | &#10004;   | &#10004;       | &#10004;  |
-| Logical Vectors    | &#10004;   | &#10004;       | &#10004;  |
-| Character Vectors  | &#10004;   | &#10004;       | &#10004;  |
-| Character Encoding | &#10004;   | (vector-wide only) | &#10004;  |
-| Complex Vectors    | &#10004;   | X      | &#10004;  |
-| Data.Frames        | &#10004;   | &#10004;       | &#10004;  |
-| On disk row access | X  | &#10004;       | X |
-| Attributes         | &#10004;   | Some          | &#10004;  |
-| Lists / Nested Lists| &#10004;   |  X     | &#10004;  |
-| Multi-threaded     | X (Not Yet) | &#10004;      |  X   |
-
 ## Summary Benchmarks
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/updated_mac_results_cran_v131.png" width="700">
 
-<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/updated_mac_results_cran_v131.png" width="576">
-* *Updated for qs ver. 0.13.1 on CRAN*
 
 The table below lists a more complete benchmark of serialization speed for several different data types and methods.  
 <table>
@@ -120,6 +97,25 @@ The table below lists a more complete benchmark of serialization speed for sever
     <td>N/A</td>
   </tr>
 </table>
+
+## Features
+The table below compares the features of different serialization approaches in R.
+
+
+|                    | qs         | fst           | saveRDS  |
+|--------------------|:-----------:|:---------------:|:----------:|
+| Not Slow             | &#10004;   | &#10004;       | X |
+| Numeric Vectors    | &#10004;   | &#10004;       | &#10004;  |
+| Integer Vectors    | &#10004;   | &#10004;       | &#10004;  |
+| Logical Vectors    | &#10004;   | &#10004;       | &#10004;  |
+| Character Vectors  | &#10004;   | &#10004;       | &#10004;  |
+| Character Encoding | &#10004;   | (vector-wide only) | &#10004;  |
+| Complex Vectors    | &#10004;   | X      | &#10004;  |
+| Data.Frames        | &#10004;   | &#10004;       | &#10004;  |
+| On disk row access | X  | &#10004;       | X |
+| Attributes         | &#10004;   | Some          | &#10004;  |
+| Lists / Nested Lists| &#10004;   |  X     | &#10004;  |
+| Multi-threaded     | X (Not Yet) | &#10004;      |  X   |
 
 ## Additional Benchmarks
 
