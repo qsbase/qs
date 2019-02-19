@@ -33,7 +33,11 @@ The table below compares the features of different serialization approaches in R
 | Multi-threaded     | X (Not Yet) | &#10004;      |  X   |
 
 ## Summary Benchmarks
-The table below lists serialization speed for several different data types.  
+
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/updated_mac_results_cran_v131.png" width="576">
+* *Updated for qs ver. 0.13.1 on CRAN*
+
+The table below lists a more complete benchmark of serialization speed for several different data types and methods.  
 <table>
   <tr>
     <th></th>
