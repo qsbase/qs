@@ -114,12 +114,12 @@ For a more complete comparison with `fst`, a number of different
 parameters were evaluated for each method. For `fst`, compression level
 and number of threads were varied and plotted. For `qs`, byte shuffle
 settings (see the “Byte Shuffling” section below) and algorithm used
-were evaluated. A `data.frame` with 5 million rows was used for the
-purpose of this evaluation.
+were evaluated.
 
 ![](vignettes/dataframe_bench.png "dataframe_bench")
 
-The `data.frame` used is as follows:
+A `data.frame` with 5 million rows was employed for the purpose of this
+evaluation:
 
 ``` r
 data.frame(a=rnorm(5e6), b=rpois(100,5e6),
@@ -127,27 +127,22 @@ data.frame(a=rnorm(5e6), b=rpois(100,5e6),
            stringsAsFactors = F)
 ```
 
-This benchmark also includes materialization of alt-rep data, for an
-apples-to-apples comparison.
-
 ## Byte Shuffle
 
-Byte shuffling (adapted from the Blosc meta-compression library) is a
-way of re-organizing data to be more ammenable to compression. Consider
-integer data: an integer contains four bytes and the limits of an
-integer in R are +/- 2^31-1. However, most real data doesn’t use
-anywhere near the range of possible integer values. For example, if the
-data were representing percentages, 0% to 100%, the first three out of
-the four bytes would be unused and zero.
+Byte shuffling (adopted from the Blosc meta-compression library) is a
+way of re-organizing data to be more ammenable to compression. For
+example: an integer contains four bytes and the limits of an integer in
+R are +/- 2^31-1. However, most real data doesn’t use anywhere near the
+range of possible integer values. For example, if the data were
+representing percentages, 0% to 100%, the first three bytes would be
+unused and zero.
 
 Byte shuffling rearranges the data such that all of the first bytes are
-blocked together, the second bytes are blocked together, etc., which
-makes it very easy for compression algorithms to find repeated patterns.
-This often improves compression by orders of magnitude; in the example
-below, shuffle compression achieves a compression ratio of over 1000x.
-See `?qsave` for more details.
-
-Example:
+blocked together, the second bytes are blocked together, etc. This
+procedure often makes it very easy for compression algorithms to find
+repeated patterns and can often improves compression ratio by orders of
+magnitude. In the example below, shuffle compression achieves a
+compression ratio of over 1000x. See `?qsave` for more details.
 
 ``` r
 # With byte shuffling
@@ -168,15 +163,15 @@ cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.q")$si
 The alt-rep system was introduced in R version 3.5. Briefly, alt-rep
 vectors are objects that are not represented by R internal data, but
 have accesor functions which promise to “materialize” elements within
-the vector on the fly. The amazing thing about the system is that it’s
-completely seamless to the user.
+the vector on the fly. To the user, this system is completely hidden and
+appears seamless.
 
-Only alt-rep character vectors are implemented in `qs` because it is
+In `qs`, only alt-rep character vectors are implemented because it is
 often the mostly costly of data types to read into R. Numeric and
-integer data are already fast enough and do not benefit. An example use
-case: if you have a large `data.frame`, and you are only interested in
-processing certain columns, it is wasted computatoin to materialize the
-whole `data.frame`. The alt-rep system solves this
+integer data are already fast enough and do not largely benefit. An
+example use case: if you have a large `data.frame`, and you are only
+interested in processing certain columns, it is wasted computation to
+materialize the whole `data.frame`. The alt-rep system solves this
 problem.
 
 ``` r
