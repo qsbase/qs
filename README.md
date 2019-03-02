@@ -62,7 +62,7 @@ These benchmarks were performed on a desktop using various data types (detailed 
 
 `qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible.  For simplicity, `qs` comes with 3 presets, which trades speed for compression: "fast", "balanced" and "high".  The benchmark below uses the "fast" preset.  
 
-![](headline_bench.png "headline_bench"){width=500px}
+![](vignettes/headline_bench.png "headline_bench"){width=500px}
 
 * character: `randomStrings(1e6)`
 * numeric:`rnorm(1e7)`
@@ -77,7 +77,7 @@ Benchmarking write and read speed is a bit tricky and depends highly on a number
 
 For a more complete comparison with `fst`, a number of different parameters were evaluated for each method.  For `fst`, compression level and number of threads were varied and plotted.  For `qs`, byte shuffle settings (see the "Byte Shuffling" section below) and algorithm used were evaluated.  A `data.frame` with 5 million rows was used for the purpose of this evaluation. 
 
-![](dataframe_bench.png "dataframe_bench"){width=500px}
+![](vignettes/dataframe_bench.png "dataframe_bench"){width=500px}
 
 The `data.frame` used is as follows:
 
