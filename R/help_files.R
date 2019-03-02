@@ -22,11 +22,32 @@
 #' qsave
 #' 
 #' Saves (serializes) an object to disk.  
-#' @usage qsave(x, file, compress_level)
+#' @usage qsave(x, file, 
+#' preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 15L)
 #' @param x the object to serialize.
 #' @param file the file name/path.
-#' @param compress_level The compression level (-50 to 22).  Default -1.  Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  Values with good compression/speed tradeoffs seem to be -1, 1 and 4.  
-#' @return The de-serialized object
+#' @param preset One of "fast", "balanced" (default), "high" or "custom".  See details.  
+#' @param algorithm Compression algorithm used.  Either lz4 (default or zstd). 
+#' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
+#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
+#' @details 
+#' This function serializes and compresses R objects using block compresion with the option of byte shuffling.  
+#' There are lots of possible parameters.  This function exposes three parameters related to compression level and byte shuffling. 
+#' 
+#' `compress_level` - Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  
+#' Due to the format of qs, there is very little benefit to compression levels > 5 or so.  
+#' 
+#' `shuffle_control` - This sets which numerical R object types are subject to byte shuffling.  
+#' Generally speaking, the more ordered/sequential an object is (e.g., `1:1e7`), the larger the potential benefit of byte shuffling.  
+#' It is not uncommon to have several orders magnitude benefit to compression ratio or compression speed.  The more random an object is (e.g., `rnorm(1e7)`), 
+#' the less potential benefit there is, even negative benefit is possible.  Integer vectors almost always benefit from byte shuffling whereas the results for numeric vectors are mixed.  
+#' To control block shuffling, add +1 to the parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors. 
+#' 
+#' The `preset` parameter has several different combination of parameter sets that are performant over a large variety of data.  
+#' The `algorithm` parameter, `compression_level` and `shuffle_control` 
+#' parameters are ignored unless `preset` is "custom".  "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.  
+#' "balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.  
+#' "high" preset: algorithm zstd, compress_level 5, shuffle_control 15.  
 #' @examples 
 #' x <- data.frame(int = sample(1e3, replace=TRUE), 
 #'                  num = rnorm(1e3), 
@@ -53,8 +74,9 @@ NULL
 #' qread
 #' 
 #' Reads a object in a file serialized to disk
-#' @usage qread(file)
+#' @usage qread(file, use_alt_rep=FALSE)
 #' @param file the file name/path
+#' @param use_alt_rep Use alt rep when reading in string data.  Default: FALSE  
 #' @return The de-serialized object
 #' @examples 
 #' x <- data.frame(int = sample(1e3, replace=TRUE), 
@@ -96,34 +118,17 @@ NULL
 NULL
 
 
-#' Use alt-rep
-#' 
-#' Changes whether qread uses the alt-rep system.  If you experience issues or run out of memory, set to FALSE.
-#' @usage qs_use_alt_rep(s)
-#' @param s A boolean to determine whether `qread` uses alt-rep.  Default: TRUE.  
-#' @examples
-#' myfile <- tempfile()
-#' qs_use_alt_rep(FALSE)
-#' x <- randomStrings(1e3)
-#' qsave(x, myfile)
-#' x2 <- qread(myfile) # qs will no longer use alt-rep strings to load in character vector data
-#' identical(x, x2) # returns true
-#' @name qs_use_alt_rep
-NULL
-
-
-#' Zstd CompressBound
+#' Zstd compress bound
 #' 
 #' Exports the compress bound function from the zstd library.  Returns the maximum compressed size of an object of length `size`.  
-#' @usage zstd_compressBound(size)
+#' @usage zstd_compress_bound(size)
 #' @param size An integer size
 #' @return maximum compressed size
 #' @examples
-#' zstd_compressBound(100000)
-#' #' zstd_compressBound(1e9)
-#' @name zstd_compressBound
+#' zstd_compress_bound(100000)
+#' zstd_compress_bound(1e9)
+#' @name zstd_compress_bound
 NULL
-
 
 #' Zstd compression
 #' 
@@ -152,6 +157,47 @@ NULL
 #' xcompressed <- zstd_compress_raw(xserialized, compress_level = 1)
 #' xrecovered <- unserialize(zstd_decompress_raw(xcompressed))
 #' @name zstd_decompress_raw
+NULL
+
+#' lz4 compress bound
+#' 
+#' Exports the compress bound function from the lz4 library.  Returns the maximum compressed size of an object of length `size`.  
+#' @usage lz4_compress_bound(size)
+#' @param size An integer size
+#' @return maximum compressed size
+#' @examples
+#' lz4_compress_bound(100000)
+#' #' lz4_compress_bound(1e9)
+#' @name lz4_compress_bound
+NULL
+
+#' lz4 compression
+#' 
+#' Compression of raw vector.  Exports the main lz4 compression function.  
+#' @usage lz4_compress_raw(x, compress_level)
+#' @param x A Raw Vector
+#' @param compress_level The compression level (> 1). 
+#' @return The compressed data
+#' @examples
+#' x <- 1:1e6
+#' xserialized <- serialize(x, connection=NULL)
+#' xcompressed <- lz4_compress_raw(xserialized, compress_level = 1)
+#' xrecovered <- unserialize(lz4_decompress_raw(xcompressed))
+#' @name lz4_compress_raw
+NULL
+
+#' lz4 decompression
+#' 
+#' Decompresses of raw vector
+#' @usage lz4_decompress_raw(x)
+#' @param x A Raw Vector
+#' @return The uncompressed data
+#' @examples
+#' x <- 1:1e6
+#' xserialized <- serialize(x, connection=NULL)
+#' xcompressed <- lz4_compress_raw(xserialized, compress_level = 1)
+#' xrecovered <- unserialize(lz4_decompress_raw(xcompressed))
+#' @name lz4_decompress_raw
 NULL
 
 
@@ -192,3 +238,54 @@ NULL
 NULL
 
 
+#' Shuffle a raw vector 
+#' 
+#' A function for shuffling a raw vector using BLOSC shuffle routines
+#' @usage blosc_shuffle_raw(x, bytesofsize)
+#' @param x The raw vector
+#' @param bytesofsize Either 4 or 8
+#' @return The shuffled vector
+#' @examples
+#' x <- serialize(1L:1000L, NULL)
+#' xshuf <- blosc_shuffle_raw(x, 4)
+#' xunshuf <- blosc_unshuffle_raw(xshuf, 4)
+#' @name blosc_shuffle_raw
+NULL
+
+
+#' Un-shuffle a raw vector 
+#' 
+#' A function for un-shuffling a raw vector using BLOSC un-shuffle routines
+#' @usage blosc_unshuffle_raw(x, bytesofsize)
+#' @param x The raw vector
+#' @param bytesofsize Either 4 or 8
+#' @return The unshuffled vector
+#' @examples
+#' x <- serialize(1L:1000L, NULL)
+#' xshuf <- blosc_shuffle_raw(x, 4)
+#' xunshuf <- blosc_unshuffle_raw(xshuf, 4)
+#' @name blosc_unshuffle_raw
+NULL
+
+#' Official list of IAU Star Names
+#'
+#' Data from the International Astronomical Union.  
+#' An official list of the 336 internationally recognized named stars,
+#' updated as of June 1, 2018.    
+#'
+#' @docType data
+#'
+#' @usage data(starnames)
+#'
+#' @format A `data.frame` with official IAU star names and several properties, such as coordinates.   
+#'
+#' @keywords datasets
+#' 
+#' @references E Mamajek et. al. (2018), 
+#' \emph{WG Triennial Report (2015-2018) - Star Names}, Reports on Astronomy, 22 Mar 2018.  
+#
+#' @source \href{https://www.iau.org/public/themes/naming_stars/}{Naming Stars | International Astronomical Union.}
+#'
+#' @examples
+#' data(starnames)
+"starnames"

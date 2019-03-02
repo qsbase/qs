@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.13.1
-Date: 2019-2-12
+Version: 0.14.1
+Date: 2019-2-26
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd code"),
@@ -10,10 +10,12 @@ Authors@R: c(
     person("Reichardt", "Tino", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Skibinski", "Przemyslaw", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Mori", "Yuta", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
-    person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for Alt-Rep structures"))
+    person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for Alt-Rep structures"),
+    person("Francesc", "Alted", role = c("ctb", "cph"), comment = "Shuffling routines derived from Blosc library"))
 Maintainer: Travers Ching <traversc@gmail.com>
-Description: Provides functions for quickly writing and reading any R object to and from disk.  This package makes use of the 'zstd' library for compression and decompression.  'zstd' is created by Yann Collet and owned by Facebook, Inc. 
+Description: Provides functions for quickly writing and reading any R object to and from disk.  
 License: AGPL-3 | file LICENSE
+LazyData: true
 Imports: 
     Rcpp, RApiSerialize
 LinkingTo: Rcpp, RApiSerialize
@@ -22,6 +24,6 @@ Depends:
 RoxygenNote: 6.0.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
-Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet.
+Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet; and code derived from the 'Blosc' library created and owned by Francesc Alted.  
 URL: https://github.com/traversc/qs
 BugReports: https://github.com/traversc/qs/issues

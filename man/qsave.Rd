@@ -4,20 +4,43 @@
 \alias{qsave}
 \title{qsave}
 \usage{
-qsave(x, file, compress_level)
+qsave(x, file, 
+preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 15L)
 }
 \arguments{
 \item{x}{the object to serialize.}
 
 \item{file}{the file name/path.}
 
-\item{compress_level}{The compression level (-50 to 22).  Default -1.  Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  Values with good compression/speed tradeoffs seem to be -1, 1 and 4.}
-}
-\value{
-The de-serialized object
+\item{preset}{One of "fast", "balanced" (default), "high" or "custom".  See details.}
+
+\item{algorithm}{Compression algorithm used.  Either lz4 (default or zstd).}
+
+\item{compress_level}{The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).}
+
+\item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.}
 }
 \description{
 Saves (serializes) an object to disk.
+}
+\details{
+This function serializes and compresses R objects using block compresion with the option of byte shuffling.  
+There are lots of possible parameters.  This function exposes three parameters related to compression level and byte shuffling. 
+
+`compress_level` - Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  
+Due to the format of qs, there is very little benefit to compression levels > 5 or so.  
+
+`shuffle_control` - This sets which numerical R object types are subject to byte shuffling.  
+Generally speaking, the more ordered/sequential an object is (e.g., `1:1e7`), the larger the potential benefit of byte shuffling.  
+It is not uncommon to have several orders magnitude benefit to compression ratio or compression speed.  The more random an object is (e.g., `rnorm(1e7)`), 
+the less potential benefit there is, even negative benefit is possible.  Integer vectors almost always benefit from byte shuffling whereas the results for numeric vectors are mixed.  
+To control block shuffling, add +1 to the parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors. 
+
+The `preset` parameter has several different combination of parameter sets that are performant over a large variety of data.  
+The `algorithm` parameter, `compression_level` and `shuffle_control` 
+parameters are ignored unless `preset` is "custom".  "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.  
+"balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.  
+"high" preset: algorithm zstd, compress_level 5, shuffle_control 15.
 }
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE), 

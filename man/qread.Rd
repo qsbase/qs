@@ -4,10 +4,12 @@
 \alias{qread}
 \title{qread}
 \usage{
-qread(file)
+qread(file, use_alt_rep=FALSE)
 }
 \arguments{
 \item{file}{the file name/path}
+
+\item{use_alt_rep}{Use alt rep when reading in string data.  Default: FALSE}
 }
 \value{
 The de-serialized object

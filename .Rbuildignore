@@ -9,3 +9,4 @@ rebuild.sh
 rticle
 .Rhistory
 src/ZSTD/LICENSCE.txt
+aclocal.m4

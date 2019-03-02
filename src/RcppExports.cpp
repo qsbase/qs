@@ -5,17 +5,6 @@
 
 using namespace Rcpp;
 
-// zstd_compressBound
-int zstd_compressBound(int size);
-RcppExport SEXP _qs_zstd_compressBound(SEXP sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(zstd_compressBound(size));
-    return rcpp_result_gen;
-END_RCPP
-}
 // is_big_endian
 bool is_big_endian();
 RcppExport SEXP _qs_is_big_endian() {
@@ -26,14 +15,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// qsave
+void qsave(RObject x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control);
+RcppExport SEXP _qs_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< RObject >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
+    Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
+    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    qsave(x, file, preset, algorithm, compress_level, shuffle_control);
+    return R_NilValue;
+END_RCPP
+}
 // qread
-SEXP qread(std::string file);
-RcppExport SEXP _qs_qread(SEXP fileSEXP) {
+SEXP qread(std::string file, bool use_alt_rep);
+RcppExport SEXP _qs_qread(SEXP fileSEXP, SEXP use_alt_repSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
-    rcpp_result_gen = Rcpp::wrap(qread(file));
+    Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
+    rcpp_result_gen = Rcpp::wrap(qread(file, use_alt_rep));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -48,28 +53,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// qsave
-void qsave(RObject x, std::string file, int compress_level);
-RcppExport SEXP _qs_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP compress_levelSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RObject >::type x(xSEXP);
-    Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
-    Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
-    qsave(x, file, compress_level);
-    return R_NilValue;
-END_RCPP
-}
-// qs_use_alt_rep
-void qs_use_alt_rep(bool s);
-RcppExport SEXP _qs_qs_use_alt_rep(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< bool >::type s(sSEXP);
-    qs_use_alt_rep(s);
-    return R_NilValue;
-END_RCPP
-}
 // randomStrings
 std::vector<std::string> randomStrings(int N, int string_size);
 RcppExport SEXP _qs_randomStrings(SEXP NSEXP, SEXP string_sizeSEXP) {
@@ -79,6 +62,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type string_size(string_sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(randomStrings(N, string_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// zstd_compress_bound
+int zstd_compress_bound(int size);
+RcppExport SEXP _qs_zstd_compress_bound(SEXP sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(zstd_compress_bound(size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lz4_compress_bound
+int lz4_compress_bound(int size);
+RcppExport SEXP _qs_lz4_compress_bound(SEXP sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(lz4_compress_bound(size));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -105,6 +110,53 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lz4_compress_raw
+std::vector<unsigned char> lz4_compress_raw(RawVector x, int compress_level);
+RcppExport SEXP _qs_lz4_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
+    rcpp_result_gen = Rcpp::wrap(lz4_compress_raw(x, compress_level));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lz4_decompress_raw
+std::vector<unsigned char> lz4_decompress_raw(RawVector x);
+RcppExport SEXP _qs_lz4_decompress_raw(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(lz4_decompress_raw(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// blosc_shuffle_raw
+std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesofsize);
+RcppExport SEXP _qs_blosc_shuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(blosc_shuffle_raw(x, bytesofsize));
+    return rcpp_result_gen;
+END_RCPP
+}
+// blosc_unshuffle_raw
+std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytesofsize);
+RcppExport SEXP _qs_blosc_unshuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(blosc_unshuffle_raw(x, bytesofsize));
+    return rcpp_result_gen;
+END_RCPP
+}
 // convertToAlt
 SEXP convertToAlt(CharacterVector x);
 RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
@@ -118,15 +170,19 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_qs_zstd_compressBound", (DL_FUNC) &_qs_zstd_compressBound, 1},
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
-    {"_qs_qread", (DL_FUNC) &_qs_qread, 1},
+    {"_qs_qsave", (DL_FUNC) &_qs_qsave, 6},
+    {"_qs_qread", (DL_FUNC) &_qs_qread, 2},
     {"_qs_qdump", (DL_FUNC) &_qs_qdump, 1},
-    {"_qs_qsave", (DL_FUNC) &_qs_qsave, 3},
-    {"_qs_qs_use_alt_rep", (DL_FUNC) &_qs_qs_use_alt_rep, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
+    {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
+    {"_qs_lz4_compress_bound", (DL_FUNC) &_qs_lz4_compress_bound, 1},
     {"_qs_zstd_compress_raw", (DL_FUNC) &_qs_zstd_compress_raw, 2},
     {"_qs_zstd_decompress_raw", (DL_FUNC) &_qs_zstd_decompress_raw, 1},
+    {"_qs_lz4_compress_raw", (DL_FUNC) &_qs_lz4_compress_raw, 2},
+    {"_qs_lz4_decompress_raw", (DL_FUNC) &_qs_lz4_decompress_raw, 1},
+    {"_qs_blosc_shuffle_raw", (DL_FUNC) &_qs_blosc_shuffle_raw, 2},
+    {"_qs_blosc_unshuffle_raw", (DL_FUNC) &_qs_blosc_unshuffle_raw, 2},
     {"_qs_convertToAlt", (DL_FUNC) &_qs_convertToAlt, 1},
     {NULL, NULL, 0}
 };
