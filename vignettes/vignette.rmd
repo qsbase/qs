@@ -28,7 +28,6 @@ df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6))
 qsave(df1, "myfile.q")
 df2 <- qread("myfile.q")
 ```
-
 ## Installation:
 For R version 3.5 or higher:
 ```{r eval=FALSE}
@@ -38,10 +37,8 @@ remotes::install_github("traversc/qs") ## Latest version
 For R version 3.4 and lower:
 ```{r eval=FALSE}
 remotes::install_github("traversc/qs", ref = "qs34")
-
-For Windows users, I recommend installing from source rather than using the pre-compiled library. Adding `PKG_CPPFLAGS+=-mavx2` to the R makefile (`C:\Users\<user>\Documents\.R\Makevars`) will increase serialization speed.  
 ```
-
+For Windows users, I recommend installing from source rather than using the pre-compiled library. Adding `PKG_CPPFLAGS+=-mavx2` to the R makefile (`C:\Users\<user>\Documents\.R\Makevars`) will increase serialization speed. 
 ## Features
 The table below compares the features of different serialization approaches in R.
 
@@ -67,14 +64,13 @@ The table below compares the features of different serialization approaches in R
 * For numerical data (numeric, integer, logical and complex vectors) `qs` implements byte shuffling filters (adopted from the Blosc meta-compression library).  These filters utilize extended CPU instruction sets (either SSE2 or AVX2).
 
 Both of these features have the possibility of additionally increasing performance by orders of magnitude, for certain types of data.  See sections below for more details.  
-
 ## Summary Benchmarks
 
 These benchmarks were performed on a desktop using various data types (detailed below). `qs` was comapared with `saveRDS`/`readRDS` in base R and the `fst` package for serializing `data.frame`'s.  In terms of speed, `qs` is  comparable to `fst` for the data types `fst` supports, and both packages are orders of magnitude faster than `saveRDS`.  
 
 `qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible.  For simplicity, `qs` comes with 3 presets, which trades speed for compression: "fast", "balanced" and "high".  The benchmark below uses the "fast" preset.  
 
-![](headline_bench.png "headline_bench"){width=600px}
+![](headline_bench.png "headline_bench"){width=500px}
 
 * character: `randomStrings(1e6)`
 * numeric:`rnorm(1e7)`
@@ -85,11 +81,11 @@ These benchmarks were performed on a desktop using various data types (detailed 
 
 Benchmarking write and read speed is a bit tricky and depends highly on a number of factors, such as which operating system one uses, the hardware being run on, the distribution of the data, or even whether R is restarted before each measurement.  Reading data is also subject to various hardware and software memory caches, and so may not be fully representative of reading data straight from disk.  
 
-### Data.Frame benchmark
+## Data.Frame benchmark
 
 For a more complete comparison with `fst`, a number of different parameters were evaluated for each method.  For `fst`, compression level and number of threads were varied and plotted.  For `qs`, byte shuffle settings (see the "Byte Shuffling" section below) and algorithm used were evaluated.  A `data.frame` with 5 million rows was used for the purpose of this evaluation. 
 
-![](dataframe_bench.png "dataframe_bench"){width=600px}
+![](dataframe_bench.png "dataframe_bench"){width=500px}
 
 The `data.frame` used is as follows:
 ```{r eval=FALSE}
@@ -99,7 +95,7 @@ data.frame(a=rnorm(5e6), b=rpois(100,5e6),
 ```
 
 This benchmark also includes materialization of alt-rep data, for an apples-to-apples comparison.  
-                 
+
 ## Byte Shuffle
 
 Byte shuffling (adapted from the Blosc meta-compression library) is a way of re-organizing data to be more ammenable to compression.  Consider integer data: an integer contains four bytes and the limits of an integer in R are +/- 2^31-1.  However, most real data doesn't use anywhere near the range of possible integer values.  For example, if the data were representing percentages, 0% to 100%, the first three out of the four bytes would be unused and zero.    
@@ -120,7 +116,6 @@ qsave(x, "mydat.q", preset="custom", shuffle_control=0, algorithm="zstd")
 cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.q")$size, "\n" )
 # Compression Ratio:  1.479294 
 ```
-
 
 ## Alt-rep character vectors
 

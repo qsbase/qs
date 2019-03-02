@@ -22,6 +22,7 @@ df2 <- qread("myfile.q")
 ## Installation:
 For R version 3.5 or higher:
 
+<<<<<<< HEAD
 ```r
 install.packages("qs") ## CRAN version
 remotes::install_github("traversc/qs") ## Latest version
@@ -60,8 +61,12 @@ The table below compares the features of different serialization approaches in R
 
 Both of these features have the possibility of additionally increasing performance by orders of magnitude, for certain types of data.  See sections below for more details.  
 
+=======
+>>>>>>> 73ce289ae9910ade1ba238be21d1fc101b5e1efd
 ## Summary Benchmarks
+<img src="https://raw.githubusercontent.com/traversc/qs/master/vignettes/updated_mac_results_cran_v131.png" width="700">
 
+<<<<<<< HEAD
 These benchmarks were performed on a desktop using various data types (detailed below). `qs` was comapared with `saveRDS`/`readRDS` in base R and the `fst` package for serializing `data.frame`'s.  In terms of speed, `qs` is  comparable to `fst` for the data types `fst` supports, and both packages are orders of magnitude faster than `saveRDS`.  
 
 `qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible.  For simplicity, `qs` comes with 3 presets, which trades speed for compression: "fast", "balanced" and "high".  The benchmark below uses the "fast" preset.  
@@ -76,6 +81,106 @@ These benchmarks were performed on a desktop using various data types (detailed 
 
 
 Benchmarking write and read speed is a bit tricky and depends highly on a number of factors, such as which operating system one uses, the hardware being run on, the distribution of the data, or even whether R is restarted before each measurement.  Reading data is also subject to various hardware and software memory caches, and so may not be fully representative of reading data straight from disk.  
+=======
+
+The table below lists a more complete benchmark of serialization speeds for several different data types and methods.  
+<table>
+  <tr>
+    <th></th>
+    <th colspan="2">qs</th>
+    <th colspan="2">saveRDS</th>
+    <th colspan="2">fst<br>1 thread</th>
+    <th colspan="2">fst<br>4 threads</th>
+  </tr>
+  <tr>
+    <td></td>
+    <td>Write</td>
+    <td>Read</td>
+    <td>Write</td>
+    <td>Read</td>
+    <td>Write</td>
+    <td>Read</td>
+    <td>Write</td>
+    <td>Read</td>
+  </tr>
+  <tr>
+    <td><b>Integer Vector</b><br>sample(1e8)</td>
+    <td>900.5 MB/s<br></td>
+    <td>854.3 MB/s</td>
+    <td>27.1 MB/s</td>
+    <td>135.5 MB/s</td>
+    <td>1012.0 MB/s</td>
+    <td>421.8 MB/s</td>
+    <td>1111.6 MB/s</td>
+    <td>534.7 MB/s</td>
+  </tr>
+  <tr>
+    <td><b>Numeric Vector</b><br>runif(1e8)</td>
+    <td>938.4 MB/s</td>
+    <td>963.4 MB/s</td>
+    <td>24.3 MB/s</td>
+    <td>131.9 MB/s</td>
+    <td>992.2 MB/s</td>
+    <td>629.8 MB/s</td>
+    <td>1072.4 MB/s</td>
+    <td>795.3 MB/s</td>
+  </tr>
+  <tr>
+    <td><b>Character Vector</b><br>qs::randomStrings(1e7)</td>
+    <td>1446.8 MB/s</td>
+    <td>764.8 MB/s*</td>
+    <td>49.1 MB/s</td>
+    <td>43.9 MB/s</td>
+    <td>1663.5 MB/s</td>
+    <td>59.7 MB/s</td>
+    <td>1710.9 MB/s</td>
+    <td>58.8 MB/s</td>
+  </tr>
+  <tr>
+    <td><b>List</b><br>map(1:1e5,sample(100))</td>
+    <td>192.7 MB/s<br></td>
+    <td>273.1 MB/s</td>
+    <td>7.7 MB/s</td>
+    <td>123.5 MB/s</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+  </tr>
+  <tr>
+    <td><b>Environment</b><br>map(1:1e5,sample(100))<br>names(x)&lt;-1:1e5<br>as.environment(x)</td>
+    <td>57.8 MB/s</td>
+    <td>120.7 MB/s</td>
+    <td>7.7 MB/s</td>
+    <td>89.6 MB/s</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>N/A</td>
+  </tr>
+</table>
+
+## Features
+The table below compares the features of different serialization approaches in R.
+
+
+|                    | qs         | fst           | saveRDS  |
+|--------------------|:-----------:|:---------------:|:----------:|
+| Not Slow             | &#10004;   | &#10004;       | X |
+| Numeric Vectors    | &#10004;   | &#10004;       | &#10004;  |
+| Integer Vectors    | &#10004;   | &#10004;       | &#10004;  |
+| Logical Vectors    | &#10004;   | &#10004;       | &#10004;  |
+| Character Vectors  | &#10004;   | &#10004;       | &#10004;  |
+| Character Encoding | &#10004;   | (vector-wide only) | &#10004;  |
+| Complex Vectors    | &#10004;   | X      | &#10004;  |
+| Data.Frames        | &#10004;   | &#10004;       | &#10004;  |
+| On disk row access | X  | &#10004;       | X |
+| Attributes         | &#10004;   | Some          | &#10004;  |
+| Lists / Nested Lists| &#10004;   |  X     | &#10004;  |
+| Multi-threaded     | X (Not Yet) | &#10004;      |  X   |
+
+## Additional Benchmarks
+>>>>>>> 73ce289ae9910ade1ba238be21d1fc101b5e1efd
 
 ### Data.Frame benchmark
 
