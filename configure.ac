@@ -76,9 +76,11 @@ AC_ARG_WITH([simd],
                            [Manually select SIMD support (options: AVX2, SSE2)]),
             [with_simd=$withval])
        
-    
-AX_CHECK_COMPILE_FLAG([-msse2], [SSE2_SUPPORTED=1], [SSE2_SUPPORTED=0])
-AX_CHECK_COMPILE_FLAG([-mavx2], [AVX2_SUPPORTED=1], [AVX2_SUPPORTED=0])
+  
+# This doesn't seem to be very portable, so we won't use it  
+# AX_CHECK_COMPILE_FLAG([-msse2], [SSE2_SUPPORTED=1], [SSE2_SUPPORTED=0])
+# AX_CHECK_COMPILE_FLAG([-mavx2], [AVX2_SUPPORTED=1], [AVX2_SUPPORTED=0])
+# AX_EXT()
 
 ########################################################
 #### Compile ZSTD checks
@@ -190,15 +192,17 @@ if test xx$with_simd = "xxAVX2"; then
 elif test xx$with_simd = "xxSSE2"; then
   echo "Using SSE2"
   INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
-else
-  if test xx$AVX2_SUPPORTED = "xx1"; then
-    echo "AVX2 support detected"
-    INCLUDE_PATHS="$INCLUDE_PATHS -mavx2"
-  elif test xx$SSE2_SUPPORTED = "xx1"; then
-    echo "SSE2 supported detected"
-    INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
-  fi
 fi
+
+# else
+#  if test xx$AVX2_SUPPORTED = "xx1"; then
+#    echo "AVX2 support detected"
+#    INCLUDE_PATHS="$INCLUDE_PATHS -mavx2"
+#  elif test xx$SSE2_SUPPORTED = "xx1"; then
+#    echo "SSE2 supported detected"
+#    INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
+#  fi
+# fi
 
 echo $LIBS
 echo $INCLUDE_PATHS

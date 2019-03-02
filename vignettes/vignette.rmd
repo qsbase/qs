@@ -1,23 +1,24 @@
 ---
 title: "Using the qs package"
 output:
+  rmarkdown::github_document: default
   html_vignette:
-    keep_md: yes
+    keep_md: no
 vignette: >
   %\VignetteIndexEntry{Using qs}
-  %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
-# qs [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs)
+# qs [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs) [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)
 
 *Quick serialization of R objects*
 
-`qs` provides an interface for quickly saving (serializing) and reading (de-serializing) objects to and from disk. The goal of this package is to provide a lightning-fast and complete replacement for the `saveRDS` and `readRDS` functions in R.
+`qs` provides an interface for quickly saving and reading objects to and from disk. The goal of this package is to provide a lightning-fast and complete replacement for the `saveRDS` and `readRDS` functions in R.
 
 Inspired by the `fst` package, `qs` uses a similar block-compression design using either the `lz4` or `zstd` compression libraries. It differs in that it applies a more general approach for attributes and object references.  
 
-`saveRDS` and `readRDS` are the standard for serializing R data, but these functions are not optimized for speed.  On the other hand, `fst` is extremely fast, but only works on `data.frame`'s and certain column types.  
+`saveRDS` and `readRDS` are the standard for serialization of R data, but these functions are not optimized for speed.  On the other hand, `fst` is extremely fast, but only works on `data.frame`'s and certain column types.  
 
 `qs` is both  extremely fast and general: it can serialize any R object like `saveRDS` and is just as fast and sometimes faster than `fst`.
 
@@ -32,13 +33,13 @@ df2 <- qread("myfile.q")
 For R version 3.5 or higher:
 ```{r eval=FALSE}
 install.packages("qs") ## CRAN version
-remotes::install_github("traversc/qs") ## Latest version
+remotes::install_github("traversc/qs", configure.args="--with-simd=AVX2") ## Latest version
 ```
 For R version 3.4 and lower:
 ```{r eval=FALSE}
 remotes::install_github("traversc/qs", ref = "qs34")
 ```
-For Windows users, I recommend installing from source rather than using the pre-compiled library. Adding `PKG_CPPFLAGS+=-mavx2` to the R makefile (`C:\Users\<user>\Documents\.R\Makevars`) will increase serialization speed. 
+
 ## Features
 The table below compares the features of different serialization approaches in R.
 
@@ -64,13 +65,14 @@ The table below compares the features of different serialization approaches in R
 * For numerical data (numeric, integer, logical and complex vectors) `qs` implements byte shuffling filters (adopted from the Blosc meta-compression library).  These filters utilize extended CPU instruction sets (either SSE2 or AVX2).
 
 Both of these features have the possibility of additionally increasing performance by orders of magnitude, for certain types of data.  See sections below for more details.  
+
 ## Summary Benchmarks
 
-These benchmarks were performed on a desktop using various data types (detailed below). `qs` was comapared with `saveRDS`/`readRDS` in base R and the `fst` package for serializing `data.frame`'s.  In terms of speed, `qs` is  comparable to `fst` for the data types `fst` supports, and both packages are orders of magnitude faster than `saveRDS`.  
+These benchmarks were performed on a Ryzen 2700x desktop using various data types (detailed below). `qs` was compared with `saveRDS`/`readRDS` in base R and the `fst` package for serializing `data.frame`'s.  In terms of speed, `qs` is  comparable to `fst` for the data types `fst` supports, and both packages are orders of magnitude faster than `saveRDS`.  
 
-`qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible.  For simplicity, `qs` comes with 3 presets, which trades speed for compression: "fast", "balanced" and "high".  The benchmark below uses the "fast" preset.  
+`qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible.  For simplicity, `qs` comes with 3 presets, which trades speed and compression ratio: "fast", "balanced" and "high".  The benchmark below uses the "fast" preset.  
 
-![](headline_bench.png "headline_bench"){width=500px}
+![](headline_bench.png "headline_bench"){width=576px}
 
 * character: `randomStrings(1e6)`
 * numeric:`rnorm(1e7)`
@@ -85,7 +87,7 @@ Benchmarking write and read speed is a bit tricky and depends highly on a number
 
 For a more complete comparison with `fst`, a number of different parameters were evaluated for each method.  For `fst`, compression level and number of threads were varied and plotted.  For `qs`, byte shuffle settings (see the "Byte Shuffling" section below) and algorithm used were evaluated.  A `data.frame` with 5 million rows was used for the purpose of this evaluation. 
 
-![](dataframe_bench.png "dataframe_bench"){width=500px}
+![](dataframe_bench.png "dataframe_bench"){width=576px}
 
 The `data.frame` used is as follows:
 ```{r eval=FALSE}
