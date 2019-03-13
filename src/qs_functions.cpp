@@ -18,7 +18,19 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
  https://github.com/traversc/qs
 */
 
-#include "qs_header.h"
+#include "qs_common.h"
+#include "qs_serialization.h"
+#include "qs_mt_serialization.h"
+#include "qs_deserialization.h"
+
+/*
+ * header structure
+ * qs_common.h -> qs_serialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_deserialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_mt_serialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_mt_deserialization.h -> qs_functions.cpp
+ * qs_common.h is protected with an include guard
+ */
 
 // https://stackoverflow.com/a/1001373
 // [[Rcpp::export]]
@@ -40,63 +52,52 @@ bool is_big_endian()
 // reserve[3] endian: 1 = big endian, 0 = little endian
 
 // [[Rcpp::export]]
-void qsave(RObject x, std::string file, std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15) {
-  if(preset == "fast") {
-    compress_level = 150;
-    shuffle_control = 0;
-    algorithm = "lz4";
-  } else if(preset == "balanced") {
-    compress_level = 1;
-    shuffle_control = 15;
-    algorithm = "lz4";
-  } else if(preset == "high") {
-    compress_level = 4;
-    shuffle_control = 15;
-    algorithm = "zstd";
-  } else if(preset == "custom") {
-    if(algorithm == "zstd") {
-      if(compress_level > 22 || compress_level < -50) throw exception("zstd compress_level must be an integer between -50 and 22");
-    } else if(algorithm == "lz4") {
-      if(compress_level < 1) throw exception("lz4 compress_level must be an integer greater than 1");
-    } else {
-      throw exception("algorithm must be one of zstd or lz4");
-    }
-    if(shuffle_control < 0 || shuffle_control > 15) throw exception("shuffle_control must be an integer between 0 and 15");
-  } else {
-    throw exception("preset must be one of fast (default), balanced, high or custom");
-  }
-  
+void c_qsave(RObject x, std::string file, std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15, int nthreads=4) {
   std::ofstream myFile(file.c_str(), std::ios::out | std::ios::binary);
-  std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-  
-  if(algorithm == "lz4") shuffle_control += 16;
-  // else zstd
-  
-  reserve_bits[3] = is_big_endian() ? 1 : 0;
-  reserve_bits[2] = shuffle_control;
-  
-  myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4); // some reserve bits for future use
-  writeSizeToFile8(myFile, 0); // number of compressed blocks
-  CompressBuffer vbuf(myFile, compress_level, static_cast<unsigned char>(shuffle_control));
-  appendToVbuf(vbuf, x);
-  vbuf.flush();
-  myFile.seekp(4);
-  writeSizeToFile8(myFile, vbuf.number_of_blocks);
+  if(!myFile) {
+    throw exception("Failed to open file");
+  }
+  if(nthreads <= 1) {
+    QsMetadata qm(preset, algorithm, compress_level, shuffle_control);
+    qm.writeToFile(myFile, shuffle_control);
+    writeSizeToFile8(myFile, 0); // number of compressed blocks
+    CompressBuffer vbuf(myFile, qm);
+    vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
+    vbuf.flush();
+    myFile.seekp(4);
+    writeSizeToFile8(myFile, vbuf.number_of_blocks);
+  } else {
+    QsMetadata qm(preset, algorithm, compress_level, shuffle_control);
+    qm.writeToFile(myFile, shuffle_control);
+    writeSizeToFile8(myFile, 0); // number of compressed blocks
+    CompressBuffer_MT vbuf(&myFile, qm, nthreads);
+    vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
+    vbuf.flush();
+    vbuf.ctc.finish();
+    myFile.seekp(4);
+    writeSizeToFile8(myFile, vbuf.number_of_blocks);
+  }
   myFile.close();
 }
 
 
 // [[Rcpp::export]]
-SEXP qread(std::string file, bool use_alt_rep=false) {
+SEXP c_qread(std::string file, bool use_alt_rep=false) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
-  Data_Context dc = Data_Context(myFile, use_alt_rep);
+  if(!myFile) {
+    throw exception("Failed to open file");
+  }
+  QsMetadata qm(myFile);
+  Data_Context dc = Data_Context(myFile, qm, use_alt_rep);
   return dc.processBlock();
 }
 
 // [[Rcpp::export]]
-RObject qdump(std::string file) {
-
+RObject c_qdump(std::string file) {
   std::ifstream myFile(file.c_str(), std::ios::in | std::ios::binary);
+  if(!myFile) {
+    throw exception("Failed to open file");
+  }
   std::array<unsigned char,4> reserve_bits;
   myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
   char sys_endian = is_big_endian() ? 1 : 0;

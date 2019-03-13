@@ -15,9 +15,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// qsave
-void qsave(RObject x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control);
-RcppExport SEXP _qs_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP) {
+// c_qsave
+void c_qsave(RObject x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, int nthreads);
+RcppExport SEXP _qs_c_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< RObject >::type x(xSEXP);
@@ -26,30 +26,31 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
     Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
     Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
-    qsave(x, file, preset, algorithm, compress_level, shuffle_control);
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, nthreads);
     return R_NilValue;
 END_RCPP
 }
-// qread
-SEXP qread(std::string file, bool use_alt_rep);
-RcppExport SEXP _qs_qread(SEXP fileSEXP, SEXP use_alt_repSEXP) {
+// c_qread
+SEXP c_qread(std::string file, bool use_alt_rep);
+RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
-    rcpp_result_gen = Rcpp::wrap(qread(file, use_alt_rep));
+    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep));
     return rcpp_result_gen;
 END_RCPP
 }
-// qdump
-RObject qdump(std::string file);
-RcppExport SEXP _qs_qdump(SEXP fileSEXP) {
+// c_qdump
+RObject c_qdump(std::string file);
+RcppExport SEXP _qs_c_qdump(SEXP fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
-    rcpp_result_gen = Rcpp::wrap(qdump(file));
+    rcpp_result_gen = Rcpp::wrap(c_qdump(file));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -171,9 +172,9 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
-    {"_qs_qsave", (DL_FUNC) &_qs_qsave, 6},
-    {"_qs_qread", (DL_FUNC) &_qs_qread, 2},
-    {"_qs_qdump", (DL_FUNC) &_qs_qdump, 1},
+    {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 7},
+    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 2},
+    {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
     {"_qs_lz4_compress_bound", (DL_FUNC) &_qs_lz4_compress_bound, 1},
@@ -188,8 +189,10 @@ static const R_CallMethodDef CallEntries[] = {
 };
 
 void init_stdvec_double(DllInfo* dll);
+void init_stdvec_double(DllInfo* dll);
 RcppExport void R_init_qs(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
+    init_stdvec_double(dll);
     init_stdvec_double(dll);
 }

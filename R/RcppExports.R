@@ -5,16 +5,16 @@ is_big_endian <- function() {
     .Call(`_qs_is_big_endian`)
 }
 
-qsave <- function(x, file, preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 15L) {
-    invisible(.Call(`_qs_qsave`, x, file, preset, algorithm, compress_level, shuffle_control))
+c_qsave <- function(x, file, preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 15L, nthreads = 4L) {
+    invisible(.Call(`_qs_c_qsave`, x, file, preset, algorithm, compress_level, shuffle_control, nthreads))
 }
 
-qread <- function(file, use_alt_rep = FALSE) {
-    .Call(`_qs_qread`, file, use_alt_rep)
+c_qread <- function(file, use_alt_rep = FALSE) {
+    .Call(`_qs_c_qread`, file, use_alt_rep)
 }
 
-qdump <- function(file) {
-    .Call(`_qs_qdump`, file)
+c_qdump <- function(file) {
+    .Call(`_qs_c_qdump`, file)
 }
 
 randomStrings <- function(N, string_size = 50L) {

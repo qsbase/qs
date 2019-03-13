@@ -19,6 +19,8 @@ preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 1
 \item{compress_level}{The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).}
 
 \item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.}
+
+\item{nthreads}{Number of threads to use.  Default 4.}
 }
 \description{
 Saves (serializes) an object to disk.

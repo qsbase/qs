@@ -30,6 +30,7 @@
 #' @param algorithm Compression algorithm used.  Either lz4 (default or zstd). 
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
 #' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
+#' @param nthreads Number of threads to use.  Default 4.  
 #' @details 
 #' This function serializes and compresses R objects using block compresion with the option of byte shuffling.  
 #' There are lots of possible parameters.  This function exposes three parameters related to compression level and byte shuffling. 
@@ -68,15 +69,17 @@
 #' qsave(w, myfile)
 #' w2 <- qread(myfile)
 #' identical(w, w2) # returns true
-#' @name qsave
-NULL
+#' @export
+qsave <- function(x, file, preset="balanced", algorithm="lz4", compress_level=1L, shuffle_control=15L, nthreads=4) {
+  c_qsave(x,file,preset,algorithm, compress_level, shuffle_control, nthreads)
+}
 
 #' qread
 #' 
 #' Reads a object in a file serialized to disk
 #' @usage qread(file, use_alt_rep=FALSE)
 #' @param file the file name/path
-#' @param use_alt_rep Use alt rep when reading in string data.  Default: FALSE  
+#' @param use_alt_rep Use alt rep when reading in string data.  Default: TRUE  
 #' @return The de-serialized object
 #' @examples 
 #' x <- data.frame(int = sample(1e3, replace=TRUE), 
@@ -98,8 +101,10 @@ NULL
 #' qsave(w, myfile)
 #' w2 <- qread(myfile)
 #' identical(w, w2) # returns true
-#' @name qread
-NULL
+#' @export
+qread <- function(file, use_alt_rep=TRUE) {
+  c_qread(normalizePath(file, mustWork=FALSE), use_alt_rep)
+}
 
 #' qdump
 #' 
@@ -114,8 +119,10 @@ NULL
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qdump(myfile)
-#' @name qdump
-NULL
+#' @export
+qdump <- function(file, use_alt_rep=TRUE) {
+  c_qread(normalizePath(file, mustWork=FALSE), use_alt_rep)
+}
 
 
 #' Zstd compress bound
