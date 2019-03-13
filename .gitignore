@@ -5,6 +5,10 @@
 src/*.o
 src/*.so
 src/*.dll
+src/*.a
+src/*/*.o
+src/*/*.so
+src/*/*.dll
 qs*.tar.gz
 *.Rcheck
 ..Rcheck
