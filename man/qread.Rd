@@ -10,6 +10,8 @@ qread(file, use_alt_rep=FALSE)
 \item{file}{the file name/path}
 
 \item{use_alt_rep}{Use alt rep when reading in string data.  Default: TRUE}
+
+\item{nthreads}{Number of threads to use.  Default 1.}
 }
 \value{
 The de-serialized object

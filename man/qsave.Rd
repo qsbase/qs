@@ -20,7 +20,7 @@ preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 1
 
 \item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.}
 
-\item{nthreads}{Number of threads to use.  Default 4.}
+\item{nthreads}{Number of threads to use.  Default 1.}
 }
 \description{
 Saves (serializes) an object to disk.

@@ -81,6 +81,7 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
 
 test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
 extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
+reps <- 3
 
 ################################################################################################
 
@@ -89,16 +90,23 @@ qsave_rand <- function(x, file) {
         compress_level=sample(10,1), shuffle_control = sample(0:15,1) )
 }
 
+qread_rand <- function(x, file) {
+  qread("/tmp/test.z", 
+        use_alt_rep = sample(c(T,F),1),
+        nthreads=sample(5,1))
+}
+
+for(q in 1:reps) {
+
 # String correctness
 time <- vector("numeric", length=3)
 for(tp in test_points) {
   for(i in 1:3) {
-    
     x1 <- rep(letters, length.out=tp) %>% paste(collapse="")
     x1 <- c(NA, "", x1)
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -117,7 +125,7 @@ for(tp in test_points) {
     x1 <- c(NA, "", x1)
     qsave_rand(x1, file="/tmp/test.z")
     time[i] <- Sys.time()
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -136,7 +144,7 @@ for(tp in test_points) {
     x1 <- c(NA, "", x1)
     qsave_rand(x1, file="/tmp/test.z")
     time[i] <- Sys.time()
-    z <- qread(file="/tmp/test.z", use_alt_rep=T)
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -152,7 +160,7 @@ for(tp in test_points) {
     x1 <- c(NA, x1)
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -169,7 +177,7 @@ for(tp in test_points) {
     x1 <- c(NA, x1)
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -185,7 +193,7 @@ for(tp in test_points) {
     x1 <- sample(c(T,F,NA), replace=T, size=tp)
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -200,7 +208,7 @@ for(tp in test_points) {
     x1 <- generateList(sample(1:4, replace=T, size=tp))
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -212,7 +220,7 @@ for(i in 1:3) {
   x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
   x1 <- data.frame(str=x1,num = runif(1:1000), stringsAsFactors = F)
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   gc()
   stopifnot(identical(z, x1))
 }
@@ -222,7 +230,7 @@ for(i in 1:3) {
   x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
   x1 <- data.table(str=x1,num = runif(1:1e6))
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   gc()
   stopifnot(all(z==x1))
 }
@@ -233,7 +241,7 @@ for(i in 1:3) {
   x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
   x1 <- tibble(str=x1,num = runif(1:1e6))
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   gc()
   stopifnot(identical(z, x1))
 }
@@ -251,7 +259,7 @@ if (Sys.info()[['sysname']] != "Windows") {
     x4 <- rep(x1, x2, length.out=1e4) %>% paste(collapse=";")
     x1 <- c(x1, x2, x3, x4)
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     gc()
     stopifnot(identical(z, x1))
   }
@@ -271,7 +279,7 @@ for(tp in test_points) {
     x1 <- c(NA_complex_, x1)
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -286,7 +294,7 @@ for(tp in test_points) {
     x1 <- factor(rep(letters, length.out=tp), levels=sample(letters), ordered=TRUE)
     time[i] <- Sys.time()
     qsave_rand(x1, file="/tmp/test.z")
-    z <- qread(file="/tmp/test.z")
+    z <- qread_rand(file="/tmp/test.z")
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -303,7 +311,7 @@ for(i in 1:8) {
   print(sprintf("Nested list/attributes: %s bytes", object.size(x1) %>% as.numeric))
   time[i] <- Sys.time()
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   time[i] <- Sys.time() - time[i]
   gc()
   stopifnot(identical(z, x1))
@@ -320,7 +328,7 @@ for(i in 1:3) {
   }
   time[i] <- Sys.time()
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   time[i] <- Sys.time() - time[i]
   gc()
   stopifnot(identical(z, x1))
@@ -333,7 +341,7 @@ for(i in 1:3) {
   x1 <- 1:1e7
   time[i] <- Sys.time()
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   time[i] <- Sys.time() - time[i]
   gc()
   stopifnot(identical(z, x1))
@@ -350,7 +358,7 @@ for(i in 1:3) {
   x1[["c"]] <- qs::randomStrings(1e4)
   time[i] <- Sys.time()
   qsave_rand(x1, file="/tmp/test.z")
-  z <- qread(file="/tmp/test.z")
+  z <- qread_rand(file="/tmp/test.z")
   stopifnot(identical(z[["a"]], x1[["a"]]))
   stopifnot(identical(z[["b"]], x1[["b"]]))
   stopifnot(identical(z[["c"]], x1[["c"]]))
@@ -358,3 +366,5 @@ for(i in 1:3) {
   gc()
 }
 print(sprintf("Environment test: %s s", signif(mean(time),4)))
+
+}

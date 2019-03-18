@@ -22,9 +22,10 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 #include "qs_serialization.h"
 #include "qs_mt_serialization.h"
 #include "qs_deserialization.h"
+#include "qs_mt_deserialization.h"
 
 /*
- * header structure
+ * headers:
  * qs_common.h -> qs_serialization.h -> qs_functions.cpp
  * qs_common.h -> qs_deserialization.h -> qs_functions.cpp
  * qs_common.h -> qs_mt_serialization.h -> qs_functions.cpp
@@ -52,7 +53,7 @@ bool is_big_endian()
 // reserve[3] endian: 1 = big endian, 0 = little endian
 
 // [[Rcpp::export]]
-void c_qsave(RObject x, std::string file, std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15, int nthreads=4) {
+void c_qsave(RObject x, std::string file, std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15, int nthreads=1) {
   std::ofstream myFile(file.c_str(), std::ios::out | std::ios::binary);
   if(!myFile) {
     throw exception("Failed to open file");
@@ -77,19 +78,27 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
     myFile.seekp(4);
     writeSizeToFile8(myFile, vbuf.number_of_blocks);
   }
-  myFile.close();
 }
 
 
 // [[Rcpp::export]]
-SEXP c_qread(std::string file, bool use_alt_rep=false) {
+SEXP c_qread(std::string file, bool use_alt_rep=false, int nthreads=1) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
     throw exception("Failed to open file");
   }
-  QsMetadata qm(myFile);
-  Data_Context dc = Data_Context(myFile, qm, use_alt_rep);
-  return dc.processBlock();
+  if(nthreads <= 1) {
+    QsMetadata qm(myFile);
+    Data_Context dc(myFile, qm, use_alt_rep);
+    return dc.processBlock();
+  } else {
+    QsMetadata qm(myFile);
+    Data_Context_MT dc(&myFile, qm, use_alt_rep, nthreads);
+    SEXP ret = PROTECT( dc.processBlock() );
+    dc.dtc.finish();
+    UNPROTECT(1);
+    return ret;
+  }
 }
 
 // [[Rcpp::export]]

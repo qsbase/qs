@@ -32,14 +32,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // c_qread
-SEXP c_qread(std::string file, bool use_alt_rep);
-RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP) {
+SEXP c_qread(std::string file, bool use_alt_rep, int nthreads);
+RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
-    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep));
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -173,7 +174,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 7},
-    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 2},
+    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 3},
     {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},

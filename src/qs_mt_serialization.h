@@ -1,22 +1,22 @@
 /* qs - Quick Serialization of R Objects
  Copyright (C) 2019-prsent Travers Ching
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-You can contact the author at:
-https://github.com/traversc/qs
-*/
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as
+ published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+ 
+ You should have received a copy of the GNU Affero General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+ You can contact the author at:
+ https://github.com/traversc/qs
+ */
 
 #include "qs_common.h"
 
@@ -24,29 +24,20 @@ https://github.com/traversc/qs
 #include <sstream>
 #include <mutex>
 
-#define terr ThreadStream(std::cerr)
-#define tout ThreadStream(std::cout)
 
 // #define QS_MT_SERIALIZATION_DEBUG
 
-#ifdef QS_MT_SERIALIZATION_DEBUG
+#ifdef QS_MT_DESERIALIZATION_DEBUG
 // https://stackoverflow.com/a/53288135/2723734
-/**
-* Thread-safe std::ostream class.
-*
-* Usage:
-*    tout << "Hello world!" << std::endl;
-*    terr << "Hello world!" << std::endl;
-*/
+// Thread-safe std::ostream class.
+
+#define terr ThreadStream(std::cerr)
+#define tout ThreadStream(std::cout)
 class ThreadStream : public std::ostringstream
 {
 public:
   ThreadStream(std::ostream& os) : os_(os)
   {
-    // copyfmt causes odd problems with lost output
-    // probably some specific flag
-    //            copyfmt(os);
-    // copy whatever properties are relevant
     imbue(os.getloc());
     precision(os.precision());
     width(os.width());
@@ -70,7 +61,7 @@ std::mutex ThreadStream::_mutex_threadstream{};
 
 
 ////////////////////////////////////////////////////////////////
-  // multi-thread serialization functions
+// multi-thread serialization functions
 ////////////////////////////////////////////////////////////////
 
 struct Compress_Thread_Context {
@@ -84,22 +75,23 @@ struct Compress_Thread_Context {
   compress_fun compFun;
   cbound_fun cbFun;
   std::atomic<bool> done;
-  std::vector<std::thread> threads;
   
   std::vector< std::atomic<bool> > data_ready;
-
+  
   std::vector<std::vector<char> > zblocks; // one per thread
   std::vector<std::vector<char> > data_blocks; // one per thread
   std::vector< std::pair<char*, uint64_t> > block_pointers;
   
   char* current_block_ptr;
   
+  std::vector<std::thread> threads;
+  
   void worker_thread(unsigned int thread_id) {
     while(!done) {
       // check if data ready and then compress
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "waiting on data " << blocks_written << " thread " << thread_id << "\n" << std::flush;
-#endif
+
+      // tout << "waiting on data " << blocks_written << " thread " << thread_id << "\n" << std::flush;
+
       while (!data_ready[thread_id]) {
         std::this_thread::yield();
         if(done) break;
@@ -107,9 +99,9 @@ struct Compress_Thread_Context {
       
       uint64_t zsize = compFun(zblocks[thread_id].data(), zblocks[thread_id].size(), block_pointers[thread_id].first, block_pointers[thread_id].second, compress_level);
       data_ready[thread_id] = false;
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "data ready to write " << blocks_written << " thread " << thread_id << "\n" << std::flush;
-#endif
+
+      // tout << "data ready to write " << blocks_written << " thread " << thread_id << "\n" << std::flush;
+
       // write to file
       while (blocks_written % nthreads != thread_id) {
         std::this_thread::yield();
@@ -117,20 +109,20 @@ struct Compress_Thread_Context {
       writeSizeToFile4(*myFile, zsize);
       myFile->write(zblocks[thread_id].data(), zsize);
       blocks_written += 1;
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "blocks written " << blocks_written << " thread " << thread_id << "\n" << std::flush;
-#endif
+
+      // tout << "blocks written " << blocks_written << " thread " << thread_id << "\n" << std::flush;
+
     }
-#ifdef QS_MT_SERIALIZATION_DEBUG
-    tout << "exit main loop " << blocks_written << " thread " << thread_id << "\n" << std::flush;
-#endif
+
+    // tout << "exit main loop " << blocks_written << " thread " << thread_id << "\n" << std::flush;
+
     
     // final check to see if any remaining data
     if(data_ready[thread_id]) {
       uint64_t zsize = compFun(zblocks[thread_id].data(), zblocks[thread_id].size(), block_pointers[thread_id].first, block_pointers[thread_id].second, compress_level);
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "final data ready to write " << blocks_written << " thread " << thread_id << "\n" << std::flush;
-#endif
+
+      // tout << "final data ready to write " << blocks_written << " thread " << thread_id << "\n" << std::flush;
+
       // write to file
       while (blocks_written % nthreads != thread_id) {
         std::this_thread::yield();
@@ -138,22 +130,22 @@ struct Compress_Thread_Context {
       writeSizeToFile4(*myFile, zsize);
       myFile->write(zblocks[thread_id].data(), zsize);
       blocks_written += 1;
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "final blocks written " << blocks_written << " thread " << thread_id << "\n" << std::flush;
-#endif
+
+      // tout << "final blocks written " << blocks_written << " thread " << thread_id << "\n" << std::flush;
+
     }
   }
   
   void finish() {
     done = true;
     for(unsigned int i =0; i < nthreads; i++) {
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "joining " << i << "\n" << std::flush;
-#endif
+
+      // tout << "joining " << i << "\n" << std::flush;
+
       threads[i].join();
-#ifdef QS_MT_SERIALIZATION_DEBUG
-      tout << "joined " << i << "\n" << std::flush;
-#endif
+
+      // tout << "joined " << i << "\n" << std::flush;
+
     }
   }
   
@@ -174,22 +166,22 @@ struct Compress_Thread_Context {
       data_ready[i] = false;
     }
     
-    for (unsigned int i = 0; i < nthreads; i++) {
-      threads.push_back(std::thread(&Compress_Thread_Context::worker_thread, this, i));
-    }
-    
     zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(cbFun(BLOCKSIZE)));
     data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
     block_pointers = std::vector< std::pair<char*, uint64_t> >(nthreads);
+    
+    for (unsigned int i = 0; i < nthreads; i++) {
+      threads.push_back(std::thread(&Compress_Thread_Context::worker_thread, this, i));
+    }
     
     // blocks_total = std::atomic<uint64_t>(0);
     // blocks_written = std::atomic<uint64_t>(0);
   }
   
   char* get_new_block_ptr() {
-#ifdef QS_MT_SERIALIZATION_DEBUG
-    tout << "new block\n" << std::flush;
-#endif
+
+    // tout << "new block\n" << std::flush;
+
     uint64_t block_check = blocks_total % nthreads;
     while (data_ready[block_check]) {
       std::this_thread::yield();
@@ -200,9 +192,9 @@ struct Compress_Thread_Context {
   
   void push_block(unsigned int datasize) {
     uint64_t block_check = blocks_total % nthreads;
-#ifdef QS_MT_SERIALIZATION_DEBUG
-    tout << "push block " << block_check << "\n" << std::flush;
-#endif
+
+    // tout << "push block " << block_check << "\n" << std::flush;
+
     block_pointers[block_check].second = datasize;
     data_ready[block_check] = true;
     blocks_total++;
@@ -210,9 +202,9 @@ struct Compress_Thread_Context {
   
   void push_ptr(char* ptr, unsigned int datasize) {
     uint64_t block_check = blocks_total % nthreads;
-#ifdef QS_MT_SERIALIZATION_DEBUG
-    tout << "push ptr " << block_check << "\n" << std::flush;
-#endif
+
+    // tout << "push ptr " << block_check << "\n" << std::flush;
+
     while (data_ready[block_check]) {
       std::this_thread::yield();
     }
@@ -229,7 +221,7 @@ struct CompressBuffer_MT {
   QsMetadata qm;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
-// shuffle_endblock is tracking when shuffleblock is finished processing
+  // shuffle_endblock is tracking when shuffleblock is finished processing
   uint64_t shuffle_endblock = 0;
   
   uint64_t current_blocksize = 0;
@@ -273,9 +265,9 @@ struct CompressBuffer_MT {
       // (len + current_blocksize)/BLOCKSIZE = additional full blocks due to shuffleblock
       // number_of_blocks = number of blocks pushed to ctc
       while( shuffle_endblock > ctc.blocks_written ) {
-#ifdef QS_MT_SERIALIZATION_DEBUG
-        tout << "shuffle " << shuffle_endblock << " " << ctc.blocks_written << "\n" << std::flush;
-#endif
+
+        // tout << "shuffle " << shuffle_endblock << " " << ctc.blocks_written << "\n" << std::flush;
+
         std::this_thread::yield();
       }
       shuffle_endblock = (len + current_blocksize)/BLOCKSIZE + number_of_blocks;
@@ -533,4 +525,3 @@ struct CompressBuffer_MT {
     }
   }
 };
-
