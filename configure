@@ -1750,7 +1750,7 @@ fi
 LIBS="-L."
 INCLUDE_PATHS="-IZSTD -IZSTD/common -IZSTD/decompress -IZSTD/compress -ILZ4"
 LZ4_ZSTD_COMPILE_STRING='LIBZSTD = ZSTD/common/debug.o ZSTD/common/entropy_common.o ZSTD/common/error_private.o ZSTD/common/fse_decompress.o ZSTD/common/pool.o ZSTD/common/threading.o ZSTD/common/xxhash.o ZSTD/common/zstd_common.o ZSTD/compress/fse_compress.o ZSTD/compress/hist.o ZSTD/compress/huf_compress.o ZSTD/compress/zstd_compress.o ZSTD/compress/zstd_double_fast.o ZSTD/compress/zstd_fast.o ZSTD/compress/zstd_lazy.o ZSTD/compress/zstd_ldm.o ZSTD/compress/zstdmt_compress.o ZSTD/compress/zstd_opt.o ZSTD/decompress/huf_decompress.o ZSTD/decompress/zstd_ddict.o ZSTD/decompress/zstd_decompress_block.o ZSTD/decompress/zstd_decompress.o ZSTD/dictBuilder/cover.o ZSTD/dictBuilder/divsufsort.o ZSTD/dictBuilder/fastcover.o ZSTD/dictBuilder/zdict.o
-LIBLZ4  = LZ4/lz4.o
+LIBLZ4  = LZ4/lz4.o LZ4/lz4hc.o
 $(SHLIB): libQSZSTD.a	libQSLZ4.a
 
 libQSZSTD.a: $(LIBZSTD)
@@ -1771,7 +1771,7 @@ libQSZSTD.a: $(LIBZSTD)
 clean:
 	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a'
 
-LZ4_COMPILE_STRING='LIBLZ4 = LZ4/lz4.o
+LZ4_COMPILE_STRING='LIBLZ4 = LZ4/lz4.o LZ4/lz4hc.o
 $(SHLIB): libQSLZ4.a
 
 libQSLZ4.a: $(LIBLZ4)

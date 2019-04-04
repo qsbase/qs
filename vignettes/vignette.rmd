@@ -1,5 +1,5 @@
 ---
-title: "Using the qs package"
+title: "qs"
 output:
   html_vignette:
     keep_md: no
@@ -10,9 +10,9 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-# qs [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs) [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)
+[![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs) [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)
 
-*Quick serialization of R objects*
+*Quick serialization of R objects* <img src="qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px">
 
 `qs` provides an interface for quickly saving and reading objects to and from disk. The goal of this package is to provide a lightning-fast and complete replacement for the `saveRDS` and `readRDS` functions in R.
 
@@ -25,7 +25,7 @@ Inspired by the `fst` package, `qs` uses a similar block-compression design usin
 ## Usage
 ```{r eval=FALSE}
 library(qs)
-df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6))
+df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6, replace=T))
 qsave(df1, "myfile.q")
 df2 <- qread("myfile.q")
 ```
@@ -33,7 +33,7 @@ df2 <- qread("myfile.q")
 For R version 3.5 or higher:
 ```{r eval=FALSE}
 install.packages("qs") ## CRAN version
-remotes::install_github("traversc/qs", configure.args="--with-simd=AVX2") ## Latest version
+remotes::install_github("traversc/qs", configure.args="--with-simd=AVX2") ## Latest experimental version
 ```
 For R version 3.4 and lower:
 ```{r eval=FALSE}
@@ -56,7 +56,7 @@ The table below compares the features of different serialization approaches in R
 | On disk row access | &#10060;  | &#10004;       | &#10060; |
 | Attributes         | &#10004;   | Some          | &#10004;  |
 | Lists / Nested Lists| &#10004;   |  &#10060;     | &#10004;  |
-| Multi-threaded     | &#10060; (Not Yet) | &#10004;      |  &#10060;   |
+| Multi-threaded     | &#10004;  | &#10004;      |  &#10060;   |
 
 
 `qs` also includes a number of advanced features:
@@ -139,9 +139,10 @@ system.time(qread("temp.q", use_alt_rep=F))[1]
 #     1.703 seconds
 ```
 
-## Future Developments
+## Future developments
 
-* Multi-threading
+* Additional compression algorithms
+* Non-blocked compressed options (for greater compression ratio)
 * Parameter optimization
 
 Future versions will be backwards compatible with the current version.  

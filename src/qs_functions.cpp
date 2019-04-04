@@ -1,5 +1,5 @@
 /* qs - Quick Serialization of R Objects
-  Copyright (C) 2019-prsent Travers Ching
+  Copyright (C) 2019-present Travers Ching
   
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
@@ -19,6 +19,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 */
 
 #include "qs_common.h"
+#include "qs_inspect.h"
 #include "qs_serialization.h"
 #include "qs_mt_serialization.h"
 #include "qs_deserialization.h"
@@ -80,9 +81,23 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
   }
 }
 
+// [[Rcpp::export]]
+bool c_qinspect(std::string file) {
+  std::ifstream myFile(file, std::ios::in | std::ios::binary);
+  if(!myFile) {
+    throw exception("Failed to open file");
+  }
+  QsMetadata qm(myFile);
+  Data_Inspect_Context dc(myFile, qm);
+  return dc.inspectData();
+}
 
 // [[Rcpp::export]]
-SEXP c_qread(std::string file, bool use_alt_rep=false, int nthreads=1) {
+SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int nthreads=1) {
+  if(inspect) {
+    bool fcheck = c_qinspect(file);
+    if(!fcheck) throw exception("File inspection failed");
+  }
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
     throw exception("Failed to open file");

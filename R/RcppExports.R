@@ -9,8 +9,12 @@ c_qsave <- function(x, file, preset = "balanced", algorithm = "lz4", compress_le
     invisible(.Call(`_qs_c_qsave`, x, file, preset, algorithm, compress_level, shuffle_control, nthreads))
 }
 
-c_qread <- function(file, use_alt_rep = FALSE, nthreads = 1L) {
-    .Call(`_qs_c_qread`, file, use_alt_rep, nthreads)
+c_qinspect <- function(file) {
+    .Call(`_qs_c_qinspect`, file)
+}
+
+c_qread <- function(file, use_alt_rep = FALSE, inspect = FALSE, nthreads = 1L) {
+    .Call(`_qs_c_qread`, file, use_alt_rep, inspect, nthreads)
 }
 
 c_qdump <- function(file) {

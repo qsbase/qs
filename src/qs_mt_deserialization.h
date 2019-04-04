@@ -1,5 +1,5 @@
 /* qs - Quick Serialization of R Objects
- Copyright (C) 2019-prsent Travers Ching
+ Copyright (C) 2019-present Travers Ching
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as
@@ -67,21 +67,19 @@ struct Data_Thread_Context {
   std::vector<std::thread> threads;
   
   std::vector< std::atomic<bool> > primary_block;
-  std::vector< std::atomic<bool> > data_signal;
-  std::vector< std::atomic<bool> > data_ready; // for direct decompress, set when signal received; for data blocks, set when uncompress finished
-  std::vector< std::atomic<bool> > thread_ready;
-  
   std::vector< std::vector<char> > zblocks; // one per thread
   std::vector< std::vector<char> > data_blocks; // one per thread
   std::vector< std::vector<char> > data_blocks2; // one per thread
   std::vector< std::atomic<char*> > block_pointers;
   std::vector< std::atomic<uint64_t> > block_sizes;
   
+  std::vector< std::atomic<uint8_t> > data_task;
+  std::pair<char*, uint64_t> data_pass;
+  
   void worker_thread(unsigned int thread_id) {
     std::array<char,4> zsize_ar;
     for(uint64_t i=thread_id; i < blocks_total; i += nthreads) {
-      thread_ready[thread_id] = true;
-      //tout << thread_id << " " << i <<  "begin\n" << std::flush;
+      // tout << thread_id << " " << i <<  "begin\n" << std::flush;
       while(blocks_read != i) {
         std::this_thread::yield();
       }
@@ -90,66 +88,48 @@ struct Data_Thread_Context {
       myFile->read(zblocks[thread_id].data(), zsize);
       blocks_read++;
       
-      //tout << thread_id << " " << zsize << " read done\n" << std::flush;
-      
-      if(data_signal[thread_id]) {
-        thread_ready[thread_id] = false;
-        //tout << thread_id << "data ptr set \n" << std::flush;
-        if(block_pointers[thread_id] == nullptr) {
-          //tout << thread_id << "decompressing block \n" << std::flush;
-          if(primary_block[thread_id]) {
-            block_sizes[thread_id] = decompFun(data_blocks[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
-            block_pointers[thread_id] = data_blocks[thread_id].data();
-          } else {
-            block_sizes[thread_id] = decompFun(data_blocks2[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
-            block_pointers[thread_id] = data_blocks2[thread_id].data();
-          }
-          data_ready[thread_id] = true;
-          //tout << thread_id << " "  << blocks_queued << " done decompressing\n" << std::flush;
-        } else {
-          data_ready[thread_id] = true;
-          //tout << thread_id << "decompressing direct \n" << std::flush;
-          decompFun(block_pointers[thread_id], BLOCKSIZE, zblocks[thread_id].data(), zsize); // if decompressing directly, we don't need to wait
-          //tout << thread_id << "done decompressing direct\n" << std::flush;
-        }
+      // task marching orders from main thread
+      // 0 = wait
+      // 1 = nothing (main thread will use block as is)
+      // 2 = memcpy
+      // it seems to be slower to check for task order and direct decompress
+      // rather than just assuming we should memcpy
+      // if(data_task[thread_id] == 2) {
+      //   char* dp = data_pass.first;
+      //   data_task[thread_id] = 0;
+      //   decompFun(dp, BLOCKSIZE, zblocks[thread_id].data(), zsize);
+      // } else {
+      if(primary_block[thread_id]) {
+        block_sizes[thread_id] = decompFun(data_blocks[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
+        block_pointers[thread_id] = data_blocks[thread_id].data();
       } else {
-        //tout << thread_id << "decompressing block ahead of signal \n" << std::flush;
-        if(primary_block[thread_id]) {
-          block_sizes[thread_id] = decompFun(data_blocks[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
-          
-        } else {
-          block_sizes[thread_id] = decompFun(data_blocks2[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
-          data_blocks2[thread_id].data();
-        }
-        while(!data_signal[thread_id]) std::this_thread::yield();
-        thread_ready[thread_id] = false;
-        if(block_pointers[thread_id] == nullptr) {
-          if(primary_block[thread_id]) {
-            block_pointers[thread_id] = data_blocks[thread_id].data();
-          } else {
-            block_pointers[thread_id] = data_blocks2[thread_id].data();
-          }
-          data_ready[thread_id] = true;
-        } else {
-          data_ready[thread_id] = true;
-          if(primary_block[thread_id]) {
-            std::memcpy(block_pointers[thread_id], data_blocks[thread_id].data(), BLOCKSIZE);
-          } else {
-            std::memcpy(block_pointers[thread_id], data_blocks2[thread_id].data(), BLOCKSIZE);
-          }
-        }
+        block_sizes[thread_id] = decompFun(data_blocks2[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
+        block_pointers[thread_id] = data_blocks2[thread_id].data();
       }
-      while(data_signal[thread_id]) std::this_thread::yield();
+      while(data_task[thread_id] == 0) {
+        std::this_thread::yield();
+      }
+      if(data_task[thread_id] == 1) {
+        data_pass.first = block_pointers[thread_id];
+        data_pass.second = block_sizes[thread_id];
+        data_task[thread_id] = 0;
+      } else { // data task == 2
+        char* dp = data_pass.first;
+        data_task[thread_id] = 0;
+        std::memcpy(dp, block_pointers[thread_id], block_sizes[thread_id]);
+      }
+      // }
+      
       blocks_processed.update_counter(thread_id);
       primary_block[thread_id] = !primary_block[thread_id];
     }
-    //tout << thread_id << " finished thread for loop\n" << std::flush;
+    // tout << thread_id << " finished thread for loop\n" << std::flush;
   }
   
   void finish() {
     blocks_queued++;
     for(unsigned int i=0; i < nthreads; i++) {
-      //tout << "join called " << i << "\n" << std::flush;
+      // tout << "join called " << i << "\n" << std::flush;
       threads[i].join();
     }
   }
@@ -157,13 +137,15 @@ struct Data_Thread_Context {
   Data_Thread_Context(std::ifstream* mf, unsigned int nt, QsMetadata qm) : 
     myFile(mf), nthreads(nt), blocks_read(0), blocks_queued(0), blocks_processed(nt) {
     blocks_total = readSizeFromFile8(*myFile);
-    //tout << blocks_total << " total blocks\n" << std::flush;
+    // tout << blocks_total << " total blocks\n" << std::flush;
     if(qm.compress_algorithm == 0) {
       decompFun = &ZSTD_decompress;
       cbFun = &ZSTD_compressBound;
-    } else { // algo == 1
+    } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) { // algo == 1
       decompFun = &LZ4_decompress_fun;
       cbFun = &LZ4_compressBound_fun;
+    } else {
+      throw exception("invalid compression algorithm selected");
     }
     
     zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(cbFun(BLOCKSIZE)));
@@ -181,17 +163,9 @@ struct Data_Thread_Context {
     for(unsigned int i=0; i<nthreads; i++) {
       primary_block[i] = true;
     }
-    data_ready = std::vector< std::atomic<bool> >(nthreads);
+    data_task = std::vector< std::atomic<uint8_t> >(nthreads);
     for(unsigned int i=0; i<nthreads; i++) {
-      data_ready[i] = false;
-    }
-    data_signal = std::vector< std::atomic<bool> >(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
-      data_signal[i] = false;
-    }
-    thread_ready = std::vector< std::atomic<bool> >(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
-      thread_ready[i] = false;
+      data_task[i] = 0;
     }
     for (unsigned int i = 0; i < nthreads; i++) {
       threads.push_back(std::thread(&Data_Thread_Context::worker_thread, this, i));
@@ -201,28 +175,21 @@ struct Data_Thread_Context {
   std::pair<char*, uint64_t> get_block_ptr() {
     uint64_t current_block = blocks_queued % nthreads;
     blocks_queued++;
-    while(!thread_ready[current_block]) std::this_thread::yield();
-    block_pointers[current_block] = nullptr;
-    data_signal[current_block] = true;
-    while(!data_ready[current_block]) std::this_thread::yield();
-    char* temp_ptr = block_pointers[current_block];
-    uint64_t temp_size = block_sizes[current_block];
-    //tout << "getting block ptr " << blocks_queued << " " << temp_size << " " << (void *)(temp_ptr) << "\n" << std::flush;
-    data_ready[current_block] = false;
-    data_signal[current_block] = false;
+    while(data_task[current_block] != 0) std::this_thread::yield();
+    data_task[current_block] = 1;
+    while(data_task[current_block] != 0) std::this_thread::yield();
+    char* temp_ptr = data_pass.first;
+    uint64_t temp_size = data_pass.second;
     return std::pair<char*, uint64_t>(temp_ptr, temp_size);
   }
   
   void decompress_data_direct(char* bpointer) {
     uint64_t current_block = blocks_queued % nthreads;
-    //tout << "decomp direct call " << blocks_queued << "\n" << std::flush;
     blocks_queued++;
-    while(!thread_ready[current_block]) std::this_thread::yield();
-    block_pointers[current_block] = bpointer;
-    data_signal[current_block] = true;
-    while(!data_ready[current_block]) std::this_thread::yield();
-    data_ready[current_block] = false;
-    data_signal[current_block] = false;
+    while(data_task[current_block] != 0) std::this_thread::yield();
+    data_pass.first = bpointer;
+    data_task[current_block] = 2;
+    while(data_task[current_block] != 0) std::this_thread::yield();
   }
 };
 
@@ -483,7 +450,7 @@ struct Data_Context_MT {
     block_data = res.first;
     block_size = res.second;
     data_offset = 0;
-    //tout << "main thread decompress block " << (void *)block_data << " " << block_size << "\n" << std::flush;
+    // tout << "main thread decompress block " << (void *)block_data << " " << block_size << "\n" << std::flush;
   }
   void getBlockData(char* outp, uint64_t data_size) {
     // tout << "main thread get block data " << data_size << " " << block_size << " " << data_offset << "\n" << std::flush;
@@ -511,7 +478,7 @@ struct Data_Context_MT {
       if(data_size > shuffleblock.size()) shuffleblock.resize(data_size);
       uint64_t shuffle_endblock = (data_size + data_offset)/BLOCKSIZE + dtc.blocks_queued;
       dtc.blocks_processed.check_lt(shuffle_endblock);
-      //tout << "shuffle end is " << shuffle_endblock << " " << dtc.blocks_processed.cached_counter_val << "\n" << std::flush;
+      // tout << "shuffle end is " << shuffle_endblock << " " << dtc.blocks_processed.cached_counter_val << "\n" << std::flush;
       getBlockData(reinterpret_cast<char*>(shuffleblock.data()), data_size);
       while( dtc.blocks_processed.check_lt(shuffle_endblock) ) {
         std::this_thread::yield();

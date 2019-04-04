@@ -86,13 +86,13 @@ reps <- 3
 ################################################################################################
 
 qsave_rand <- function(x, file) {
-  qsave(x, file="/tmp/test.z", preset = "custom", algorithm = sample(c("lz4", "zstd"), 1),
+  qsave(x, file="/tmp/test.z", preset = "custom", algorithm = sample(c("lz4", "zstd", "lz4hc"), 1),
         compress_level=sample(10,1), shuffle_control = sample(0:15,1) )
 }
 
 qread_rand <- function(x, file) {
   qread("/tmp/test.z", 
-        use_alt_rep = sample(c(T,F),1),
+        use_alt_rep = sample(c(T,F),1),inspect=T,
         nthreads=sample(5,1))
 }
 

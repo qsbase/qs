@@ -1,5 +1,5 @@
 /* qs - Quick Serialization of R Objects
- Copyright (C) 2019-prsent Travers Ching
+ Copyright (C) 2019-present Travers Ching
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -48,6 +48,7 @@ https://github.com/traversc/qs
 #include "RApiSerializeAPI.h"
 #include "zstd.h"
 #include "lz4.h"
+#include "lz4hc.h"
 #include "BLOSC/shuffle_routines.h"
 #include "BLOSC/unshuffle_routines.h"
 
@@ -235,7 +236,6 @@ void init_stdvec_double(DllInfo* dll){
 
 bool is_big_endian();
 
-// #define BLOCKSIZE 262144 // 2^20 bytes per block
 #define BLOCKRESERVE 64
 #define NA_STRING_LENGTH 4294967295 // 2^32-1 -- length used to signify NA value
 #define MIN_SHUFFLE_ELEMENTS 4
@@ -360,8 +360,12 @@ struct QsMetadata {
         compress_algorithm = 1;
         this->compress_level = compress_level;
         if(compress_level < 1) throw exception("lz4 compress_level must be an integer greater than 1");
+      }  else if(algorithm == "lz4hc") {
+        compress_algorithm = 2;
+        this->compress_level = compress_level;
+        if(compress_level < 1 || compress_level > 12) throw exception("lz4hc compress_level must be an integer between 1 and 12");
       } else {
-        throw exception("algorithm must be one of zstd or lz4");
+        throw exception("algorithm must be one of zstd or lz4 or lz4hc");
       }
       if(shuffle_control < 0 || shuffle_control > 15) throw exception("shuffle_control must be an integer between 0 and 15");
     } else {
@@ -424,6 +428,14 @@ size_t LZ4_compress_fun( void* dst, size_t dstCapacity,
                          const void* src, size_t srcSize,
                          int compressionLevel) {
   return LZ4_compress_fast(reinterpret_cast<char*>(const_cast<void*>(src)), 
+                           reinterpret_cast<char*>(const_cast<void*>(dst)),
+                           static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
+}
+
+size_t LZ4_compress_HC_fun( void* dst, size_t dstCapacity,
+                         const void* src, size_t srcSize,
+                         int compressionLevel) {
+  return LZ4_compress_HC(reinterpret_cast<char*>(const_cast<void*>(src)), 
                            reinterpret_cast<char*>(const_cast<void*>(dst)),
                            static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
 }

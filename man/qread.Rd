@@ -4,12 +4,14 @@
 \alias{qread}
 \title{qread}
 \usage{
-qread(file, use_alt_rep=FALSE)
+qread(file, use_alt_rep=FALSE, inspect=FALSE, nthreads=1)
 }
 \arguments{
 \item{file}{the file name/path}
 
 \item{use_alt_rep}{Use alt rep when reading in string data.  Default: TRUE}
+
+\item{inspect}{Whether to call qinspect before de-serializing data.  Set to true if you suspect your data may be corrupted.  Default: FALSE}
 
 \item{nthreads}{Number of threads to use.  Default 1.}
 }
@@ -28,6 +30,12 @@ qsave(x, myfile)
 x2 <- qread(myfile)
 identical(x, x2) # returns true
 
+# qs support multithreading
+qsave(x, myfile, nthreads=2)
+x2 <- qread(myfile, nthreads=2)
+identical(x, x2) # returns true
+
+# Other examples
 z <- 1:1e7
 myfile <- tempfile()
 qsave(z, myfile)

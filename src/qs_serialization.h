@@ -1,5 +1,5 @@
 /* qs - Quick Serialization of R Objects
- Copyright (C) 2019-prsent Travers Ching
+ Copyright (C) 2019-present Travers Ching
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as
@@ -40,9 +40,14 @@ struct CompressBuffer {
     if(qm.compress_algorithm == 0) {
       compFun = &ZSTD_compress;
       cbFun = &ZSTD_compressBound;
-    } else { // algo == 1
+    } else if(qm.compress_algorithm == 1) {
       compFun = &LZ4_compress_fun;
       cbFun = &LZ4_compressBound_fun;
+    } else if(qm.compress_algorithm == 2) {
+      compFun = &LZ4_compress_HC_fun;
+      cbFun = &LZ4_compressBound_fun;
+    } else {
+      throw exception("invalid compression algorithm selected");
     }
     zblock = std::vector<char>(cbFun(BLOCKSIZE));
   }

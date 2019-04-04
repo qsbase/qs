@@ -53,6 +53,12 @@ qsave(x, myfile)
 x2 <- qread(myfile)
 identical(x, x2) # returns true
 
+# qs support multithreading
+qsave(x, myfile, nthreads=2)
+x2 <- qread(myfile, nthreads=2)
+identical(x, x2) # returns true
+
+# Other examples
 z <- 1:1e7
 myfile <- tempfile()
 qsave(z, myfile)

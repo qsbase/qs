@@ -31,16 +31,28 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// c_qinspect
+bool c_qinspect(std::string file);
+RcppExport SEXP _qs_c_qinspect(SEXP fileSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qinspect(file));
+    return rcpp_result_gen;
+END_RCPP
+}
 // c_qread
-SEXP c_qread(std::string file, bool use_alt_rep, int nthreads);
-RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP nthreadsSEXP) {
+SEXP c_qread(std::string file, bool use_alt_rep, bool inspect, int nthreads);
+RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP inspectSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< bool >::type inspect(inspectSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep, nthreads));
+    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep, inspect, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -174,7 +186,8 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 7},
-    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 3},
+    {"_qs_c_qinspect", (DL_FUNC) &_qs_c_qinspect, 1},
+    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
     {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
@@ -190,10 +203,8 @@ static const R_CallMethodDef CallEntries[] = {
 };
 
 void init_stdvec_double(DllInfo* dll);
-void init_stdvec_double(DllInfo* dll);
 RcppExport void R_init_qs(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
-    init_stdvec_double(dll);
     init_stdvec_double(dll);
 }
