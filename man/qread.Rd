@@ -4,7 +4,7 @@
 \alias{qread}
 \title{qread}
 \usage{
-qread(file, use_alt_rep=FALSE, inspect=FALSE, nthreads=1)
+qread(file, use_alt_rep=TRUE, inspect=FALSE, nthreads=1)
 }
 \arguments{
 \item{file}{the file name/path}

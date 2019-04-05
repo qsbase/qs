@@ -21,7 +21,8 @@
 #' 
 #' Saves (serializes) an object to disk.  
 #' @usage qsave(x, file, 
-#' preset = "balanced", algorithm = "lz4", compress_level = 1L, shuffle_control = 15L)
+#' preset = "balanced", algorithm = "lz4", compress_level = 1L, 
+#' shuffle_control = 15L, nthreads = 1)
 #' @param x the object to serialize.
 #' @param file the file name/path.
 #' @param preset One of "fast", "balanced" (default), "high" or "custom".  See details.  
@@ -81,7 +82,7 @@ qsave <- function(x, file, preset="balanced", algorithm="lz4", compress_level=1L
 #' qread
 #' 
 #' Reads a object in a file serialized to disk
-#' @usage qread(file, use_alt_rep=FALSE, inspect=FALSE, nthreads=1)
+#' @usage qread(file, use_alt_rep=TRUE, inspect=FALSE, nthreads=1)
 #' @param file the file name/path
 #' @param use_alt_rep Use alt rep when reading in string data.  Default: TRUE
 #' @param inspect Whether to call qinspect before de-serializing data.  Set to true if you suspect your data may be corrupted.  Default: FALSE
