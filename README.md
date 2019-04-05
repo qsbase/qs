@@ -6,7 +6,7 @@ Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/q
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs)
 [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)
 
-*Quick serialization of R objects*
+# QS: Quick serialization of R objects
 
 `qs` provides an interface for quickly saving and reading objects to and
 from disk. The goal of this package is to provide a lightning-fast and
