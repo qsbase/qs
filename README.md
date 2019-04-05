@@ -1,5 +1,5 @@
-qs
-================
+
+<img src="vignettes/qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px">
 
 [![Build
 Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs)
@@ -7,7 +7,6 @@ Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/q
 [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)
 
 *Quick serialization of R objects*
-<img src="vignettes/qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px">
 
 `qs` provides an interface for quickly saving and reading objects to and
 from disk. The goal of this package is to provide a lightning-fast and
