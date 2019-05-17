@@ -81,7 +81,7 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
 
 test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
 extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
-reps <- 3
+reps <- 10
 
 ################################################################################################
 
@@ -90,10 +90,10 @@ qsave_rand <- function(x, file) {
         compress_level=sample(10,1), shuffle_control = sample(0:15,1), nthreads=sample(5,1) )
 }
 
-qsave_rand <- function(x, file) {
-  qsave(x, file="/tmp/ctest.z", preset = "custom", algorithm = "zstd_stream",
-        compress_level=sample(10,1), shuffle_control = sample(0:15,1), nthreads=sample(5,1) )
-}
+# qsave_rand <- function(x, file) {
+#   qsave(x, file="/tmp/ctest.z", preset = "custom", algorithm = "zstd_stream",
+#         compress_level=sample(10,1), shuffle_control = sample(0:15,1), nthreads=sample(5,1) )
+# }
 
 qread_rand <- function(x, file) {
   qread("/tmp/ctest.z", 
