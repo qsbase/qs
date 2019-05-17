@@ -81,7 +81,7 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
 
 test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
 extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
-reps <- 10
+reps <- 5
 
 ################################################################################################
 
