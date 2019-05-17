@@ -152,7 +152,7 @@ memory caches.
 Generally speaking, `qs` and `fst` are considerably faster than
 `saveRDS` regardless of using single threaded or multi-threaded
 compression. `qs` also manages to achieve superior compression ratio
-through various optimizations (e.g. see “below”Byte Shuffle" section
+through various optimizations (e.g. see "Byte Shuffle" section
 below).
 
 ## Byte Shuffle

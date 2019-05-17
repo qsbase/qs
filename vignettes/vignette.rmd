@@ -110,7 +110,7 @@ knitr::kable(df)
 
 Benchmarking write and read speed is a bit tricky and depends highly on a number of factors, such as operating system, the hardware being run on, the distribution of the data, or even the state of the R instance.  Reading data is also further subjected to various hardware and software memory caches.  
 
-Generally speaking, `qs` and `fst` are considerably faster than `saveRDS` regardless of using single threaded or multi-threaded compression.  `qs` also manages to achieve superior compression ratio through various optimizations (e.g. see "below"Byte Shuffle" section below).  
+Generally speaking, `qs` and `fst` are considerably faster than `saveRDS` regardless of using single threaded or multi-threaded compression.  `qs` also manages to achieve superior compression ratio through various optimizations (e.g. see "Byte Shuffle" section below).  
 
 ## Byte Shuffle
 
