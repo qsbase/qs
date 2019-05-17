@@ -83,6 +83,18 @@ AC_ARG_WITH([simd],
 # AX_EXT()
 
 ########################################################
+#### Version value function
+
+getVersion()
+{
+VERSION_STRING=$1
+MAJOR=`echo $VERSION_STRING | cut -d. -f1`
+MINOR=`echo $VERSION_STRING | cut -d. -f2`
+RELEASE=`echo $VERSION_STRING | cut -d. -f3`
+echo $(($MAJOR*100000+$MINOR*100+$RELEASE))
+}
+
+########################################################
 #### Compile ZSTD checks
 
 if test xx$zstd_force_compile = "xxtrue"; then
@@ -95,20 +107,9 @@ elif test "xx$zstd_include_path" != "xx"; then
     COMPILE_ZSTD="false"
 elif test "xx$PKGCONF" != "xx"; then
   if "${PKGCONF}" --exists libzstd; then
-    VERSION_STRING=`"${PKGCONF}" --modversion libzstd`
-    VER_MAJOR_STRING=`echo $VERSION_STRING | cut -d. -f1`
-    VER_MINOR_STRING=`echo $VERSION_STRING | cut -d. -f2`
-    VER_RELEASE_STRING=`echo $VERSION_STRING | cut -d. -f3`
-    # echo $VER_MAJOR_STRING $VER_MINOR_STRING $VER_RELEASE_STRING
-    IS_HIGHER_VERSION="false";
-    if test "$VER_MAJOR_STRING" -gt 1; then
-      IS_HIGHER_VERSION="true"
-    elif test "$VER_MAJOR_STRING" -eq 1; then
-      if test "$VER_MINOR_STRING" -ge 3; then
-        IS_HIGHER_VERSION="true"
-      fi
-    fi
-    if test xx$IS_HIGHER_VERSION = "xxtrue"; then
+    VERSION_STRING=`${PKGCONF} --modversion libzstd`
+    VER=`getVersion ${VERSION_STRING}`
+    if test "${VER}" -ge 100400; then
       echo "zstd ${VERSION_STRING} dynamic library detected -- skipping zstd compilation"
       zstd_lib_path=`"${PKGCONF}" --libs libzstd`
       zstd_include_path=`"${PKGCONF}" --cflags-only-I libzstd`
@@ -116,7 +117,7 @@ elif test "xx$PKGCONF" != "xx"; then
       INCLUDE_PATHS="${INCLUDE_PATHS} ${zstd_include_path}"
       COMPILE_ZSTD="false"
     else
-      echo "zstd ${VERSION_STRING} dynamic library detected but is lower than bundled version -- compiling from source"
+      echo "zstd ${VERSION_STRING} dynamic library detected but is lower than bundled version (1.4.0) -- compiling from source"
       COMPILE_ZSTD="true"
     fi
   else
@@ -138,20 +139,9 @@ elif test "xx$lz4_include_path" != "xx"; then
     COMPILE_LZ4="false"
 elif test "xx$PKGCONF" != "xx"; then
   if "${PKGCONF}" --exists liblz4; then
-    VERSION_STRING=`"${PKGCONF}" --modversion liblz4`
-    VER_MAJOR_STRING=`echo $VERSION_STRING | cut -d. -f1`
-    VER_MINOR_STRING=`echo $VERSION_STRING | cut -d. -f2`
-    VER_RELEASE_STRING=`echo $VERSION_STRING | cut -d. -f3`
-    # echo $VER_MAJOR_STRING $VER_MINOR_STRING $VER_RELEASE_STRING
-    IS_HIGHER_VERSION="false";
-    if test "$VER_MAJOR_STRING" -gt 1; then
-      IS_HIGHER_VERSION="true"
-    elif test "$VER_MAJOR_STRING" -eq 1; then
-      if test "$VER_MINOR_STRING" -ge 8; then
-        IS_HIGHER_VERSION="true"
-      fi
-    fi
-    if test xx$IS_HIGHER_VERSION = "xxtrue"; then
+    VERSION_STRING=`${PKGCONF} --modversion liblz4`
+    VER=`getVersion ${VERSION_STRING}`
+    if test ${VER} -ge 100901; then
       echo "lz4 ${VERSION_STRING} dynamic library detected -- skipping lz4 compilation"
       lz4_lib_path=`"${PKGCONF}" --libs liblz4`
       lz4_include_path=`"${PKGCONF}" --cflags-only-I liblz4`
@@ -159,7 +149,7 @@ elif test "xx$PKGCONF" != "xx"; then
       INCLUDE_PATHS="${INCLUDE_PATHS} ${lz4_include_path}"
       COMPILE_LZ4="false"
     else
-      echo "lz4 ${VERSION_STRING} dynamic library detected but is lower than bundled version -- compiling from source"
+      echo "lz4 ${VERSION_STRING} dynamic library detected but is lower than bundled version (1.9.1) -- compiling from source"
       COMPILE_LZ4="true"
     fi
   else

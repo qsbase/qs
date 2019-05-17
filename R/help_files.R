@@ -25,8 +25,8 @@
 #' shuffle_control = 15L, nthreads = 1)
 #' @param x the object to serialize.
 #' @param file the file name/path.
-#' @param preset One of "fast", "balanced" (default), "high" or "custom".  See details.  
-#' @param algorithm Compression algorithm used.  Either lz4 (default or zstd). 
+#' @param preset One of "fast", "balanced" (default), "high", "archive" or "custom".  See details.  
+#' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc" or "zstd_stream".
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
 #' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
 #' @param nthreads Number of threads to use.  Default 1.  
@@ -47,7 +47,8 @@
 #' The `algorithm` parameter, `compression_level` and `shuffle_control` 
 #' parameters are ignored unless `preset` is "custom".  "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.  
 #' "balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.  
-#' "high" preset: algorithm zstd, compress_level 5, shuffle_control 15.  
+#' "high" preset: algorithm zstd, compress_level 4, shuffle_control 15.  
+#' "archive" preset: algorithm zstd_stream, compress_level 14, shuffle_control 15.  
 #' @examples 
 #' x <- data.frame(int = sample(1e3, replace=TRUE), 
 #'                  num = rnorm(1e3), 
@@ -76,7 +77,7 @@
 #' identical(w, w2) # returns true
 #' @export
 qsave <- function(x, file, preset="balanced", algorithm="lz4", compress_level=1L, shuffle_control=15L, nthreads=1) {
-  c_qsave(x,file,preset,algorithm, compress_level, shuffle_control, nthreads)
+  c_qsave(x,normalizePath(file, mustWork=FALSE),preset,algorithm, compress_level, shuffle_control, nthreads)
 }
 
 #' qread

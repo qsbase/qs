@@ -3,14 +3,14 @@ title: "qs"
 output:
   html_vignette:
     keep_md: no
-  rmarkdown::github_document: default
+  # rmarkdown::github_document: default
 vignette: >
   %\VignetteIndexEntry{Using qs}
   \usepackage[utf8]{inputenc}
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-<img src="qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px">
+<!-- <img src="qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px"> -->
  
 [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs) [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)
 
@@ -28,14 +28,20 @@ Inspired by the `fst` package, `qs` uses a similar block-compression design usin
 ```{r eval=FALSE}
 library(qs)
 df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6, replace=T))
-qsave(df1, "myfile.q")
-df2 <- qread("myfile.q")
+qsave(df1, "myfile.qs")
+df2 <- qread("myfile.qs")
 ```
 ## Installation:
 For R version 3.5 or higher:
 ```{r eval=FALSE}
-install.packages("qs") ## CRAN version
-remotes::install_github("traversc/qs", configure.args="--with-simd=AVX2") ## Latest experimental version
+# CRAN version (ver. 0.15.1)
+install.packages("qs")
+
+# CRAN compile from source with AVX2 support (recommended)
+remotes::install_cran("qs", configure.args="--with-simd=AVX2")
+
+# Experimental (ver. 0.16.1)
+remotes::install_github("traversc/qs", configure.args="--with-simd=AVX2")
 ```
 For R version 3.4 and lower:
 ```{r eval=FALSE}
@@ -70,34 +76,41 @@ Both of these features have the possibility of additionally increasing performan
 
 ## Summary Benchmarks
 
-These benchmarks were performed on a Ryzen 2700x desktop using various data types (detailed below). `qs` was compared with `saveRDS`/`readRDS` in base R and the `fst` package for serializing `data.frame`'s.  In terms of speed, `qs` is  comparable to `fst` for the data types `fst` supports, and both packages are orders of magnitude faster than `saveRDS`.  
 
-`qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible.  For simplicity, `qs` comes with 3 presets, which trades speed and compression ratio: "fast", "balanced" and "high".  The benchmark below uses the "fast" preset.  
-
-![](headline_bench.png "headline_bench"){width=576px}
-
-* character: `randomStrings(1e6)`
-* numeric:`rnorm(1e7)`
-* integer: `sample(1e7)`
-* list: `map(1:1e4, ~sample(100))`
-* environment: `map(1:1e4, ~sample(100)) %>% setNames(1:1e4) %>% as.environment`
-
-
-Benchmarking write and read speed is a bit tricky and depends highly on a number of factors, such as which operating system one uses, the hardware being run on, the distribution of the data, or even whether R is restarted before each measurement.  Reading data is also subject to various hardware and software memory caches, and so may not be fully representative of reading data straight from disk.  
-
-## Data.Frame benchmark
-
-For a more complete comparison with `fst`, a number of different parameters were evaluated for each method.  For `fst`, compression level and number of threads were varied and plotted.  For `qs`, byte shuffle settings (see the "Byte Shuffling" section below) and algorithm used were evaluated.  
-
-![](dataframe_bench.png "dataframe_bench"){width=576px}
-
-A `data.frame` with 5 million rows was employed for the purpose of this evaluation:
+The following benchmarks were performed on a Ryzen 2700x desktop using various data types (detailed below). `qs` was compared with `saveRDS`/`readRDS` in base R and the `fst` package for serializing and de-serializing a medium sized `data.frame` with 5 million rows (approximately 115 Mb):
 
 ```{r eval=FALSE}
-data.frame(a=rnorm(5e6), b=rpois(100,5e6),
-           c=sample(starnames[["IAU Name"]],5e6,T), 
+data.frame(a=rnorm(5e6), 
+           b=rpois(100,5e6),
+           c=sample(starnames$IAU,5e6,T),
+           d=sample(state.name,5e6,T),
            stringsAsFactors = F)
 ```
+
+`qs` is highly parameterized and can be tuned by the user to extract as much speed and compression as possible, if desired.  For simplicity, `qs` comes with 4 presets, which trades speed and compression ratio: "fast", "balanced", "high" and "archive".
+
+The tables and plots below summarize the performance of `saveRDS`, `qs` and `fst` with various parameters:
+
+### Summary table
+```{r echo=FALSE}
+df <- read.csv("df_bench_summary.csv", check.names=F, stringsAsFactors=F)
+df$`Write Time (s)` <- signif(df$`Write Time (s)`, 3)
+df$`Read Time (s)` <- signif(df$`Read Time (s)`, 3)
+df$`File Size (Mb)` <- signif(df$`File Size (Mb)`, 3)
+knitr::kable(df)
+```
+
+### Serializing
+
+![](df_bench_write.png "df_bench_write"){width=576px}
+
+### De-serializing
+
+![](df_bench_read.png "df_bench_read"){width=576px}
+
+Benchmarking write and read speed is a bit tricky and depends highly on a number of factors, such as operating system, the hardware being run on, the distribution of the data, or even the state of the R instance.  Reading data is also further subjected to various hardware and software memory caches.  
+
+Generally speaking, `qs` and `fst` are considerably faster than `saveRDS` regardless of using single threaded or multi-threaded compression.  `qs` also manages to achieve superior compression ratio through various optimizations (e.g. see "below"Byte Shuffle" section below).  
 
 ## Byte Shuffle
 
@@ -108,14 +121,14 @@ Byte shuffling rearranges the data such that all of the first bytes are blocked 
 ```{r eval=FALSE}
 # With byte shuffling
 x <- 1:1e8
-qsave(x, "mydat.q", preset="custom", shuffle_control=15, algorithm="zstd")
-cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.q")$size, "\n" )
+qsave(x, "mydat.qs", preset="custom", shuffle_control=15, algorithm="zstd")
+cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.qs")$size, "\n" )
 # Compression Ratio:  1389.164
 
 # Without byte shuffling
 x <- 1:1e8
-qsave(x, "mydat.q", preset="custom", shuffle_control=0, algorithm="zstd")
-cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.q")$size, "\n" )
+qsave(x, "mydat.qs", preset="custom", shuffle_control=0, algorithm="zstd")
+cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.qs")$size, "\n" )
 # Compression Ratio:  1.479294 
 ```
 
@@ -127,17 +140,17 @@ In `qs`, only alt-rep character vectors are implemented because it is often the 
 
 ```{r eval=FALSE}
 df1 <- data.frame(x = randomStrings(1e6), y = randomStrings(1e6), stringsAsFactors = F)
-qsave(df1, "temp.q")
+qsave(df1, "temp.qs")
 rm(df1); gc() ## remove df1 and call gc for proper benchmarking
 
 # With alt-rep
-system.time(qread("temp.q", use_alt_rep=T))[1]
+system.time(qread("temp.qs", use_alt_rep=T))[1]
 #     0.109 seconds
 
 
 # Without alt-rep
 gc(verbose=F)
-system.time(qread("temp.q", use_alt_rep=F))[1]
+system.time(qread("temp.qs", use_alt_rep=F))[1]
 #     1.703 seconds
 ```
 

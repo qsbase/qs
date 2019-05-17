@@ -24,13 +24,17 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 #include "qs_mt_serialization.h"
 #include "qs_deserialization.h"
 #include "qs_mt_deserialization.h"
-
+#include "qs_serialization_stream.h"
+#include "qs_deserialization_stream.h"
+  
 /*
  * headers:
  * qs_common.h -> qs_serialization.h -> qs_functions.cpp
  * qs_common.h -> qs_deserialization.h -> qs_functions.cpp
  * qs_common.h -> qs_mt_serialization.h -> qs_functions.cpp
  * qs_common.h -> qs_mt_deserialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_serialization_stream.h -> qs_functions.cpp
+ * qs_common.h -> qs_deserialization_stream.h -> qs_functions.cpp
  * qs_common.h is protected with an include guard
  */
 
@@ -42,16 +46,8 @@ bool is_big_endian()
   uint32_t i;
   char c[4];
 } bint = {0x01020304};
-  
   return bint.c[0] == 1; 
 }
-
-// qs reserve header details
-// reserve[0] unused
-// reserve[1] unused
-// reserve[2] (low byte) shuffle control: 0x01 = logical shuffle, 0x02 = integer shuffle, 0x04 = double shuffle
-// reserve[2] (high byte) algorithm: 0x10 = lz4, 0x00 = zstd
-// reserve[3] endian: 1 = big endian, 0 = little endian
 
 // [[Rcpp::export]]
 void c_qsave(RObject x, std::string file, std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15, int nthreads=1) {
@@ -59,25 +55,32 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
   if(!myFile) {
     throw exception("Failed to open file");
   }
-  if(nthreads <= 1) {
-    QsMetadata qm(preset, algorithm, compress_level, shuffle_control);
-    qm.writeToFile(myFile, shuffle_control);
-    writeSizeToFile8(myFile, 0); // number of compressed blocks
-    CompressBuffer vbuf(myFile, qm);
-    vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
-    vbuf.flush();
+  QsMetadata qm(preset, algorithm, compress_level, shuffle_control);
+  qm.writeToFile(myFile, shuffle_control);
+  writeSizeToFile8(myFile, 0); // number of compressed blocks
+  if(algorithm == "zstd_stream") {
+    if(nthreads > 1) Rcpp::Rcerr << "zstd_stream currently supports only 1 thread" << std::endl;
+    ZSTD_streamWrite sw(myFile, qm);
+    CompressBufferStream<ZSTD_streamWrite> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    sw.flush();
     myFile.seekp(4);
-    writeSizeToFile8(myFile, vbuf.number_of_blocks);
+    writeSizeToFile8(myFile, sw.bytes_written);
   } else {
-    QsMetadata qm(preset, algorithm, compress_level, shuffle_control);
-    qm.writeToFile(myFile, shuffle_control);
-    writeSizeToFile8(myFile, 0); // number of compressed blocks
-    CompressBuffer_MT vbuf(&myFile, qm, nthreads);
-    vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
-    vbuf.flush();
-    vbuf.ctc.finish();
-    myFile.seekp(4);
-    writeSizeToFile8(myFile, vbuf.number_of_blocks);
+    if(nthreads <= 1) {
+      CompressBuffer vbuf(myFile, qm);
+      vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
+      vbuf.flush();
+      myFile.seekp(4);
+      writeSizeToFile8(myFile, vbuf.number_of_blocks);
+    } else {
+      CompressBuffer_MT vbuf(&myFile, qm, nthreads);
+      vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
+      vbuf.flush();
+      vbuf.ctc.finish();
+      myFile.seekp(4);
+      writeSizeToFile8(myFile, vbuf.number_of_blocks);
+    }
   }
 }
 
@@ -88,8 +91,13 @@ bool c_qinspect(std::string file) {
     throw exception("Failed to open file");
   }
   QsMetadata qm(myFile);
-  Data_Inspect_Context dc(myFile, qm);
-  return dc.inspectData();
+  if(qm.compress_algorithm == 3) {
+    uint64_t totalsize = readSizeFromFile8(myFile);
+    return inspect_stream_zstd(myFile, totalsize);
+  } else {
+    Data_Inspect_Context dc(myFile, qm);
+    return dc.inspectData();
+  }
 }
 
 // [[Rcpp::export]]
@@ -102,17 +110,23 @@ SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int n
   if(!myFile) {
     throw exception("Failed to open file");
   }
-  if(nthreads <= 1) {
-    QsMetadata qm(myFile);
-    Data_Context dc(myFile, qm, use_alt_rep);
+  QsMetadata qm(myFile);
+  if(qm.compress_algorithm == 3) { // zstd_stream
+    uint64_t totalsize = readSizeFromFile8(myFile);
+    ZSTD_streamRead sr(myFile, qm, totalsize);
+    Data_Context_Stream<ZSTD_streamRead> dc(sr, qm, false);
     return dc.processBlock();
   } else {
-    QsMetadata qm(myFile);
-    Data_Context_MT dc(&myFile, qm, use_alt_rep, nthreads);
-    SEXP ret = PROTECT( dc.processBlock() );
-    dc.dtc.finish();
-    UNPROTECT(1);
-    return ret;
+    if(nthreads <= 1) {
+      Data_Context dc(myFile, qm, use_alt_rep);
+      return dc.processBlock();
+    } else {
+      Data_Context_MT dc(&myFile, qm, use_alt_rep, nthreads);
+      SEXP ret = PROTECT( dc.processBlock() ); // is protect unnecessary since we aren't calling any R function before return?
+      dc.dtc.finish();
+      UNPROTECT(1);
+      return ret;
+    }
   }
 }
 
@@ -325,3 +339,40 @@ SEXP convertToAlt(CharacterVector x) {
   }
   return stdvec_string::Make(ret, true);
 }
+
+
+
+// std::vector<unsigned char> brotli_compress_raw(RawVector x, int compress_level) {
+//   size_t zsize = BrotliEncoderMaxCompressedSize(x.size());
+//   uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
+//   std::vector<unsigned char> ret(zsize);
+//   uint8_t* retdata = reinterpret_cast<uint8_t*>(ret.data());
+//   BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, 
+//                                 x.size(), xdata, &zsize, retdata);
+//   ret.resize(zsize);
+//   return ret;
+// }
+
+// std::vector<unsigned char> brotli_decompress_raw(RawVector x) {
+//   size_t available_in = x.size();
+//   const uint8_t* next_in = reinterpret_cast<uint8_t*>(RAW(x));
+//   std::vector<uint8_t> dbuffer(available_in);
+//   size_t available_out = dbuffer.size();
+//   uint8_t * next_out = dbuffer.data();
+//   std::vector<unsigned char> retdata(0);
+//   BrotliDecoderResult result;
+//   BrotliDecoderState* state = BrotliDecoderCreateInstance(NULL, NULL, NULL);
+//   do {
+//     result = BrotliDecoderDecompressStream(state, &available_in, &next_in, &available_out, &next_out, NULL);
+//     if(result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
+//       // error since all the input is available
+//     } else if(result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT || result == BROTLI_DECODER_RESULT_SUCCESS) {
+//       std::cout << BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT << " " << available_out << "\n";
+//       retdata.insert(retdata.end(),dbuffer.data(), dbuffer.data() + (dbuffer.size() - available_out));
+//       available_out = dbuffer.size();
+//       next_out = dbuffer.data();
+//     }
+//   } while (result != BROTLI_DECODER_RESULT_SUCCESS);
+//   BrotliDecoderDestroyInstance(state);
+//   return retdata;
+// }

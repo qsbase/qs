@@ -86,12 +86,17 @@ reps <- 3
 ################################################################################################
 
 qsave_rand <- function(x, file) {
-  qsave(x, file="/tmp/test.z", preset = "custom", algorithm = sample(c("lz4", "zstd", "lz4hc"), 1),
-        compress_level=sample(10,1), shuffle_control = sample(0:15,1) )
+  qsave(x, file="/tmp/ctest.z", preset = "custom", algorithm = sample(c("lz4", "zstd", "lz4hc", "zstd_stream"), 1),
+        compress_level=sample(10,1), shuffle_control = sample(0:15,1), nthreads=sample(5,1) )
+}
+
+qsave_rand <- function(x, file) {
+  qsave(x, file="/tmp/ctest.z", preset = "custom", algorithm = "zstd_stream",
+        compress_level=sample(10,1), shuffle_control = sample(0:15,1), nthreads=sample(5,1) )
 }
 
 qread_rand <- function(x, file) {
-  qread("/tmp/test.z", 
+  qread("/tmp/ctest.z", 
         use_alt_rep = sample(c(T,F),1),inspect=T,
         nthreads=sample(5,1))
 }
@@ -131,25 +136,6 @@ for(tp in test_points) {
     stopifnot(identical(z, x1))
   }
   print(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time),4)))
-}
-
-# Character vectors alt rep
-time <- vector("numeric", length=3)
-for(tp in test_points) {
-  for(i in 1:3) {
-    # qs_use_alt_rep(F)
-    x1 <- rep(as.raw(sample(255)), length.out = tp*10) %>% rawToChar
-    cuts <- sample(tp*10, tp+1) %>% sort %>% as.numeric
-    x1 <- splitstr(x1, cuts)
-    x1 <- c(NA, "", x1)
-    qsave_rand(x1, file="/tmp/test.z")
-    time[i] <- Sys.time()
-    z <- qread_rand(file="/tmp/test.z")
-    time[i] <- Sys.time() - time[i]
-    gc()
-    stopifnot(identical(z, x1))
-  }
-  print(sprintf("Character Vectors with alt-rep: %s, %s s",tp, signif(mean(time),4)))
 }
 
 # Integers

@@ -1,0 +1,36 @@
+Version 0.16.1 (2019-5-15)
+
+   * Support for zstd streaming interface.  As opposed to block compression routines, streaming compression offers better compression ratio but is not as fast
+   * Update zstd to version 1.4.0
+   * Re-factor configure script to not be so messy
+   * Change file suffixes in examples from "q" to "qs" (https://github.com/traversc/qs/issues/5)
+   * (Not included) brotli compression library was evaluated, but did not offer better performance compared to zstd on average
+   * Updated zstd to version 1.4.0 (from 1.3.8) and lz4 to 1.9.1 (from 1.8.2)
+   * C++ macro compiler warnings fixed in zstd; this needs to be done every time zstd is updated (https://github.com/facebook/zstd/issues/1538)
+
+Version 0.15.1 (2019-04-07)
+
+   * Initial multi-threading support using C++11 concurrency
+   * Added support for lz4HC (high compression lz4 variant, but slower compression)
+   * Additional error check handling to verify file integrity; see `qinspect` function
+   * Additional documentation and examples
+   * Normalize file paths before attempting to write or read (https://github.com/traversc/qs/issues/4)
+   * Added star name database from the International Astronomical Union; see `?starnames`
+
+Version 0.14.1  (2019-03-03)
+
+   * Support for LZ4 compression codec
+   * Defined several compression presets: "fast", "balanced" and "high" which trade speed for compression ratio
+   * Byte shuffling routines adapted from the BLOSC library, for higher compression ratios
+   * Utility functions for compressing and decompressing raw data using zstd or lz4
+
+Version 0.13.1  (2019-02-13)
+
+   * Added configure file to detect system installation of zstd
+   * Fixes to "undefined behavior" (C++ unaligned type casts)
+
+Version 0.12 (2019-02-08)
+
+   * Initial CRAN release
+   * This package provides serialization of R objects through block compression with zstd
+   * Utilizes Alt-rep data to quickly de-serialize string data

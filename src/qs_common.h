@@ -328,7 +328,7 @@ inline POD unaligned_cast(char* data, uint64_t offset) {
 // reserve[0] unused
 // reserve[1] unused
 // reserve[2] (low byte) shuffle control: 0x01 = logical shuffle, 0x02 = integer shuffle, 0x04 = double shuffle
-// reserve[2] (high byte) algorithm: 0x10 = lz4, 0x00 = zstd
+// reserve[2] (high byte) algorithm: 0x01 = lz4, 0x00 = zstd, 0x02 = "lz4hc", 0x03 = zstd_stream
 // reserve[3] endian: 1 = big endian, 0 = little endian
 struct QsMetadata {
   unsigned char compress_algorithm;
@@ -351,9 +351,18 @@ struct QsMetadata {
       this->compress_level = 4;
       shuffle_control = 15;
       compress_algorithm = 0;
+    } else if(preset == "archive") {
+      this->compress_level = 14;
+      shuffle_control = 15;
+      compress_algorithm = 0;
+      compress_algorithm = 3;
     } else if(preset == "custom") {
       if(algorithm == "zstd") {
         compress_algorithm = 0;
+        this->compress_level = compress_level;
+        if(compress_level > 22 || compress_level < -50) throw exception("zstd compress_level must be an integer between -50 and 22");
+      } else if(algorithm == "zstd_stream") {
+        compress_algorithm = 3;
         this->compress_level = compress_level;
         if(compress_level > 22 || compress_level < -50) throw exception("zstd compress_level must be an integer between -50 and 22");
       } else if(algorithm == "lz4") {
@@ -365,11 +374,11 @@ struct QsMetadata {
         this->compress_level = compress_level;
         if(compress_level < 1 || compress_level > 12) throw exception("lz4hc compress_level must be an integer between 1 and 12");
       } else {
-        throw exception("algorithm must be one of zstd or lz4 or lz4hc");
+        throw exception("algorithm must be one of zstd, lz4, lz4hc or zstd_stream");
       }
       if(shuffle_control < 0 || shuffle_control > 15) throw exception("shuffle_control must be an integer between 0 and 15");
     } else {
-      throw exception("preset must be one of fast (default), balanced, high or custom");
+      throw exception("preset must be one of fast, balanced (default), high, archive or custom");
     }
     lgl_shuffle = shuffle_control & 0x01;
     int_shuffle = shuffle_control & 0x02;
