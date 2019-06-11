@@ -35,7 +35,8 @@ struct ZSTD_streamRead {
   }
   inline void ZSTD_decompressStream_count(ZSTD_DStream* zds, ZSTD_outBuffer * zout, ZSTD_inBuffer * zin) {
     uint64_t temp = zout->pos;
-    ZSTD_decompressStream(zds, zout, zin);
+    size_t return_value = ZSTD_decompressStream(zds, zout, zin);
+    if(ZSTD_isError(return_value)) throw exception("zstd stream decompression error");
     decompressed_bytes_read += zout->pos - temp;
   }
   void getBlock(uint64_t & blocksize, uint64_t & bytesused) {
@@ -475,15 +476,16 @@ struct Data_Context_Stream {
       number_of_attributes = 0;
     }
     SEXP obj;
+    Protect_Tracker pt = Protect_Tracker();
     switch(obj_type) {
     case VECSXP: 
-      obj = PROTECT(Rf_allocVector(VECSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(VECSXP, r_array_len)); pt++;
       for(uint64_t i=0; i<r_array_len; i++) {
         SET_VECTOR_ELT(obj, i, processBlock());
       }
       break;
     case REALSXP:
-      obj = PROTECT(Rf_allocVector(REALSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(REALSXP, r_array_len)); pt++;
       if(qm.real_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(REAL(obj)), r_array_len*8, 8);
       } else {
@@ -491,7 +493,7 @@ struct Data_Context_Stream {
       }
       break;
     case INTSXP:
-      obj = PROTECT(Rf_allocVector(INTSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(INTSXP, r_array_len)); pt++;
       if(qm.int_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(INTEGER(obj)), r_array_len*4, 4);
       } else {
@@ -499,7 +501,7 @@ struct Data_Context_Stream {
       }
       break;
     case LGLSXP:
-      obj = PROTECT(Rf_allocVector(LGLSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(LGLSXP, r_array_len)); pt++;
       if(qm.lgl_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(LOGICAL(obj)), r_array_len*4, 4);
       } else {
@@ -507,7 +509,7 @@ struct Data_Context_Stream {
       }
       break;
     case CPLXSXP:
-      obj = PROTECT(Rf_allocVector(CPLXSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(CPLXSXP, r_array_len)); pt++;
       if(qm.cplx_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(COMPLEX(obj)), r_array_len*16, 8);
       } else {
@@ -515,7 +517,7 @@ struct Data_Context_Stream {
       }
       break;
     case RAWSXP:
-      obj = PROTECT(Rf_allocVector(RAWSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
       if(r_array_len > 0) getBlockData(reinterpret_cast<char*>(RAW(obj)), r_array_len);
       break;
     case STRSXP:
@@ -552,9 +554,9 @@ struct Data_Context_Stream {
             getBlockData(&(ret->strings[i])[0], r_string_len);
           }
         }
-        obj = PROTECT(stdvec_string::Make(ret, true));
+        obj = PROTECT(stdvec_string::Make(ret, true)); pt++;
       } else {
-        obj = PROTECT(Rf_allocVector(STRSXP, r_array_len));
+        obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
         for(uint64_t i=0; i<r_array_len; i++) {
           uint32_t r_string_len;
           cetype_t string_encoding = CE_NATIVE;
@@ -575,10 +577,10 @@ struct Data_Context_Stream {
       break;
     case S4SXP:
     {
-      SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len));
+      SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
       getBlockData(reinterpret_cast<char*>(RAW(obj_data)), r_array_len);
-      obj = PROTECT(unserializeFromRaw(obj_data));
-      UNPROTECT(2);
+      obj = PROTECT(unserializeFromRaw(obj_data)); pt++;
+      // UNPROTECT(2);
       return obj;
     }
     default: // also NILSXP
@@ -598,7 +600,7 @@ struct Data_Context_Stream {
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), processBlock());
       }
     }
-    UNPROTECT(1);
+    // UNPROTECT(1);
     return std::move(obj);
   }
 };

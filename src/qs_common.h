@@ -56,6 +56,7 @@ https://github.com/traversc/qs
 
 using namespace Rcpp;
 
+
 ////////////////////////////////////////////////////////////////
 // alt rep string class
 ////////////////////////////////////////////////////////////////
@@ -423,6 +424,42 @@ struct QsMetadata {
   }
 };
 
+
+// thin SEXP wrapper that auto de-protects
+// struct SEXPW {
+//   SEXP x;
+//   SEXPW() {}
+//   SEXPW(SEXP _x) : x(_x) {}
+//   ~SEXPW() {
+//     UNPROTECT(1);
+//   }
+//   operator SEXP() const {return x;} // implicit conversion to SEXP
+//   void operator=(SEXP r_value) {
+//     x = r_value;
+//   }
+// };
+
+// R stack tracker using RAII
+// protection handling using RAII should have no issues with longjmp
+// ref: https://developer.r-project.org/Blog/public/2019/03/28/use-of-c---in-packages/
+// "R restores the protection stack depth before taking a long jump,
+// so if a C++ destructor includes say UNPROTECT(1) call to restore 
+// the protection stack depth, it does not matter it is not executed, 
+// because R will do that automatically."
+// 
+// There is also a limit of 10,000 on the protection stack.  
+// Realistically, it should never occur in this package as you'd need a list with depth 10000
+// Ref: https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Garbage-Collection
+struct Protect_Tracker {
+  unsigned int n;
+  Protect_Tracker() : n(0) {}
+  ~Protect_Tracker() {
+    UNPROTECT(n);
+  }
+  void operator++(int) {
+    n++;
+  }
+};
 
 // Normalize lz4/zstd function arguments so we can use function types
 typedef size_t (*compress_fun)(void*, size_t, const void*, size_t, int);

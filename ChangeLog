@@ -1,3 +1,10 @@
+Version 0.16.2 (2019-6-11)
+
+   * Code cleanup:
+      * Additional error checking during compression and de-compression
+      * Use of templates instead of function pointers fo
+      * Use of RAII for protection stack handling
+
 Version 0.16.1 (2019-5-15)
 
    * Support for zstd streaming interface.  As opposed to block compression routines, streaming compression offers better compression ratio but is not as fast 

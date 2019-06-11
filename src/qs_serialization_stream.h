@@ -28,7 +28,8 @@ struct ZSTD_streamWrite {
     bytes_written += zin.size;
     while(zin.pos < zin.size) {
       zout.pos = 0;
-      ZSTD_compressStream(zcs, &zout, &zin);
+      size_t return_value = ZSTD_compressStream(zcs, &zout, &zin);
+      if(ZSTD_isError(return_value)) throw exception("zstd stream compression error; output is likely corrupted");
       if(zout.pos > 0) myFile.write(reinterpret_cast<char*>(zout.dst), zout.pos);
     }
   }
@@ -37,6 +38,7 @@ struct ZSTD_streamWrite {
     do {
       zout.pos = 0;
       remain = ZSTD_flushStream(zcs, &zout);
+      if(ZSTD_isError(remain)) throw exception("zstd stream compression error; output is likely corrupted");
       if(zout.pos > 0) myFile.write(reinterpret_cast<char*>(zout.dst), zout.pos);
     } while (remain != 0);
   }

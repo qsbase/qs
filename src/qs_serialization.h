@@ -24,36 +24,91 @@
 // serialization functions
 ////////////////////////////////////////////////////////////////
 
+struct zstd_compress_env {
+  // ZSTD_CCtx* zcs;
+  // zstd_compress_env() : zcs(ZSTD_createCCtx()) {}
+  // ~zstd_compress_env() {
+  //   ZSTD_freeCCtx(zcs);
+  // }
+  size_t compress( void* dst, size_t dstCapacity,
+                   const void* src, size_t srcSize,
+                   int compressionLevel) {
+    // return ZSTD_compressCCtx(zcs, dst, dstCapacity, src, srcSize, compressionLevel);
+    size_t return_value = ZSTD_compress(dst, dstCapacity, src, srcSize, compressionLevel);
+    if(ZSTD_isError(return_value)) throw exception("zstd compression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return ZSTD_compressBound(srcSize);
+  }
+};
+
+struct lz4_compress_env {
+  // std::vector<char> zcs;
+  // char* state;
+  // lz4_compress_env() {
+  //   zcs = std::vector<char>(LZ4_sizeofState());
+  //   state = zcs.data();
+  // }
+  size_t compress( void* dst, size_t dstCapacity,
+                   const void* src, size_t srcSize,
+                   int compressionLevel) {
+    // return LZ4_compress_fast_extState(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
+    //                          reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
+    int return_value = LZ4_compress_fast(reinterpret_cast<char*>(const_cast<void*>(src)), 
+                                         reinterpret_cast<char*>(const_cast<void*>(dst)),
+                                         static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
+                                         compressionLevel);
+    if(return_value == 0) throw exception("lz4 compression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return LZ4_compressBound(srcSize);
+  }
+};
+
+struct lz4hc_compress_env {
+  // std::vector<char> zcs;
+  // char* state;
+  // lz4hc_compress_env() {
+  //   zcs = std::vector<char>(LZ4_sizeofStateHC());
+  //   state = zcs.data();
+  // }
+  size_t compress( void* dst, size_t dstCapacity,
+                   const void* src, size_t srcSize,
+                   int compressionLevel) {
+    // return LZ4_compress_HC_extStateHC(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
+    //                                   reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                                   static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
+    int return_value = LZ4_compress_HC(reinterpret_cast<char*>(const_cast<void*>(src)), 
+                                         reinterpret_cast<char*>(const_cast<void*>(dst)),
+                                         static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
+                                         compressionLevel);
+    if(return_value == 0) throw exception("lz4hc compression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return LZ4_compressBound(srcSize);
+  }
+};
+
+template <class compress_env> 
 struct CompressBuffer {
+  std::ofstream & myFile;
+  QsMetadata qm;
+  compress_env cenv;
   uint64_t number_of_blocks = 0;
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
   std::vector<char> block = std::vector<char>(BLOCKSIZE);
   uint64_t current_blocksize=0;
-  std::ofstream & myFile;
-  QsMetadata qm;
-  compress_fun compFun;
-  cbound_fun cbFun;
   std::vector<char> zblock;
-
-  CompressBuffer(std::ofstream & f, QsMetadata qm) : myFile(f) {
-    this->qm = qm;
-    if(qm.compress_algorithm == 0) {
-      compFun = &ZSTD_compress;
-      cbFun = &ZSTD_compressBound;
-    } else if(qm.compress_algorithm == 1) {
-      compFun = &LZ4_compress_fun;
-      cbFun = &LZ4_compressBound_fun;
-    } else if(qm.compress_algorithm == 2) {
-      compFun = &LZ4_compress_HC_fun;
-      cbFun = &LZ4_compressBound_fun;
-    } else {
-      throw exception("invalid compression algorithm selected");
-    }
-    zblock = std::vector<char>(cbFun(BLOCKSIZE));
+  CompressBuffer(std::ofstream & f, QsMetadata qm) : myFile(f), qm(qm), cenv(compress_env()) {
+    zblock = std::vector<char>(cenv.compressBound(BLOCKSIZE));
   }
   void flush() {
     if(current_blocksize > 0) {
-      uint64_t zsize = compFun(zblock.data(), zblock.size(), block.data(), current_blocksize, qm.compress_level);
+      uint64_t zsize = cenv.compress(zblock.data(), zblock.size(), block.data(), current_blocksize, qm.compress_level);
       writeSizeToFile4(myFile, zsize);
       myFile.write(zblock.data(), zsize);
       current_blocksize = 0;
@@ -67,7 +122,7 @@ struct CompressBuffer {
         flush();
       }
       if(current_blocksize == 0 && len - current_pointer_consumed >= BLOCKSIZE) {
-        uint64_t zsize = compFun(zblock.data(), zblock.size(), data + current_pointer_consumed, BLOCKSIZE, qm.compress_level);
+        uint64_t zsize = cenv.compress(zblock.data(), zblock.size(), data + current_pointer_consumed, BLOCKSIZE, qm.compress_level);
         writeSizeToFile4(myFile, zsize);
         myFile.write(zblock.data(), zsize);
         current_pointer_consumed += BLOCKSIZE;

@@ -54,7 +54,9 @@ struct Ordered_Counter {
   }
 };
 
+template <class decompress_env> 
 struct Data_Thread_Context {
+  decompress_env denv;
   std::ifstream* myFile;
   const unsigned int nthreads;
   uint64_t blocks_total;
@@ -62,10 +64,7 @@ struct Data_Thread_Context {
   std::atomic<uint64_t>  blocks_queued;
   Ordered_Counter blocks_processed;
   
-  decompress_fun decompFun;
-  cbound_fun cbFun;
   std::vector<std::thread> threads;
-  
   std::vector< std::atomic<bool> > primary_block;
   std::vector< std::vector<char> > zblocks; // one per thread
   std::vector< std::vector<char> > data_blocks; // one per thread
@@ -100,10 +99,10 @@ struct Data_Thread_Context {
       //   decompFun(dp, BLOCKSIZE, zblocks[thread_id].data(), zsize);
       // } else {
       if(primary_block[thread_id]) {
-        block_sizes[thread_id] = decompFun(data_blocks[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
+        block_sizes[thread_id] = denv.decompress(data_blocks[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
         block_pointers[thread_id] = data_blocks[thread_id].data();
       } else {
-        block_sizes[thread_id] = decompFun(data_blocks2[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
+        block_sizes[thread_id] = denv.decompress(data_blocks2[thread_id].data(), BLOCKSIZE, zblocks[thread_id].data(), zsize);
         block_pointers[thread_id] = data_blocks2[thread_id].data();
       }
       while(data_task[thread_id] == 0) {
@@ -135,20 +134,11 @@ struct Data_Thread_Context {
   }
   
   Data_Thread_Context(std::ifstream* mf, unsigned int nt, QsMetadata qm) : 
+    denv(decompress_env()),
     myFile(mf), nthreads(nt), blocks_read(0), blocks_queued(0), blocks_processed(nt) {
     blocks_total = readSizeFromFile8(*myFile);
-    // tout << blocks_total << " total blocks\n" << std::flush;
-    if(qm.compress_algorithm == 0) {
-      decompFun = &ZSTD_decompress;
-      cbFun = &ZSTD_compressBound;
-    } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) { // algo == 1
-      decompFun = &LZ4_decompress_fun;
-      cbFun = &LZ4_compressBound_fun;
-    } else {
-      throw exception("invalid compression algorithm selected");
-    }
     
-    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(cbFun(BLOCKSIZE)));
+    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(denv.compressBound(BLOCKSIZE)));
     data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
     data_blocks2 = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
     block_pointers = std::vector<std::atomic<char*>>(nthreads);
@@ -193,11 +183,11 @@ struct Data_Thread_Context {
   }
 };
 
-
+template <class decompress_env> 
 struct Data_Context_MT {
   std::ifstream * myFile;
   bool use_alt_rep_bool;
-  Data_Thread_Context dtc;
+  Data_Thread_Context<decompress_env> dtc;
   QsMetadata qm;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
@@ -500,15 +490,16 @@ struct Data_Context_MT {
       number_of_attributes = 0;
     }
     SEXP obj;
+    Protect_Tracker pt = Protect_Tracker();
     switch(obj_type) {
     case VECSXP: 
-      obj = PROTECT(Rf_allocVector(VECSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(VECSXP, r_array_len)); pt++;
       for(uint64_t i=0; i<r_array_len; i++) {
         SET_VECTOR_ELT(obj, i, processBlock());
       }
       break;
     case REALSXP:
-      obj = PROTECT(Rf_allocVector(REALSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(REALSXP, r_array_len)); pt++;
       if(qm.real_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(REAL(obj)), r_array_len*8, 8);
       } else {
@@ -516,7 +507,7 @@ struct Data_Context_MT {
       }
       break;
     case INTSXP:
-      obj = PROTECT(Rf_allocVector(INTSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(INTSXP, r_array_len)); pt++;
       if(qm.int_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(INTEGER(obj)), r_array_len*4, 4);
       } else {
@@ -524,7 +515,7 @@ struct Data_Context_MT {
       }
       break;
     case LGLSXP:
-      obj = PROTECT(Rf_allocVector(LGLSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(LGLSXP, r_array_len)); pt++;
       if(qm.lgl_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(LOGICAL(obj)), r_array_len*4, 4);
       } else {
@@ -532,7 +523,7 @@ struct Data_Context_MT {
       }
       break;
     case CPLXSXP:
-      obj = PROTECT(Rf_allocVector(CPLXSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(CPLXSXP, r_array_len)); pt++;
       if(qm.cplx_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(COMPLEX(obj)), r_array_len*16, 8);
       } else {
@@ -540,7 +531,7 @@ struct Data_Context_MT {
       }
       break;
     case RAWSXP:
-      obj = PROTECT(Rf_allocVector(RAWSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
       if(r_array_len > 0) getBlockData(reinterpret_cast<char*>(RAW(obj)), r_array_len);
       break;
     case STRSXP:
@@ -577,9 +568,9 @@ struct Data_Context_MT {
             getBlockData(&(ret->strings[i])[0], r_string_len); // don't need to wait!
           }
         }
-        obj = PROTECT(stdvec_string::Make(ret, true));
+        obj = PROTECT(stdvec_string::Make(ret, true)); pt++;
       } else {
-        obj = PROTECT(Rf_allocVector(STRSXP, r_array_len));
+        obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
         uint64_t string_endblock;
         for(uint64_t i=0; i<r_array_len; i++) {
           uint32_t r_string_len;
@@ -609,10 +600,10 @@ struct Data_Context_MT {
       break;
     case S4SXP:
     {
-      SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len));
+      SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
       getBlockData(reinterpret_cast<char*>(RAW(obj_data)), r_array_len);
-      obj = PROTECT(unserializeFromRaw(obj_data));
-      UNPROTECT(2);
+      obj = PROTECT(unserializeFromRaw(obj_data)); pt++;
+      // UNPROTECT(2);
       return obj;
     }
     default: // also NILSXP
@@ -638,7 +629,7 @@ struct Data_Context_MT {
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), processBlock());
       }
     }
-    UNPROTECT(1);
+    // UNPROTECT(1);
     return std::move(obj);
   }
 };

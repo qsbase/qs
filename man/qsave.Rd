@@ -13,9 +13,9 @@ shuffle_control = 15L, nthreads = 1)
 
 \item{file}{the file name/path.}
 
-\item{preset}{One of "fast", "balanced" (default), "high" or "custom".  See details.}
+\item{preset}{One of "fast", "balanced" (default), "high", "archive" or "custom".  See details.}
 
-\item{algorithm}{Compression algorithm used.  Either lz4 (default or zstd).}
+\item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc" or "zstd_stream".}
 
 \item{compress_level}{The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).}
 
@@ -43,7 +43,8 @@ The `preset` parameter has several different combination of parameter sets that 
 The `algorithm` parameter, `compression_level` and `shuffle_control` 
 parameters are ignored unless `preset` is "custom".  "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.  
 "balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.  
-"high" preset: algorithm zstd, compress_level 5, shuffle_control 15.
+"high" preset: algorithm zstd, compress_level 4, shuffle_control 15.  
+"archive" preset: algorithm zstd_stream, compress_level 14, shuffle_control 15.
 }
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE), 

@@ -68,18 +68,52 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
     writeSizeToFile8(myFile, sw.bytes_written);
   } else {
     if(nthreads <= 1) {
-      CompressBuffer vbuf(myFile, qm);
-      vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
-      vbuf.flush();
-      myFile.seekp(4);
-      writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      if(qm.compress_algorithm == 0) {
+        CompressBuffer<zstd_compress_env> vbuf(myFile, qm);
+        vbuf.appendObj(x);
+        vbuf.flush();
+        myFile.seekp(4);
+        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      } else if(qm.compress_algorithm == 1) {
+        CompressBuffer<lz4_compress_env> vbuf(myFile, qm);
+        vbuf.appendObj(x);
+        vbuf.flush();
+        myFile.seekp(4);
+        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      } else if(qm.compress_algorithm == 2) {
+        CompressBuffer<lz4hc_compress_env> vbuf(myFile, qm);
+        vbuf.appendObj(x);
+        vbuf.flush();
+        myFile.seekp(4);
+        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      } else {
+        throw exception("invalid compression algorithm selected");
+      }
     } else {
-      CompressBuffer_MT vbuf(&myFile, qm, nthreads);
-      vbuf.appendObj(x); // this should be vbuf.append(x); TO DO: rewrite into class structure
-      vbuf.flush();
-      vbuf.ctc.finish();
-      myFile.seekp(4);
-      writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      if(qm.compress_algorithm == 0) {
+        CompressBuffer_MT<zstd_compress_env> vbuf(&myFile, qm, nthreads);
+        vbuf.appendObj(x);
+        vbuf.flush();
+        vbuf.ctc.finish();
+        myFile.seekp(4);
+        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      } else if(qm.compress_algorithm == 1) {
+        CompressBuffer_MT<lz4_compress_env> vbuf(&myFile, qm, nthreads);
+        vbuf.appendObj(x);
+        vbuf.flush();
+        vbuf.ctc.finish();
+        myFile.seekp(4);
+        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      } else if(qm.compress_algorithm == 2) {
+        CompressBuffer_MT<lz4hc_compress_env> vbuf(&myFile, qm, nthreads);
+        vbuf.appendObj(x);
+        vbuf.flush();
+        vbuf.ctc.finish();
+        myFile.seekp(4);
+        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+      } else {
+        throw exception("invalid compression algorithm selected");
+      }
     }
   }
 }
@@ -118,14 +152,29 @@ SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int n
     return dc.processBlock();
   } else {
     if(nthreads <= 1) {
-      Data_Context dc(myFile, qm, use_alt_rep);
-      return dc.processBlock();
+      if(qm.compress_algorithm == 0) {
+        Data_Context<zstd_decompress_env> dc(myFile, qm, use_alt_rep);
+        return dc.processBlock();
+      } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+        Data_Context<lz4_decompress_env> dc(myFile, qm, use_alt_rep);
+        return dc.processBlock();
+      } else {
+        throw exception("Invalid compression algorithm in file");
+      }
     } else {
-      Data_Context_MT dc(&myFile, qm, use_alt_rep, nthreads);
-      SEXP ret = PROTECT( dc.processBlock() ); // is protect unnecessary since we aren't calling any R function before return?
-      dc.dtc.finish();
-      UNPROTECT(1);
-      return ret;
+      if(qm.compress_algorithm == 0) {
+        Data_Context_MT<zstd_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
+        SEXP ret = dc.processBlock(); // is protect unnecessary since we aren't calling any R function before return?
+        dc.dtc.finish();
+        return ret;
+      } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+        Data_Context_MT<lz4_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
+        SEXP ret = dc.processBlock(); // is protect unnecessary since we aren't calling any R function before return?
+        dc.dtc.finish();
+        return ret;
+      } else {
+        throw exception("Invalid compression algorithm in file");
+      }
     }
   }
 }

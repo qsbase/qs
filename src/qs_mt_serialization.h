@@ -64,7 +64,9 @@ std::mutex ThreadStream::_mutex_threadstream{};
 // multi-thread serialization functions
 ////////////////////////////////////////////////////////////////
 
+template <class compress_env> 
 struct Compress_Thread_Context {
+  compress_env cenv;
   std::ofstream* myFile;
   
   std::atomic<uint64_t> blocks_total;
@@ -72,8 +74,6 @@ struct Compress_Thread_Context {
   
   unsigned int nthreads;
   int compress_level;  
-  compress_fun compFun;
-  cbound_fun cbFun;
   std::atomic<bool> done;
   
   std::vector< std::atomic<bool> > data_ready;
@@ -97,7 +97,7 @@ struct Compress_Thread_Context {
         if(done) break;
       }; if(done) break;
       
-      uint64_t zsize = compFun(zblocks[thread_id].data(), zblocks[thread_id].size(), block_pointers[thread_id].first, block_pointers[thread_id].second, compress_level);
+      uint64_t zsize = cenv.compress(zblocks[thread_id].data(), zblocks[thread_id].size(), block_pointers[thread_id].first, block_pointers[thread_id].second, compress_level);
       data_ready[thread_id] = false;
 
       // tout << "data ready to write " << blocks_written << " thread " << thread_id << "\n" << std::flush;
@@ -119,7 +119,7 @@ struct Compress_Thread_Context {
     
     // final check to see if any remaining data
     if(data_ready[thread_id]) {
-      uint64_t zsize = compFun(zblocks[thread_id].data(), zblocks[thread_id].size(), block_pointers[thread_id].first, block_pointers[thread_id].second, compress_level);
+      uint64_t zsize = cenv.compress(zblocks[thread_id].data(), zblocks[thread_id].size(), block_pointers[thread_id].first, block_pointers[thread_id].second, compress_level);
 
       // tout << "final data ready to write " << blocks_written << " thread " << thread_id << "\n" << std::flush;
 
@@ -149,20 +149,8 @@ struct Compress_Thread_Context {
     }
   }
   
-  Compress_Thread_Context(std::ofstream* mf, unsigned int nt, QsMetadata qm) : myFile(mf), blocks_total(0), blocks_written(0) {
+  Compress_Thread_Context(std::ofstream* mf, unsigned int nt, QsMetadata qm) : cenv(compress_env()), myFile(mf), blocks_total(0), blocks_written(0) {
     compress_level = qm.compress_level;
-    if(qm.compress_algorithm == 0) {
-      compFun = &ZSTD_compress;
-      cbFun = &ZSTD_compressBound;
-    } else if(qm.compress_algorithm == 1) {
-      compFun = &LZ4_compress_fun;
-      cbFun = &LZ4_compressBound_fun;
-    } else if(qm.compress_algorithm == 2) {
-      compFun = &LZ4_compress_HC_fun;
-      cbFun = &LZ4_compressBound_fun;
-    } else {
-      throw exception("invalid compression algorithm selected");
-    }
     nthreads = nt - 1;
     done = false;
     
@@ -171,7 +159,7 @@ struct Compress_Thread_Context {
       data_ready[i] = false;
     }
     
-    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(cbFun(BLOCKSIZE)));
+    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(cenv.compressBound(BLOCKSIZE)));
     data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
     block_pointers = std::vector< std::pair<char*, uint64_t> >(nthreads);
     
@@ -220,9 +208,10 @@ struct Compress_Thread_Context {
   }
 };
 
+template <class compress_env> 
 struct CompressBuffer_MT {
   std::ofstream * myFile;
-  Compress_Thread_Context ctc;
+  Compress_Thread_Context<compress_env> ctc;
   QsMetadata qm;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);

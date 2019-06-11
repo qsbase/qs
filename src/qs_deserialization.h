@@ -24,13 +24,49 @@
 // de-serialization functions
 ////////////////////////////////////////////////////////////////
 
+// using an explicit decompress context seems to be marginally slower (zstd v. 1.4.0)
+struct zstd_decompress_env {
+  // ZSTD_DCtx* zcs;
+  // zstd_decompress_env() : zcs(ZSTD_createDCtx()) {}
+  // ~zstd_decompress_env() {
+  //   ZSTD_freeDCtx(zcs);
+  // }
+  size_t decompress( void* dst, size_t dstCapacity,
+                     const void* src, size_t compressedSize) {
+    // return ZSTD_decompress(dst, dstCapacity, src, compressedSize);
+    // return ZSTD_decompressDCtx(zcs, dst, dstCapacity, src, compressedSize);
+    size_t return_value = ZSTD_decompress(dst, dstCapacity, src, compressedSize);
+    if(return_value == ZSTD_CONTENTSIZE_ERROR || return_value == ZSTD_CONTENTSIZE_UNKNOWN) throw exception("zstd decompression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return ZSTD_compressBound(srcSize);
+  }
+};
+
+struct lz4_decompress_env {
+  size_t decompress( void* dst, size_t dstCapacity,
+                     const void* src, size_t compressedSize) {
+    // int return_value = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
+    //                                        reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                                        static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
+    // if(return_value < 0) throw exception("lz4 decompression error");
+    // return return_value;
+    return LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
+                                           reinterpret_cast<char*>(const_cast<void*>(dst)),
+                                           static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
+  }
+  size_t compressBound(size_t srcSize) {
+    return LZ4_compressBound(srcSize);
+  }
+};
+
+template <class decompress_env> 
 struct Data_Context {
   std::ifstream & myFile;
   bool use_alt_rep_bool;
-  
+  decompress_env denv;
   QsMetadata qm;
-  decompress_fun decompFun;
-  cbound_fun cbFun;
   
   uint64_t number_of_blocks;
   std::vector<char> zblock;
@@ -40,21 +76,11 @@ struct Data_Context {
   uint64_t block_i;
   uint64_t block_size;
   std::string temp_string;
-
-  Data_Context(std::ifstream & mf, QsMetadata qm, bool use_alt_rep) : myFile(mf), use_alt_rep_bool(use_alt_rep) {
-    this->qm = qm;
-    if(qm.compress_algorithm == 0) {
-      decompFun = &ZSTD_decompress;
-      cbFun = &ZSTD_compressBound;
-    } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) { // algo == 1
-      decompFun = &LZ4_decompress_fun;
-      cbFun = &LZ4_compressBound_fun;
-    } else {
-      throw exception("invalid compression algorithm selected");
-    }
-    
+  
+  Data_Context(std::ifstream & mf, QsMetadata qm, bool use_alt_rep) : 
+    myFile(mf), use_alt_rep_bool(use_alt_rep), denv(decompress_env()), qm(qm) {
     number_of_blocks = readSizeFromFile8(myFile);
-    zblock = std::vector<char>(cbFun(BLOCKSIZE));
+    zblock = std::vector<char>(denv.compressBound(BLOCKSIZE));
     block = std::vector<char>(BLOCKSIZE);
     data_offset = 0;
     block_i = 0;
@@ -296,7 +322,7 @@ struct Data_Context {
     myFile.read(zsize_ar.data(), 4);
     uint64_t zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
     myFile.read(zblock.data(), zsize);
-    block_size = decompFun(bpointer, BLOCKSIZE, zblock.data(), zsize);
+    block_size = denv.decompress(bpointer, BLOCKSIZE, zblock.data(), zsize);
   }
   void decompress_block() {
     block_i++;
@@ -304,7 +330,7 @@ struct Data_Context {
     myFile.read(zsize_ar.data(), 4);
     uint64_t zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
     myFile.read(zblock.data(), zsize);
-    block_size = decompFun(block.data(), BLOCKSIZE, zblock.data(), zsize);
+    block_size = denv.decompress(block.data(), BLOCKSIZE, zblock.data(), zsize);
     data_offset = 0;
   }
   void getBlockData(char* outp, uint64_t data_size) {
@@ -348,15 +374,16 @@ struct Data_Context {
       number_of_attributes = 0;
     }
     SEXP obj;
+    Protect_Tracker pt = Protect_Tracker();
     switch(obj_type) {
     case VECSXP: 
-      obj = PROTECT(Rf_allocVector(VECSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(VECSXP, r_array_len));  pt++;
       for(uint64_t i=0; i<r_array_len; i++) {
         SET_VECTOR_ELT(obj, i, processBlock());
       }
       break;
     case REALSXP:
-      obj = PROTECT(Rf_allocVector(REALSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(REALSXP, r_array_len));  pt++;
       if(qm.real_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(REAL(obj)), r_array_len*8, 8);
       } else {
@@ -364,7 +391,7 @@ struct Data_Context {
       }
       break;
     case INTSXP:
-      obj = PROTECT(Rf_allocVector(INTSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(INTSXP, r_array_len));  pt++;
       if(qm.int_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(INTEGER(obj)), r_array_len*4, 4);
       } else {
@@ -372,7 +399,7 @@ struct Data_Context {
       }
       break;
     case LGLSXP:
-      obj = PROTECT(Rf_allocVector(LGLSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(LGLSXP, r_array_len));  pt++;
       if(qm.lgl_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(LOGICAL(obj)), r_array_len*4, 4);
       } else {
@@ -380,7 +407,7 @@ struct Data_Context {
       }
       break;
     case CPLXSXP:
-      obj = PROTECT(Rf_allocVector(CPLXSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(CPLXSXP, r_array_len));  pt++;
       if(qm.cplx_shuffle) {
         getShuffleBlockData(reinterpret_cast<char*>(COMPLEX(obj)), r_array_len*16, 8);
       } else {
@@ -388,7 +415,7 @@ struct Data_Context {
       }
       break;
     case RAWSXP:
-      obj = PROTECT(Rf_allocVector(RAWSXP, r_array_len));
+      obj = PROTECT(Rf_allocVector(RAWSXP, r_array_len));  pt++;
       if(r_array_len > 0) getBlockData(reinterpret_cast<char*>(RAW(obj)), r_array_len);
       break;
     case STRSXP:
@@ -419,15 +446,15 @@ struct Data_Context {
               break;
             default:
               ret->encodings[i] = 5;
-              break;
+            break;
             }
             ret->strings[i].resize(r_string_len);
             getBlockData(&(ret->strings[i])[0], r_string_len);
           }
         }
-        obj = PROTECT(stdvec_string::Make(ret, true));
+        obj = PROTECT(stdvec_string::Make(ret, true));  pt++;
       } else {
-        obj = PROTECT(Rf_allocVector(STRSXP, r_array_len));
+        obj = PROTECT(Rf_allocVector(STRSXP, r_array_len));  pt++;
         for(uint64_t i=0; i<r_array_len; i++) {
           uint32_t r_string_len;
           cetype_t string_encoding = CE_NATIVE;
@@ -448,10 +475,10 @@ struct Data_Context {
       break;
     case S4SXP:
     {
-      SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len));
+      SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len));  pt++;
       getBlockData(reinterpret_cast<char*>(RAW(obj_data)), r_array_len);
-      obj = PROTECT(unserializeFromRaw(obj_data));
-      UNPROTECT(2);
+      obj = PROTECT(unserializeFromRaw(obj_data));  pt++;
+      // UNPROTECT(2);
       return obj;
     }
     default: // also NILSXP
@@ -471,7 +498,7 @@ struct Data_Context {
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), processBlock());
       }
     }
-    UNPROTECT(1);
+    // UNPROTECT(1);
     return std::move(obj);
   }
 };
