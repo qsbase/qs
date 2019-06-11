@@ -1,7 +1,5 @@
-﻿qs
+qs
 ================
-
-<!-- <img src="qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px"> -->
 
 [![Build
 Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs)
@@ -41,13 +39,13 @@ df2 <- qread("myfile.qs")
 For R version 3.5 or higher:
 
 ``` r
-# CRAN version (ver. 0.15.1)
+# CRAN version
 install.packages("qs")
 
-# CRAN compile from source with AVX2 support (recommended)
-remotes::install_cran("qs", configure.args="--with-simd=AVX2")
+# CRAN version compile from source with AVX2 support (recommended)
+remotes::install_cran("qs", type="source", configure.args="--with-simd=AVX2")
 
-# Experimental (ver. 0.16.1)
+# Experimental
 remotes::install_github("traversc/qs", configure.args="--with-simd=AVX2")
 ```
 
@@ -137,11 +135,11 @@ parameters:
 
 ### Serializing
 
-![](vignettes/df_bench_write.png "df_bench_write")
+![](df_bench_write.png "vignettes/df_bench_write")
 
 ### De-serializing
 
-![](vignettes/df_bench_read.png "df_bench_read")
+![](df_bench_read.png "vignettes/df_bench_read")
 
 Benchmarking write and read speed is a bit tricky and depends highly on
 a number of factors, such as operating system, the hardware being run
@@ -152,8 +150,7 @@ memory caches.
 Generally speaking, `qs` and `fst` are considerably faster than
 `saveRDS` regardless of using single threaded or multi-threaded
 compression. `qs` also manages to achieve superior compression ratio
-through various optimizations (e.g. see "Byte Shuffle" section
-below).
+through various optimizations (e.g. see “Byte Shuffle” section below).
 
 ## Byte Shuffle
 
