@@ -29,7 +29,7 @@ struct ZSTD_streamWrite {
     while(zin.pos < zin.size) {
       zout.pos = 0;
       size_t return_value = ZSTD_compressStream(zcs, &zout, &zin);
-      if(ZSTD_isError(return_value)) throw exception("zstd stream compression error; output is likely corrupted");
+      if(ZSTD_isError(return_value)) throw std::runtime_error("zstd stream compression error; output is likely corrupted");
       if(zout.pos > 0) myFile.write(reinterpret_cast<char*>(zout.dst), zout.pos);
     }
   }
@@ -38,74 +38,11 @@ struct ZSTD_streamWrite {
     do {
       zout.pos = 0;
       remain = ZSTD_flushStream(zcs, &zout);
-      if(ZSTD_isError(remain)) throw exception("zstd stream compression error; output is likely corrupted");
+      if(ZSTD_isError(remain)) throw std::runtime_error("zstd stream compression error; output is likely corrupted");
       if(zout.pos > 0) myFile.write(reinterpret_cast<char*>(zout.dst), zout.pos);
     } while (remain != 0);
   }
 };
-
-// struct brotli_streamWrite {
-//   std::ofstream & myFile;
-//   QsMetadata qm;
-//   uint64_t bytes_written;
-//   std::vector<char> outblock;
-//   BrotliEncoderState* zcs;
-//   brotli_streamWrite(std::ofstream & mf, QsMetadata qm) : myFile(mf), qm(qm) {
-//     bytes_written = 0;
-//     outblock = std::vector<char>(BLOCKSIZE);
-//     zcs = BrotliEncoderCreateInstance(NULL, NULL, NULL);
-//     BrotliEncoderSetParameter(zcs, BROTLI_PARAM_QUALITY, static_cast<uint32_t>(qm.compress_level));
-//     BrotliEncoderSetParameter(zcs, BROTLI_PARAM_LGWIN, 30);
-//   }
-//   ~brotli_streamWrite() {
-//     BrotliEncoderDestroyInstance(zcs);
-//   }
-//   void push(char * data, size_t length) {
-//     const uint8_t * next_in = reinterpret_cast<uint8_t*>(data);
-//     bytes_written += length;
-//     uint8_t * next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//     size_t available_out = outblock.size();
-//     while(length > 0) {
-//       BrotliEncoderCompressStream(zcs, BROTLI_OPERATION_PROCESS, 
-//                                   &length, &next_in, 
-//                                   &available_out, &next_out, NULL);
-//       if(available_out == 0) {
-//         myFile.write(outblock.data(), outblock.size());
-//         available_out = outblock.size();
-//         next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//       }
-//     }
-//     if(available_out < outblock.size()) {
-//       myFile.write(outblock.data(), outblock.size() - available_out);
-//     }
-//   }
-//   void flush() {
-//     // while(BrotliEncoderHasMoreOutput(zcs)) {
-//     //   size_t temp = 0;
-//     //   uint8_t * next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//     //   size_t available_out = outblock.size();
-//     //   BrotliEncoderCompressStream(zcs, BROTLI_OPERATION_FLUSH, &temp, 
-//     //                               NULL, &available_out, reinterpret_cast<uint8_t**>(&next_out), NULL);
-//     //   if(available_out != outblock.size()) {
-//     //     myFile.write(outblock.data(), outblock.size());
-//     //     available_out = outblock.size();
-//     //     next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//     //   }
-//     // }
-//     while(! BrotliEncoderIsFinished(zcs)) {
-//       size_t temp = 0;
-//       uint8_t * next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//       size_t available_out = outblock.size();
-//       BrotliEncoderCompressStream(zcs, BROTLI_OPERATION_FINISH, &temp, 
-//                                   NULL, &available_out, reinterpret_cast<uint8_t**>(&next_out), NULL);
-//       if(available_out != outblock.size()) {
-//         myFile.write(outblock.data(), outblock.size() - available_out);
-//         available_out = outblock.size();
-//         next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//       }
-//     }
-//   }
-// };
 
 template <class StreamClass> 
 struct CompressBufferStream {
@@ -238,7 +175,7 @@ struct CompressBufferStream {
       sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&null_header)), 1);
       return;
     default:
-      throw exception("something went wrong writing object header");  // should never reach here
+      throw std::runtime_error("something went wrong writing object header");  // should never reach here
     }
   }
   

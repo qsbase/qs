@@ -355,31 +355,30 @@ struct QsMetadata {
     } else if(preset == "archive") {
       this->compress_level = 14;
       shuffle_control = 15;
-      compress_algorithm = 0;
       compress_algorithm = 3;
     } else if(preset == "custom") {
       if(algorithm == "zstd") {
         compress_algorithm = 0;
         this->compress_level = compress_level;
-        if(compress_level > 22 || compress_level < -50) throw exception("zstd compress_level must be an integer between -50 and 22");
+        if(compress_level > 22 || compress_level < -50) throw std::runtime_error("zstd compress_level must be an integer between -50 and 22");
       } else if(algorithm == "zstd_stream") {
         compress_algorithm = 3;
         this->compress_level = compress_level;
-        if(compress_level > 22 || compress_level < -50) throw exception("zstd compress_level must be an integer between -50 and 22");
+        if(compress_level > 22 || compress_level < -50) throw std::runtime_error("zstd compress_level must be an integer between -50 and 22");
       } else if(algorithm == "lz4") {
         compress_algorithm = 1;
         this->compress_level = compress_level;
-        if(compress_level < 1) throw exception("lz4 compress_level must be an integer greater than 1");
+        if(compress_level < 1) throw std::runtime_error("lz4 compress_level must be an integer greater than 1");
       }  else if(algorithm == "lz4hc") {
         compress_algorithm = 2;
         this->compress_level = compress_level;
-        if(compress_level < 1 || compress_level > 12) throw exception("lz4hc compress_level must be an integer between 1 and 12");
+        if(compress_level < 1 || compress_level > 12) throw std::runtime_error("lz4hc compress_level must be an integer between 1 and 12");
       } else {
-        throw exception("algorithm must be one of zstd, lz4, lz4hc or zstd_stream");
+        throw std::runtime_error("algorithm must be one of zstd, lz4, lz4hc or zstd_stream");
       }
-      if(shuffle_control < 0 || shuffle_control > 15) throw exception("shuffle_control must be an integer between 0 and 15");
+      if(shuffle_control < 0 || shuffle_control > 15) throw std::runtime_error("shuffle_control must be an integer between 0 and 15");
     } else {
-      throw exception("preset must be one of fast, balanced (default), high, archive or custom");
+      throw std::runtime_error("preset must be one of fast, balanced (default), high, archive or custom");
     }
     lgl_shuffle = shuffle_control & 0x01;
     int_shuffle = shuffle_control & 0x02;
@@ -399,7 +398,7 @@ struct QsMetadata {
     std::array<unsigned char,4> reserve_bits;
     myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
     unsigned char sys_endian = is_big_endian() ? 1 : 0;
-    if(reserve_bits[3] != sys_endian) throw exception("Endian of system doesn't match file endian");
+    if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
     compress_algorithm = reserve_bits[2] >> 4;
     compress_level = 1;
     lgl_shuffle = reserve_bits[2] & 0x01;
@@ -424,42 +423,6 @@ struct QsMetadata {
   }
 };
 
-
-// thin SEXP wrapper that auto de-protects
-// struct SEXPW {
-//   SEXP x;
-//   SEXPW() {}
-//   SEXPW(SEXP _x) : x(_x) {}
-//   ~SEXPW() {
-//     UNPROTECT(1);
-//   }
-//   operator SEXP() const {return x;} // implicit conversion to SEXP
-//   void operator=(SEXP r_value) {
-//     x = r_value;
-//   }
-// };
-
-// R stack tracker using RAII
-// protection handling using RAII should have no issues with longjmp
-// ref: https://developer.r-project.org/Blog/public/2019/03/28/use-of-c---in-packages/
-// "R restores the protection stack depth before taking a long jump,
-// so if a C++ destructor includes say UNPROTECT(1) call to restore 
-// the protection stack depth, it does not matter it is not executed, 
-// because R will do that automatically."
-// 
-// There is also a limit of 10,000 on the protection stack.  
-// Realistically, it should never occur in this package as you'd need a list with depth 10000
-// Ref: https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Garbage-Collection
-struct Protect_Tracker {
-  unsigned int n;
-  Protect_Tracker() : n(0) {}
-  ~Protect_Tracker() {
-    UNPROTECT(n);
-  }
-  void operator++(int) {
-    n++;
-  }
-};
 
 // Normalize lz4/zstd function arguments so we can use function types
 typedef size_t (*compress_fun)(void*, size_t, const void*, size_t, int);
@@ -493,5 +456,266 @@ size_t LZ4_decompress_fun( void* dst, size_t dstCapacity,
                              static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
   
 }
+
+////////////////////////////////////////////////////////////////
+// common utility functions for serialization
+////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////
+// common utility functions for deserialization
+////////////////////////////////////////////////////////////////
+
+// R stack tracker using RAII
+// protection handling using RAII should have no issues with longjmp
+// ref: https://developer.r-project.org/Blog/public/2019/03/28/use-of-c---in-packages/
+// "R restores the protection stack depth before taking a long jump,
+// so if a C++ destructor includes say UNPROTECT(1) call to restore 
+// the protection stack depth, it does not matter it is not executed, 
+// because R will do that automatically."
+// 
+// There is also a limit of 10,000 on the protection stack.  
+// Theoretically, we'd need to track it globally to be 100% error proof.  
+// Realistically, it should never occur in this package as you'd need a list with depth 10,000.
+// Ref: https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Garbage-Collection
+struct Protect_Tracker {
+  unsigned int n;
+  Protect_Tracker() : n(0) {}
+  ~Protect_Tracker() {
+    UNPROTECT(n);
+  }
+  void operator++(int) {
+    n++;
+  }
+};
+
+inline void readHeader_common(SEXPTYPE & object_type, uint64_t & r_array_len, uint64_t & data_offset, char* header) {
+  unsigned char h5 = reinterpret_cast<unsigned char*>(header)[data_offset] & 0xE0;
+  switch(h5) {
+  case numeric_header_5:
+    r_array_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    object_type = REALSXP;
+    return;
+  case list_header_5:
+    r_array_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    object_type = VECSXP;
+    return;
+  case integer_header_5:
+    r_array_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    object_type = INTSXP;
+    return;
+  case logical_header_5:
+    r_array_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    object_type = LGLSXP;
+    return;
+  case character_header_5:
+    r_array_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    object_type = STRSXP;
+    return;
+  case attribute_header_5:
+    r_array_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    object_type = ANYSXP;
+    return;
+  }
+  unsigned char hd = reinterpret_cast<unsigned char*>(header)[data_offset];
+  switch(hd) {
+  case numeric_header_8:
+    r_array_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+    data_offset += 2;
+    object_type = REALSXP;
+    return;
+  case numeric_header_16:
+    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
+    data_offset += 3;
+    object_type = REALSXP;
+    return;
+  case numeric_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = REALSXP;
+    return;
+  case numeric_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = REALSXP;
+    return;
+  case list_header_8:
+    r_array_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+    data_offset += 2;
+    object_type = VECSXP;
+    return;
+  case list_header_16:
+    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
+    data_offset += 3;
+    object_type = VECSXP;
+    return;
+  case list_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = VECSXP;
+    return;
+  case list_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = VECSXP;
+    return;
+  case integer_header_8:
+    r_array_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+    data_offset += 2;
+    object_type = INTSXP;
+    return;
+  case integer_header_16:
+    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
+    data_offset += 3;
+    object_type = INTSXP;
+    return;
+  case integer_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = INTSXP;
+    return;
+  case integer_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = INTSXP;
+    return;
+  case logical_header_8:
+    r_array_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+    data_offset += 2;
+    object_type = LGLSXP;
+    return;
+  case logical_header_16:
+    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
+    data_offset += 3;
+    object_type = LGLSXP;
+    return;
+  case logical_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = LGLSXP;
+    return;
+  case logical_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = LGLSXP;
+    return;
+  case raw_header_32:
+    r_array_len = unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = RAWSXP;
+    return;
+  case raw_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = RAWSXP;
+    return;
+  case character_header_8:
+    r_array_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+    data_offset += 2;
+    object_type = STRSXP;
+    return;
+  case character_header_16:
+    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
+    data_offset += 3;
+    object_type = STRSXP;
+    return;
+  case character_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = STRSXP;
+    return;
+  case character_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = STRSXP;
+    return;
+  case complex_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = CPLXSXP;
+    return;
+  case complex_header_64:
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = CPLXSXP;
+    return;
+  case null_header:
+    r_array_len =  0;
+    data_offset += 1;
+    object_type = NILSXP;
+    return;
+  case attribute_header_8:
+    r_array_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+    data_offset += 2;
+    object_type = ANYSXP;
+    return;
+  case attribute_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = ANYSXP;
+    return;
+  case nstype_header_32:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 5;
+    object_type = S4SXP;
+    return;
+  case nstype_header_64:
+    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    data_offset += 9;
+    object_type = S4SXP;
+    return;
+  }
+  // additional types
+  throw std::runtime_error("something went wrong (reading object header)");
+}
+
+inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, uint64_t & data_offset, char* header) {
+  unsigned char enc = reinterpret_cast<unsigned char*>(header)[data_offset] & 0xC0;
+  switch(enc) {
+  case string_enc_native:
+    ce_enc = CE_NATIVE; break;
+  case string_enc_utf8:
+    ce_enc = CE_UTF8; break;
+  case string_enc_latin1:
+    ce_enc = CE_LATIN1; break;
+  case string_enc_bytes:
+    ce_enc = CE_BYTES; break;
+  }
+  
+  if((reinterpret_cast<unsigned char*>(header)[data_offset] & 0x20) == string_header_5) {
+    r_string_len = *reinterpret_cast<uint8_t*>(header+data_offset) & 0x1F ;
+    data_offset += 1;
+    return;
+  } else {
+    unsigned char hd = reinterpret_cast<unsigned char*>(header)[data_offset] & 0x1F;
+    switch(hd) {
+    case string_header_8:
+      r_string_len =  *reinterpret_cast<uint8_t*>(header+data_offset+1) ;
+      data_offset += 2;
+      return;
+    case string_header_16:
+      r_string_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
+      data_offset += 3;
+      return;
+    case string_header_32:
+      r_string_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+      data_offset += 5;
+      return;
+    case string_header_NA:
+      r_string_len = NA_STRING_LENGTH;
+      data_offset += 1;
+      return;
+    }
+  } 
+  throw std::runtime_error("something went wrong (reading string header)");
+}
+
 
 #endif

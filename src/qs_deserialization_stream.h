@@ -36,7 +36,7 @@ struct ZSTD_streamRead {
   inline void ZSTD_decompressStream_count(ZSTD_DStream* zds, ZSTD_outBuffer * zout, ZSTD_inBuffer * zin) {
     uint64_t temp = zout->pos;
     size_t return_value = ZSTD_decompressStream(zds, zout, zin);
-    if(ZSTD_isError(return_value)) throw exception("zstd stream decompression error");
+    if(ZSTD_isError(return_value)) throw std::runtime_error("zstd stream decompression error");
     decompressed_bytes_read += zout->pos - temp;
   }
   void getBlock(uint64_t & blocksize, uint64_t & bytesused) {
@@ -95,7 +95,10 @@ struct ZSTD_streamRead {
           size_t current_pos = zout.pos;
           ZSTD_decompressStream_count(zds, &zout, &zin);
           // std::cout << zin.pos << "/" << zin.size << " zin " << zout.pos << "/" << zout.size << " zout flush\n";
-          if(zout.pos == current_pos) break; // no more data, also we should throw an error as more data was expected
+          if(zout.pos == current_pos) {
+            Rcpp::Rcerr << "End of file reached, but more data was expected (object may be incomplete)" << std::endl;
+            break; // no more data, also we should throw an error as more data was expected
+          }
         }
       }
       bytesused = 0;
@@ -111,97 +114,6 @@ struct ZSTD_streamRead {
     }
   }
 };
-
-// struct brotli_streamRead {
-//   std::ifstream & myFile;
-//   QsMetadata qm;
-//   uint64_t minblocksize;
-//   uint64_t maxblocksize;
-//   uint64_t decompressed_bytes_total;
-//   std::vector<char> outblock;
-//   std::vector<char> inblock;
-//   size_t available_in;
-//   size_t available_out;
-//   size_t total_out;
-//   const uint8_t * next_in;
-//   uint8_t * next_out;
-//   BrotliDecoderState* zds;
-//   brotli_streamRead(std::ifstream & mf, QsMetadata qm, uint64_t dbt) : 
-//     myFile(mf), qm(qm), decompressed_bytes_total(dbt) {
-//     size_t outblocksize = 2*BLOCKSIZE;
-//     size_t inblocksize = 2*BLOCKSIZE;
-//     outblock = std::vector<char>(outblocksize);
-//     inblock = std::vector<char>(inblocksize);
-//     minblocksize = BLOCKSIZE / 2;
-//     maxblocksize = 2*BLOCKSIZE;
-//     available_in = 0;
-//     available_out = 0;
-//     total_out = 0;
-//     next_in = reinterpret_cast<uint8_t*>(inblock.data());
-//     next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//     zds = BrotliDecoderCreateInstance(NULL, NULL, NULL);
-//   }
-//   ~brotli_streamRead() {
-//     BrotliDecoderDestroyInstance(zds);
-//   }
-//   void getBlock(uint64_t & blocksize, uint64_t & bytesused) {
-//     if(total_out >= decompressed_bytes_total) return;
-//     if(blocksize > bytesused) {
-//       std::memcpy(outblock.data(), outblock.data() + bytesused, blocksize - bytesused); 
-//       available_out = outblock.size() - (blocksize - bytesused);
-//       next_out = reinterpret_cast<uint8_t*>(outblock.data()) + (blocksize - bytesused);
-//     } else {
-//       available_out = outblock.size();
-//       next_out = reinterpret_cast<uint8_t*>(outblock.data());
-//     }
-//     while(outblock.size() - available_out < minblocksize) {
-//       if(available_in > 0) {
-//         BrotliDecoderDecompressStream(zds, &available_in, &next_in, &available_out, &next_out, &total_out);
-//       } else if(! myFile.eof()) {
-//         myFile.read(inblock.data(), inblock.size());
-//         available_in = myFile.gcount();
-//         next_in = reinterpret_cast<uint8_t*>(inblock.data());
-//         if(available_in == 0) continue; // EOF
-//         BrotliDecoderDecompressStream(zds, &available_in, &next_in, &available_out, &next_out, &total_out);
-//       } else {
-//         BrotliDecoderResult ret = BrotliDecoderDecompressStream(zds, &available_in, &next_in, &available_out, &next_out, &total_out);
-//         if( ret == BROTLI_DECODER_RESULT_SUCCESS ) break; // no more data
-//       }
-//     }
-//     blocksize = outblock.size() - available_out;
-//     bytesused = 0;
-//   }
-//   void copyData(uint64_t & blocksize, uint64_t & bytesused, char* dst, uint64_t dst_size) {
-//     if(dst_size > blocksize - bytesused) {
-//       std::memcpy(dst, outblock.data() + bytesused, blocksize - bytesused);
-//       next_out = reinterpret_cast<uint8_t*>(dst) + blocksize - bytesused;
-//       available_out = dst_size - (blocksize - bytesused);
-//       while(available_out > 0) {
-//         if(available_in > 0) {
-//           BrotliDecoderDecompressStream(zds, &available_in, &next_in, &available_out, &next_out, &total_out);
-//         } else if(! myFile.eof()) {
-//           myFile.read(inblock.data(), inblock.size());
-//           available_in = myFile.gcount();
-//           next_in = reinterpret_cast<uint8_t*>(inblock.data());
-//           if(available_in == 0) continue; // EOF
-//           BrotliDecoderDecompressStream(zds, &available_in, &next_in, &available_out, &next_out, &total_out);
-//         } else {
-//           BrotliDecoderResult ret = BrotliDecoderDecompressStream(zds, &available_in, &next_in, &available_out, &next_out, &total_out);
-//           if( ret == BROTLI_DECODER_RESULT_SUCCESS ) break; // no more data
-//         }
-//       }
-//       bytesused = 0;
-//       blocksize = 0;
-//       getBlock(blocksize, bytesused);
-//     } else {
-//       std::memcpy(dst, outblock.data() + bytesused, dst_size);
-//       bytesused += dst_size;
-//       if(blocksize - bytesused < BLOCKRESERVE) {
-//         getBlock(blocksize, bytesused);
-//       }
-//     }
-//   }
-// };
 
 template <class DestreamClass> 
 struct Data_Context_Stream {
@@ -405,7 +317,7 @@ struct Data_Context_Stream {
       return;
     }
     // additional types
-    throw exception("something went wrong (reading object header)");
+    throw std::runtime_error("something went wrong (reading object header)");
   }
   void readStringHeader(uint32_t & r_string_len, cetype_t & ce_enc) {
     if(data_offset + BLOCKRESERVE >= block_size) dsc.getBlock(block_size, data_offset);
@@ -447,7 +359,7 @@ struct Data_Context_Stream {
         return;
       }
     } 
-    throw exception("something went wrong (reading string header)");
+    throw std::runtime_error("something went wrong (reading string header)");
   }
   void getBlockData(char* outp, uint64_t data_size) {
     // std::cout << data_size << " get block\n";

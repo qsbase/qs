@@ -44,7 +44,7 @@ The `algorithm` parameter, `compression_level` and `shuffle_control`
 parameters are ignored unless `preset` is "custom".  "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.  
 "balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.  
 "high" preset: algorithm zstd, compress_level 4, shuffle_control 15.  
-"archive" preset: algorithm zstd_stream, compress_level 14, shuffle_control 15.
+"archive" preset: algorithm zstd_stream, compress_level 14, shuffle_control 15. (zstd_stream is currently single threaded only)
 }
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE), 

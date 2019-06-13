@@ -35,7 +35,7 @@ struct zstd_compress_env {
                    int compressionLevel) {
     // return ZSTD_compressCCtx(zcs, dst, dstCapacity, src, srcSize, compressionLevel);
     size_t return_value = ZSTD_compress(dst, dstCapacity, src, srcSize, compressionLevel);
-    if(ZSTD_isError(return_value)) throw exception("zstd compression error");
+    if(ZSTD_isError(return_value)) throw std::runtime_error("zstd compression error");
     return return_value;
   }
   size_t compressBound(size_t srcSize) {
@@ -60,7 +60,7 @@ struct lz4_compress_env {
                                          reinterpret_cast<char*>(const_cast<void*>(dst)),
                                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
                                          compressionLevel);
-    if(return_value == 0) throw exception("lz4 compression error");
+    if(return_value == 0) throw std::runtime_error("lz4 compression error");
     return return_value;
   }
   size_t compressBound(size_t srcSize) {
@@ -85,7 +85,7 @@ struct lz4hc_compress_env {
                                          reinterpret_cast<char*>(const_cast<void*>(dst)),
                                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
                                          compressionLevel);
-    if(return_value == 0) throw exception("lz4hc compression error");
+    if(return_value == 0) throw std::runtime_error("lz4hc compression error");
     return return_value;
   }
   size_t compressBound(size_t srcSize) {
@@ -259,7 +259,7 @@ struct CompressBuffer {
       append(reinterpret_cast<char*>(const_cast<unsigned char*>(&null_header)), 1);
       return;
     default:
-      throw exception("something went wrong writing object header");  // should never reach here
+      throw std::runtime_error("something went wrong writing object header");  // should never reach here
     }
   }
   

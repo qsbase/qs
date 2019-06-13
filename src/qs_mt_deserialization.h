@@ -388,7 +388,7 @@ struct Data_Context_MT {
       return;
     }
     // additional types
-    throw exception("something went wrong (reading object header)");
+    throw std::runtime_error("something went wrong (reading object header)");
   }
   void readStringHeader(uint32_t & r_string_len, cetype_t & ce_enc) {
     if(data_offset >= block_size) decompress_block();
@@ -430,7 +430,7 @@ struct Data_Context_MT {
         return;
       }
     } 
-    throw exception("something went wrong (reading string header)");
+    throw std::runtime_error("something went wrong (reading string header)");
   }
   void decompress_direct(char* bpointer) {
     dtc.decompress_data_direct(bpointer);

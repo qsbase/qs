@@ -53,13 +53,13 @@ bool is_big_endian()
 void c_qsave(RObject x, std::string file, std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15, int nthreads=1) {
   std::ofstream myFile(file.c_str(), std::ios::out | std::ios::binary);
   if(!myFile) {
-    throw exception("Failed to open file");
+    throw std::runtime_error("Failed to open file");
   }
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control);
   qm.writeToFile(myFile, shuffle_control);
   writeSizeToFile8(myFile, 0); // number of compressed blocks
-  if(algorithm == "zstd_stream") {
-    if(nthreads > 1) Rcpp::Rcerr << "zstd_stream currently supports only 1 thread" << std::endl;
+  if(qm.compress_algorithm == 3) {
+    // if(nthreads > 1) Rcpp::Rcerr << "zstd_stream currently supports only 1 thread" << std::endl;
     ZSTD_streamWrite sw(myFile, qm);
     CompressBufferStream<ZSTD_streamWrite> vbuf(sw, qm);
     vbuf.pushObj(x);
@@ -87,7 +87,7 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else {
-        throw exception("invalid compression algorithm selected");
+        throw std::runtime_error("invalid compression algorithm selected");
       }
     } else {
       if(qm.compress_algorithm == 0) {
@@ -112,7 +112,7 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else {
-        throw exception("invalid compression algorithm selected");
+        throw std::runtime_error("invalid compression algorithm selected");
       }
     }
   }
@@ -122,7 +122,7 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
 bool c_qinspect(std::string file) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw exception("Failed to open file");
+    throw std::runtime_error("Failed to open file");
   }
   QsMetadata qm(myFile);
   if(qm.compress_algorithm == 3) {
@@ -138,11 +138,11 @@ bool c_qinspect(std::string file) {
 SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int nthreads=1) {
   if(inspect) {
     bool fcheck = c_qinspect(file);
-    if(!fcheck) throw exception("File inspection failed");
+    if(!fcheck) throw std::runtime_error("File inspection failed");
   }
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw exception("Failed to open file");
+    throw std::runtime_error("Failed to open file");
   }
   QsMetadata qm(myFile);
   if(qm.compress_algorithm == 3) { // zstd_stream
@@ -159,7 +159,7 @@ SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int n
         Data_Context<lz4_decompress_env> dc(myFile, qm, use_alt_rep);
         return dc.processBlock();
       } else {
-        throw exception("Invalid compression algorithm in file");
+        throw std::runtime_error("Invalid compression algorithm in file");
       }
     } else {
       if(qm.compress_algorithm == 0) {
@@ -173,7 +173,7 @@ SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int n
         dc.dtc.finish();
         return ret;
       } else {
-        throw exception("Invalid compression algorithm in file");
+        throw std::runtime_error("Invalid compression algorithm in file");
       }
     }
   }
@@ -183,12 +183,12 @@ SEXP c_qread(std::string file, bool use_alt_rep=false, bool inspect=false, int n
 RObject c_qdump(std::string file) {
   std::ifstream myFile(file.c_str(), std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw exception("Failed to open file");
+    throw std::runtime_error("Failed to open file");
   }
   std::array<unsigned char,4> reserve_bits;
   myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
   char sys_endian = is_big_endian() ? 1 : 0;
-  if(reserve_bits[3] != sys_endian) throw exception("Endian of system doesn't match file endian");
+  if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
   
   unsigned char algo_control = reserve_bits[2];
   decompress_fun decompFun;
@@ -256,7 +256,7 @@ int lz4_compress_bound(int size) {
 
 // [[Rcpp::export]]
 std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level) {
-  if(compress_level > 22 || compress_level < -50) throw exception("compress_level must be an integer between -50 and 22");
+  if(compress_level > 22 || compress_level < -50) throw std::runtime_error("compress_level must be an integer between -50 and 22");
   uint64_t zsize = ZSTD_compressBound(x.size());
   char* xdata = reinterpret_cast<char*>(RAW(x));
   std::vector<unsigned char> ret(zsize);
@@ -279,7 +279,7 @@ RawVector zstd_decompress_raw(RawVector x) {
 
 // [[Rcpp::export]]
 std::vector<unsigned char> lz4_compress_raw(RawVector x, int compress_level) {
-  if(compress_level < 1) throw exception("compress_level must be an integer greater than 1");
+  if(compress_level < 1) throw std::runtime_error("compress_level must be an integer greater than 1");
   uint64_t zsize = LZ4_compressBound(x.size());
   char* xdata = reinterpret_cast<char*>(RAW(x));
   std::vector<unsigned char> ret(zsize);
@@ -307,7 +307,7 @@ std::vector<unsigned char> lz4_decompress_raw(RawVector x) {
       break;
     }
   }
-  if(decomp < 0) throw exception("lz4 decompression failed");
+  if(decomp < 0) throw std::runtime_error("lz4 decompression failed");
   ret.resize(decomp);
   return ret;
 }
@@ -315,13 +315,13 @@ std::vector<unsigned char> lz4_decompress_raw(RawVector x) {
 // [[Rcpp::export]]
 std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesofsize) {
 #if defined (__AVX2__)
-  Rcout << "AVX2" << std::endl;
+  Rcpp::Rcerr << "AVX2" << std::endl;
 #elif defined (__SSE2__)
-  Rcout << "SSE2" << std::endl;
+  Rcpp::Rcerr << "SSE2" << std::endl;
 #else
-  Rcout << "no SIMD" << std::endl;
+  Rcpp::Rcerr << "no SIMD" << std::endl;
 #endif
-  if(bytesofsize != 4 && bytesofsize != 8) throw exception("bytesofsize must be 4 or 8");
+  if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
   size_t blocksize = x.size();
   std::vector<uint8_t> xshuf(blocksize);
   blosc_shuffle(x.data(), xshuf.data(), blocksize, bytesofsize);
@@ -334,13 +334,13 @@ std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesof
 // [[Rcpp::export]]
 std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytesofsize) {
 #if defined (__AVX2__)
-  Rcout << "AVX2" << std::endl;
+  Rcpp::Rcerr << "AVX2" << std::endl;
 #elif defined (__SSE2__)
-  Rcout << "SSE2" << std::endl;
+  Rcpp::Rcerr << "SSE2" << std::endl;
 #else
-  Rcout << "no SIMD" << std::endl;
+  Rcpp::Rcerr << "no SIMD" << std::endl;
 #endif
-  if(bytesofsize != 4 && bytesofsize != 8) throw exception("bytesofsize must be 4 or 8");
+  if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
   size_t blocksize = x.size();
   std::vector<uint8_t> xshuf(blocksize);
   blosc_unshuffle(x.data(), xshuf.data(), blocksize, bytesofsize);

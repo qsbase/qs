@@ -31,12 +31,17 @@ struct zstd_decompress_env {
   // ~zstd_decompress_env() {
   //   ZSTD_freeDCtx(zcs);
   // }
+  uint64_t bound;
+  zstd_decompress_env() : bound(ZSTD_compressBound(BLOCKSIZE)) {}
   size_t decompress( void* dst, size_t dstCapacity,
                      const void* src, size_t compressedSize) {
     // return ZSTD_decompress(dst, dstCapacity, src, compressedSize);
     // return ZSTD_decompressDCtx(zcs, dst, dstCapacity, src, compressedSize);
+    if(compressedSize > bound) throw std::runtime_error("Malformed compress block: compressed size > compress bound");
+    // std::cout << "decompressing " << dst << " " << dstCapacity << " " << src << " " << compressedSize << "\n";
     size_t return_value = ZSTD_decompress(dst, dstCapacity, src, compressedSize);
-    if(return_value == ZSTD_CONTENTSIZE_ERROR || return_value == ZSTD_CONTENTSIZE_UNKNOWN) throw exception("zstd decompression error");
+    if(ZSTD_isError(return_value)) throw std::runtime_error("zstd decompression error");
+    if(return_value > BLOCKSIZE) throw std::runtime_error("Malformed compress block: decompressed size > max blocksize " + std::to_string(return_value));
     return return_value;
   }
   size_t compressBound(size_t srcSize) {
@@ -45,16 +50,20 @@ struct zstd_decompress_env {
 };
 
 struct lz4_decompress_env {
+  uint64_t bound;
+  lz4_decompress_env() : bound(LZ4_compressBound(BLOCKSIZE)) {}
   size_t decompress( void* dst, size_t dstCapacity,
                      const void* src, size_t compressedSize) {
-    // int return_value = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
-    //                                        reinterpret_cast<char*>(const_cast<void*>(dst)),
-    //                                        static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
-    // if(return_value < 0) throw exception("lz4 decompression error");
-    // return return_value;
-    return LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
+    if(compressedSize > bound) throw std::runtime_error("Malformed compress block: compressed size > compress bound");
+    int return_value = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
                                            reinterpret_cast<char*>(const_cast<void*>(dst)),
                                            static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
+    if(return_value < 0) throw std::runtime_error("lz4 decompression error");
+    if(return_value > BLOCKSIZE) throw std::runtime_error("Malformed compress block: decompressed size > max blocksize" + std::to_string(return_value));
+    return return_value;
+    // return LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
+    //                                        reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                                        static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
   }
   size_t compressBound(size_t srcSize) {
     return LZ4_compressBound(srcSize);
@@ -272,7 +281,7 @@ struct Data_Context {
       return;
     }
     // additional types
-    throw exception("something went wrong (reading object header)");
+    throw std::runtime_error("something went wrong (reading object header)");
   }
   void readStringHeader(uint32_t & r_string_len, cetype_t & ce_enc) {
     if(data_offset >= block_size) decompress_block();
@@ -314,7 +323,7 @@ struct Data_Context {
         return;
       }
     } 
-    throw exception("something went wrong (reading string header)");
+    throw std::runtime_error("something went wrong (reading string header)");
   }
   void decompress_direct(char* bpointer) {
     block_i++;
@@ -366,6 +375,7 @@ struct Data_Context {
     SEXPTYPE obj_type;
     uint64_t r_array_len;
     readHeader(obj_type, r_array_len);
+    // std::cout << obj_type << " " << r_array_len << "\n";
     uint64_t number_of_attributes;
     if(obj_type == ANYSXP) {
       number_of_attributes = r_array_len;

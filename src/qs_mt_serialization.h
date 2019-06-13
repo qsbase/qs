@@ -386,7 +386,7 @@ struct CompressBuffer_MT {
       append(reinterpret_cast<char*>(const_cast<unsigned char*>(&null_header)), 1);
       return;
     default:
-      throw exception("something went wrong writing object header");  // should never reach here
+      throw std::runtime_error("something went wrong writing object header");  // should never reach here
     }
   }
   
