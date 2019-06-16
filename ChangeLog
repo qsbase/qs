@@ -1,9 +1,10 @@
-Version 0.16.2 (2019-6-11)
-
+Version 0.16.2 (2019-6-15)
+   * Added `Set_elt` method for alt-rep string class (https://github.com/traversc/qs/issues/9)
    * Code cleanup:
       * Additional error checking during compression and de-compression
-      * Use of templates instead of function pointers fo
-      * Use of RAII for protection stack handling
+	  * Use of RAII for protection stack handling
+      * Use of templates instead of function pointers for compression and decompression
+	  * Moved some functions to qs_common.h as templates to avoid code redundancy
 
 Version 0.16.1 (2019-5-15)
 

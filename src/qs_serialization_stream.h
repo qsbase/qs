@@ -33,6 +33,11 @@ struct ZSTD_streamWrite {
       if(zout.pos > 0) myFile.write(reinterpret_cast<char*>(zout.dst), zout.pos);
     }
   }
+  template<typename POD>
+  void push_pod(POD pod) {
+    push(reinterpret_cast<char*>(&pod), sizeof(pod));
+  }
+  
   void flush() {
     size_t remain;
     do {
@@ -61,173 +66,16 @@ struct CompressBufferStream {
       sobj.push(data, len);
     }
   }
-  template<typename POD>
-  inline void push_pod(POD pod) {
-    sobj.push(reinterpret_cast<char*>(&pod), sizeof(pod));
-  }
-  
-  void writeHeader(SEXPTYPE object_type, uint64_t length) {
-    switch(object_type) {
-    case REALSXP:
-      if(length < 32) {
-        push_pod(static_cast<unsigned char>( numeric_header_5 | static_cast<unsigned char>(length) ) );
-      } else if(length < 256) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_8)), 1);
-        push_pod(static_cast<uint8_t>(length) );
-      } else if(length < 65536) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_16)), 1);
-        push_pod(static_cast<uint16_t>(length) );
-      } else if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case VECSXP:
-      if(length < 32) {
-        push_pod(static_cast<unsigned char>( list_header_5 | static_cast<unsigned char>(length) ) );
-      } else if(length < 256) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_8)), 1);
-        push_pod(static_cast<uint8_t>(length) );
-      } else if(length < 65536) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_16)), 1);
-        push_pod(static_cast<uint16_t>(length) );
-      } else if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case INTSXP:
-      if(length < 32) {
-        push_pod(static_cast<unsigned char>( integer_header_5 | static_cast<unsigned char>(length) ) );
-      } else if(length < 256) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_8)), 1);
-        push_pod(static_cast<uint8_t>(length) );
-      } else if(length < 65536) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_16)), 1);
-        push_pod(static_cast<uint16_t>(length) );
-      } else if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case LGLSXP:
-      if(length < 32) {
-        push_pod(static_cast<unsigned char>( logical_header_5 | static_cast<unsigned char>(length) ) );
-      } else if(length < 256) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_8)), 1);
-        push_pod(static_cast<uint8_t>(length) );
-      } else if(length < 65536) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_16)), 1);
-        push_pod(static_cast<uint16_t>(length) );
-      } else if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case RAWSXP:
-      if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&raw_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&raw_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case STRSXP:
-      if(length < 32) {
-        push_pod(static_cast<unsigned char>( character_header_5 | static_cast<unsigned char>(length) ) );
-      } else if(length < 256) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_8)), 1);
-        push_pod(static_cast<uint8_t>(length) );
-      } else if(length < 65536) { 
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_16)), 1);
-        push_pod(static_cast<uint16_t>(length) );
-      } else if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case CPLXSXP:
-      if(length < 4294967296) {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&complex_header_32)), 1);
-        push_pod(static_cast<uint32_t>(length) );
-      } else {
-        sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&complex_header_64)), 1);
-        push_pod(static_cast<uint64_t>(length) );
-      }
-      return;
-    case NILSXP:
-      sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&null_header)), 1);
-      return;
-    default:
-      throw std::runtime_error("something went wrong writing object header");  // should never reach here
-    }
-  }
-  
-  void writeAttributeHeader(uint64_t length) {
-    if(length < 32) {
-      push_pod(static_cast<unsigned char>( attribute_header_5 | static_cast<unsigned char>(length) ) );
-    } else if(length < 256) {
-      push_pod(static_cast<unsigned char>( attribute_header_8 ) );
-      push_pod(static_cast<uint8_t>(length) );
-    } else {
-      push_pod(static_cast<unsigned char>( attribute_header_32 ) );
-      push_pod(static_cast<uint32_t>(length) );
-    }
-  }
-  
-  void writeStringHeader(uint64_t length, cetype_t ce_enc) {
-    unsigned char enc;
-    switch(ce_enc) {
-    case CE_NATIVE:
-      enc = string_enc_native; break;
-    case CE_UTF8:
-      enc = string_enc_utf8; break;
-    case CE_LATIN1:
-      enc = string_enc_latin1; break;
-    case CE_BYTES:
-      enc = string_enc_bytes; break;
-    default:
-      enc = string_enc_native;
-    }
-    if(length < 32) {
-      push_pod(static_cast<unsigned char>( string_header_5 | static_cast<unsigned char>(enc) | static_cast<unsigned char>(length) ) );
-    } else if(length < 256) {
-      push_pod(static_cast<unsigned char>( string_header_8 | static_cast<unsigned char>(enc) ) );
-      push_pod(static_cast<uint8_t>(length) );
-    } else if(length < 65536) {
-      push_pod(static_cast<unsigned char>( string_header_16 | static_cast<unsigned char>(enc) ) );
-      push_pod(static_cast<uint16_t>(length) );
-    } else {
-      push_pod(static_cast<unsigned char>( string_header_32 | static_cast<unsigned char>(enc) ) );
-      push_pod(static_cast<uint32_t>(length) );
-    }
-  }
   
   // to do: use SEXP instead of RObject?
   void pushObj(RObject & x, bool attributes_processed = false) {
     if(!attributes_processed && stypes.find(TYPEOF(x)) != stypes.end()) {
       std::vector<std::string> anames = x.attributeNames();
       if(anames.size() != 0) {
-        writeAttributeHeader(anames.size());
+        writeAttributeHeader_stream(anames.size(), &sobj);
         pushObj(x, true);
         for(uint64_t i=0; i<anames.size(); i++) {
-          writeStringHeader(anames[i].size(),CE_NATIVE);
+          writeStringHeader_stream(anames[i].size(),CE_NATIVE, &sobj);
           sobj.push(&anames[i][0], anames[i].size());
           RObject xa = x.attr(anames[i]);
           pushObj(xa);
@@ -237,7 +85,7 @@ struct CompressBufferStream {
       }
     } else if(TYPEOF(x) == STRSXP) {
       uint64_t dl = Rf_xlength(x);
-      writeHeader(STRSXP, dl);
+      writeHeader_stream(STRSXP, dl, &sobj);
       CharacterVector xc = CharacterVector(x);
       for(uint64_t i=0; i<dl; i++) {
         SEXP xi = xc[i];
@@ -245,13 +93,13 @@ struct CompressBufferStream {
           sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&string_header_NA)), 1);
         } else {
           uint64_t dl = LENGTH(xi);
-          writeStringHeader(dl, Rf_getCharCE(xi));
+          writeStringHeader_stream(dl, Rf_getCharCE(xi), &sobj);
           sobj.push(const_cast<char*>(CHAR(xi)), dl);
         }
       }
     } else if(stypes.find(TYPEOF(x)) != stypes.end()) {
       uint64_t dl = Rf_xlength(x);
-      writeHeader(TYPEOF(x), dl);
+      writeHeader_stream(TYPEOF(x), dl, &sobj);
       if(TYPEOF(x) == VECSXP) {
         List xl = List(x);
         for(uint64_t i=0; i<dl; i++) {
@@ -299,10 +147,10 @@ struct CompressBufferStream {
       RawVector xserialized = serializeToRaw(x);
       if(xserialized.size() < 4294967296) {
         sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_32)), 1);
-        push_pod(static_cast<uint32_t>(xserialized.size()) );
+        sobj.push_pod(static_cast<uint32_t>(xserialized.size()) );
       } else {
         sobj.push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_64)), 1);
-        push_pod(static_cast<uint64_t>(xserialized.size()) );
+        sobj.push_pod(static_cast<uint64_t>(xserialized.size()) );
       }
       sobj.push(reinterpret_cast<char*>(RAW(xserialized)), xserialized.size());
     }

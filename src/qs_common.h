@@ -186,7 +186,7 @@ struct stdvec_string {
   // this does not do bounds checking because that's expensive, so
   // the caller must take care of that
   static SEXP string_Elt(SEXP vec, R_xlen_t i){
-    auto data2 = Materialize(vec);
+    SEXP data2 = Materialize(vec);
     return STRING_ELT(data2, i);
     // switch(data1.encodings[i]) {
     // case 1:
@@ -201,6 +201,11 @@ struct stdvec_string {
     //   return NA_STRING;
     // break;
     // }
+  }
+  
+  static void string_Set_elt(SEXP vec, R_xlen_t i, SEXP new_val) {
+    SEXP data2 = Materialize(vec);
+    SET_STRING_ELT(data2, i, new_val);
   }
   
   // -------- initialize the altrep class with the methods above
@@ -218,6 +223,7 @@ struct stdvec_string {
     
     // altstring
     R_set_altstring_Elt_method(class_t, string_Elt);
+    R_set_altstring_Set_elt_method(class_t, string_Set_elt);
   }
   
 };
@@ -240,10 +246,10 @@ bool is_big_endian();
 #define BLOCKRESERVE 64
 #define NA_STRING_LENGTH 4294967295 // 2^32-1 -- length used to signify NA value
 #define MIN_SHUFFLE_ELEMENTS 4
+#define BLOCKSIZE 524288
 
 // static const uint64_t SHUFFLE_DONE_VAL = std::numeric_limits<uint64_t>::max();
-
-static const uint64_t BLOCKSIZE = 524288;
+// static const uint64_t BLOCKSIZE = 524288;
 
 static const unsigned char list_header_5 = 0x20; 
 static const unsigned char list_header_8 = 0x01;
@@ -458,10 +464,323 @@ size_t LZ4_decompress_fun( void* dst, size_t dstCapacity,
 }
 
 ////////////////////////////////////////////////////////////////
-// common utility functions for serialization
+// common utility functions for serialization (stream)
 ////////////////////////////////////////////////////////////////
 
+template <class T>
+void writeHeader_stream(SEXPTYPE object_type, uint64_t length, T * sobj) {
+  switch(object_type) {
+  case REALSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( numeric_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length) );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length) );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case VECSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( list_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length) );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length) );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case INTSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( integer_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length) );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length) );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case LGLSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( logical_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length) );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length) );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case RAWSXP:
+    if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&raw_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&raw_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case STRSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( character_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length) );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length) );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case CPLXSXP:
+    if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&complex_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length) );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&complex_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length) );
+    }
+    return;
+  case NILSXP:
+    sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&null_header)), 1);
+    return;
+  default:
+    throw std::runtime_error("something went wrong writing object header");  // should never reach here
+  }
+}
 
+template <class T>
+void writeAttributeHeader_stream(uint64_t length, T * sobj) {
+  if(length < 32) {
+    sobj->push_pod(static_cast<unsigned char>( attribute_header_5 | static_cast<unsigned char>(length) ) );
+  } else if(length < 256) {
+    sobj->push_pod(static_cast<unsigned char>( attribute_header_8 ) );
+    sobj->push_pod(static_cast<uint8_t>(length) );
+  } else {
+    sobj->push_pod(static_cast<unsigned char>( attribute_header_32 ) );
+    sobj->push_pod(static_cast<uint32_t>(length) );
+  }
+}
+
+template <class T>
+void writeStringHeader_stream(uint64_t length, cetype_t ce_enc, T * sobj) {
+  unsigned char enc;
+  switch(ce_enc) {
+  case CE_NATIVE:
+    enc = string_enc_native; break;
+  case CE_UTF8:
+    enc = string_enc_utf8; break;
+  case CE_LATIN1:
+    enc = string_enc_latin1; break;
+  case CE_BYTES:
+    enc = string_enc_bytes; break;
+  default:
+    enc = string_enc_native;
+  }
+  if(length < 32) {
+    sobj->push_pod(static_cast<unsigned char>( string_header_5 | static_cast<unsigned char>(enc) | static_cast<unsigned char>(length) ) );
+  } else if(length < 256) {
+    sobj->push_pod(static_cast<unsigned char>( string_header_8 | static_cast<unsigned char>(enc) ) );
+    sobj->push_pod(static_cast<uint8_t>(length) );
+  } else if(length < 65536) {
+    sobj->push_pod(static_cast<unsigned char>( string_header_16 | static_cast<unsigned char>(enc) ) );
+    sobj->push_pod(static_cast<uint16_t>(length) );
+  } else {
+    sobj->push_pod(static_cast<unsigned char>( string_header_32 | static_cast<unsigned char>(enc) ) );
+    sobj->push_pod(static_cast<uint32_t>(length) );
+  }
+}
+
+////////////////////////////////////////////////////////////////
+// common utility functions for serialization (block compression)
+////////////////////////////////////////////////////////////////
+
+template <class T>
+void writeHeader_common(SEXPTYPE object_type, uint64_t length, T * sobj) {
+  switch(object_type) {
+  case REALSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( numeric_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length), true );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length), true );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&numeric_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case VECSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( list_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length), true );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length), true );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&list_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case INTSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( integer_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length), true );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length), true );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&integer_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case LGLSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( logical_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length), true );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length), true );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&logical_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case RAWSXP:
+    if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&raw_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&raw_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case STRSXP:
+    if(length < 32) {
+      sobj->push_pod(static_cast<unsigned char>( character_header_5 | static_cast<unsigned char>(length) ) );
+    } else if(length < 256) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_8)), 1);
+      sobj->push_pod(static_cast<uint8_t>(length), true );
+    } else if(length < 65536) { 
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_16)), 1);
+      sobj->push_pod(static_cast<uint16_t>(length), true );
+    } else if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&character_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case CPLXSXP:
+    if(length < 4294967296) {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&complex_header_32)), 1);
+      sobj->push_pod(static_cast<uint32_t>(length), true );
+    } else {
+      sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&complex_header_64)), 1);
+      sobj->push_pod(static_cast<uint64_t>(length), true );
+    }
+    return;
+  case NILSXP:
+    sobj->push(reinterpret_cast<char*>(const_cast<unsigned char*>(&null_header)), 1);
+    return;
+  default:
+    throw std::runtime_error("something went wrong writing object header");  // should never reach here
+  }
+}
+template <class T>
+void writeAttributeHeader_common(uint64_t length, T * sobj) {
+  if(length < 32) {
+    sobj->push_pod(static_cast<unsigned char>( attribute_header_5 | static_cast<unsigned char>(length) ) );
+  } else if(length < 256) {
+    sobj->push_pod(static_cast<unsigned char>( attribute_header_8 ) );
+    sobj->push_pod(static_cast<uint8_t>(length), true );
+  } else {
+    sobj->push_pod(static_cast<unsigned char>( attribute_header_32 ) );
+    sobj->push_pod(static_cast<uint32_t>(length), true );
+  }
+}
+
+template <class T>
+void writeStringHeader_common(uint64_t length, cetype_t ce_enc, T * sobj) {
+  unsigned char enc;
+  switch(ce_enc) {
+  case CE_NATIVE:
+    enc = string_enc_native; break;
+  case CE_UTF8:
+    enc = string_enc_utf8; break;
+  case CE_LATIN1:
+    enc = string_enc_latin1; break;
+  case CE_BYTES:
+    enc = string_enc_bytes; break;
+  default:
+    enc = string_enc_native;
+  }
+  if(length < 32) {
+    sobj->push_pod(static_cast<unsigned char>( string_header_5 | static_cast<unsigned char>(enc) | static_cast<unsigned char>(length) ) );
+  } else if(length < 256) {
+    sobj->push_pod(static_cast<unsigned char>( string_header_8 | static_cast<unsigned char>(enc) ) );
+    sobj->push_pod(static_cast<uint8_t>(length), true );
+  } else if(length < 65536) {
+    sobj->push_pod(static_cast<unsigned char>( string_header_16 | static_cast<unsigned char>(enc) ) );
+    sobj->push_pod(static_cast<uint16_t>(length), true );
+  } else {
+    sobj->push_pod(static_cast<unsigned char>( string_header_32 | static_cast<unsigned char>(enc) ) );
+    sobj->push_pod(static_cast<uint32_t>(length), true );
+  }
+}
 
 ////////////////////////////////////////////////////////////////
 // common utility functions for deserialization
@@ -717,5 +1036,50 @@ inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, 
   throw std::runtime_error("something went wrong (reading string header)");
 }
 
+// Explicit decompression context (zstd v. 1.4.0)
+struct zstd_decompress_env {
+  // ZSTD_DCtx* zcs;
+  // zstd_decompress_env() : zcs(ZSTD_createDCtx()) {}
+  // ~zstd_decompress_env() {
+  //   ZSTD_freeDCtx(zcs);
+  // }
+  uint64_t bound;
+  zstd_decompress_env() : bound(ZSTD_compressBound(BLOCKSIZE)) {}
+  size_t decompress( void* dst, size_t dstCapacity,
+                     const void* src, size_t compressedSize) {
+    // return ZSTD_decompress(dst, dstCapacity, src, compressedSize);
+    // return ZSTD_decompressDCtx(zcs, dst, dstCapacity, src, compressedSize);
+    if(compressedSize > bound) throw std::runtime_error("Malformed compress block: compressed size > compress bound");
+    // std::cout << "decompressing " << dst << " " << dstCapacity << " " << src << " " << compressedSize << "\n";
+    size_t return_value = ZSTD_decompress(dst, dstCapacity, src, compressedSize);
+    if(ZSTD_isError(return_value)) throw std::runtime_error("zstd decompression error");
+    if(return_value > BLOCKSIZE) throw std::runtime_error("Malformed compress block: decompressed size > max blocksize " + std::to_string(return_value));
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return ZSTD_compressBound(srcSize);
+  }
+};
+
+struct lz4_decompress_env {
+  uint64_t bound;
+  lz4_decompress_env() : bound(LZ4_compressBound(BLOCKSIZE)) {}
+  size_t decompress( void* dst, size_t dstCapacity,
+                     const void* src, size_t compressedSize) {
+    if(compressedSize > bound) throw std::runtime_error("Malformed compress block: compressed size > compress bound");
+    int return_value = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
+                                           reinterpret_cast<char*>(const_cast<void*>(dst)),
+                                           static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
+    if(return_value < 0) throw std::runtime_error("lz4 decompression error");
+    if(return_value > BLOCKSIZE) throw std::runtime_error("Malformed compress block: decompressed size > max blocksize" + std::to_string(return_value));
+    return return_value;
+    // return LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
+    //                                        reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                                        static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
+  }
+  size_t compressBound(size_t srcSize) {
+    return LZ4_compressBound(srcSize);
+  }
+};
 
 #endif

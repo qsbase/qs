@@ -70,19 +70,19 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
     if(nthreads <= 1) {
       if(qm.compress_algorithm == 0) {
         CompressBuffer<zstd_compress_env> vbuf(myFile, qm);
-        vbuf.appendObj(x);
+        vbuf.pushObj(x);
         vbuf.flush();
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == 1) {
         CompressBuffer<lz4_compress_env> vbuf(myFile, qm);
-        vbuf.appendObj(x);
+        vbuf.pushObj(x);
         vbuf.flush();
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == 2) {
         CompressBuffer<lz4hc_compress_env> vbuf(myFile, qm);
-        vbuf.appendObj(x);
+        vbuf.pushObj(x);
         vbuf.flush();
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
@@ -92,21 +92,21 @@ void c_qsave(RObject x, std::string file, std::string preset="balanced", std::st
     } else {
       if(qm.compress_algorithm == 0) {
         CompressBuffer_MT<zstd_compress_env> vbuf(&myFile, qm, nthreads);
-        vbuf.appendObj(x);
+        vbuf.pushObj(x);
         vbuf.flush();
         vbuf.ctc.finish();
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == 1) {
         CompressBuffer_MT<lz4_compress_env> vbuf(&myFile, qm, nthreads);
-        vbuf.appendObj(x);
+        vbuf.pushObj(x);
         vbuf.flush();
         vbuf.ctc.finish();
         myFile.seekp(4);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == 2) {
         CompressBuffer_MT<lz4hc_compress_env> vbuf(&myFile, qm, nthreads);
-        vbuf.appendObj(x);
+        vbuf.pushObj(x);
         vbuf.flush();
         vbuf.ctc.finish();
         myFile.seekp(4);
