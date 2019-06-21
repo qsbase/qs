@@ -24,35 +24,35 @@
 // de-serialization functions
 ////////////////////////////////////////////////////////////////
 
-struct Ordered_Counter {
-  uint64_t cached_counter_val;
-  std::atomic<uint64_t> counter;
-  std::vector< std::atomic<uint64_t> > thread_counters;
-  Ordered_Counter(unsigned int nthreads) : cached_counter_val(0), counter(0), thread_counters(nthreads) {
-    for(unsigned int i=0; i<nthreads; i++) {
-      thread_counters[i] = 0;
-    }
-  }
-  void update_counter(unsigned int thread_id) {
-    thread_counters[thread_id]++;
-  }
-  bool check_lte(uint64_t val) {
-    if(cached_counter_val > val) return false;
-    auto it = std::min_element(thread_counters.begin(), thread_counters.end());
-    uint64_t min_val = *it;
-    uint64_t first_min = it - thread_counters.begin();
-    cached_counter_val = min_val * thread_counters.size() + first_min;
-    return cached_counter_val <= val;
-  }
-  bool check_lt(uint64_t val) {
-    if(cached_counter_val >= val) return false;
-    auto it = std::min_element(thread_counters.begin(), thread_counters.end());
-    uint64_t min_val = *it;
-    uint64_t first_min = it - thread_counters.begin();
-    cached_counter_val = min_val * thread_counters.size() + first_min;
-    return cached_counter_val < val;
-  }
-};
+// struct Ordered_Counter {
+//   uint64_t cached_counter_val;
+//   std::atomic<uint64_t> counter;
+//   std::vector< std::atomic<uint64_t> > thread_counters;
+//   Ordered_Counter(unsigned int nthreads) : cached_counter_val(0), counter(0), thread_counters(nthreads) {
+//     for(unsigned int i=0; i<nthreads; i++) {
+//       thread_counters[i] = 0;
+//     }
+//   }
+//   void update_counter(unsigned int thread_id) {
+//     thread_counters[thread_id]++;
+//   }
+//   bool check_lte(uint64_t val) {
+//     if(cached_counter_val > val) return false;
+//     auto it = std::min_element(thread_counters.begin(), thread_counters.end());
+//     uint64_t min_val = *it;
+//     uint64_t first_min = it - thread_counters.begin();
+//     cached_counter_val = min_val * thread_counters.size() + first_min;
+//     return cached_counter_val <= val;
+//   }
+//   bool check_lt(uint64_t val) {
+//     if(cached_counter_val >= val) return false;
+//     auto it = std::min_element(thread_counters.begin(), thread_counters.end());
+//     uint64_t min_val = *it;
+//     uint64_t first_min = it - thread_counters.begin();
+//     cached_counter_val = min_val * thread_counters.size() + first_min;
+//     return cached_counter_val < val;
+//   }
+// };
 
 template <class decompress_env> 
 struct Data_Thread_Context {
@@ -61,11 +61,10 @@ struct Data_Thread_Context {
   const unsigned int nthreads;
   uint64_t blocks_total;
   std::atomic<uint64_t> blocks_read;
-  std::atomic<uint64_t>  blocks_queued;
-  Ordered_Counter blocks_processed;
+  std::atomic<uint64_t>  blocks_processed;
   
   std::vector<std::thread> threads;
-  std::vector< std::atomic<bool> > primary_block;
+  std::vector<bool> primary_block;
   std::vector< std::vector<char> > zblocks; // one per thread
   std::vector< std::vector<char> > data_blocks; // one per thread
   std::vector< std::vector<char> > data_blocks2; // one per thread
@@ -74,6 +73,32 @@ struct Data_Thread_Context {
   
   std::vector< std::atomic<uint8_t> > data_task;
   std::pair<char*, uint64_t> data_pass;
+  
+  Data_Thread_Context(std::ifstream* mf, unsigned int nt, QsMetadata qm) : 
+    denv(decompress_env()),
+    myFile(mf), nthreads(nt), blocks_read(0), blocks_processed(0) {
+    blocks_total = readSizeFromFile8(*myFile);
+    
+    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(denv.compressBound(BLOCKSIZE)));
+    data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
+    data_blocks2 = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
+    block_pointers = std::vector<std::atomic<char*>>(nthreads);
+    for(unsigned int i=0; i<nthreads; i++) {
+      block_pointers[i] = nullptr;
+    }
+    block_sizes = std::vector<std::atomic<uint64_t>>(nthreads);
+    for(unsigned int i=0; i<nthreads; i++) {
+      block_sizes[i] = 0;
+    }
+    primary_block = std::vector<bool>(nthreads, true);
+    data_task = std::vector< std::atomic<uint8_t> >(nthreads);
+    for(unsigned int i=0; i<nthreads; i++) {
+      data_task[i] = 0;
+    }
+    for (unsigned int i = 0; i < nthreads; i++) {
+      threads.push_back(std::thread(&Data_Thread_Context::worker_thread, this, i));
+    }
+  }
   
   void worker_thread(unsigned int thread_id) {
     std::array<char,4> zsize_ar;
@@ -114,58 +139,27 @@ struct Data_Thread_Context {
         data_task[thread_id] = 0;
       } else { // data task == 2
         char* dp = data_pass.first;
-        data_task[thread_id] = 0;
         std::memcpy(dp, block_pointers[thread_id], block_sizes[thread_id]);
+        data_task[thread_id] = 0;
       }
       // }
       
-      blocks_processed.update_counter(thread_id);
-      // update hash here
       primary_block[thread_id] = !primary_block[thread_id];
     }
     // tout << thread_id << " finished thread for loop\n" << std::flush;
   }
   
   void finish() {
-    blocks_queued++;
+    blocks_processed++;
     for(unsigned int i=0; i < nthreads; i++) {
       // tout << "join called " << i << "\n" << std::flush;
       threads[i].join();
     }
   }
   
-  Data_Thread_Context(std::ifstream* mf, unsigned int nt, QsMetadata qm) : 
-    denv(decompress_env()),
-    myFile(mf), nthreads(nt), blocks_read(0), blocks_queued(0), blocks_processed(nt) {
-    blocks_total = readSizeFromFile8(*myFile);
-    
-    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(denv.compressBound(BLOCKSIZE)));
-    data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
-    data_blocks2 = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
-    block_pointers = std::vector<std::atomic<char*>>(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
-      block_pointers[i] = nullptr;
-    }
-    block_sizes = std::vector<std::atomic<uint64_t>>(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
-      block_sizes[i] = 0;
-    }
-    primary_block = std::vector< std::atomic<bool> >(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
-      primary_block[i] = true;
-    }
-    data_task = std::vector< std::atomic<uint8_t> >(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
-      data_task[i] = 0;
-    }
-    for (unsigned int i = 0; i < nthreads; i++) {
-      threads.push_back(std::thread(&Data_Thread_Context::worker_thread, this, i));
-    }
-  }
-  
   std::pair<char*, uint64_t> get_block_ptr() {
-    uint64_t current_block = blocks_queued % nthreads;
-    blocks_queued++;
+    uint64_t current_block = blocks_processed % nthreads;
+    blocks_processed++;
     while(data_task[current_block] != 0) std::this_thread::yield();
     data_task[current_block] = 1;
     while(data_task[current_block] != 0) std::this_thread::yield();
@@ -175,8 +169,8 @@ struct Data_Thread_Context {
   }
   
   void decompress_data_direct(char* bpointer) {
-    uint64_t current_block = blocks_queued % nthreads;
-    blocks_queued++;
+    uint64_t current_block = blocks_processed % nthreads;
+    blocks_processed++;
     while(data_task[current_block] != 0) std::this_thread::yield();
     data_pass.first = bpointer;
     data_task[current_block] = 2;
@@ -187,9 +181,10 @@ struct Data_Thread_Context {
 template <class decompress_env> 
 struct Data_Context_MT {
   std::ifstream * myFile;
-  bool use_alt_rep_bool;
   Data_Thread_Context<decompress_env> dtc;
+  xxhash_env xenv;
   QsMetadata qm;
+  bool use_alt_rep_bool;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
   uint64_t data_offset;
@@ -198,8 +193,7 @@ struct Data_Context_MT {
   std::string temp_string;
   
   Data_Context_MT(std::ifstream * mf, QsMetadata qm, bool use_alt_rep, unsigned int nthreads) : 
-    myFile(mf), use_alt_rep_bool(use_alt_rep), dtc(mf, nthreads-1, qm) {
-    this->qm = qm;
+    myFile(mf), dtc(mf, nthreads-1, qm), xenv(xxhash_env()), qm(qm), use_alt_rep_bool(use_alt_rep) {
     data_offset = 0;
     block_size = 0;
     temp_string = std::string(256, '\0');
@@ -216,12 +210,14 @@ struct Data_Context_MT {
   }
   void decompress_direct(char* bpointer) {
     dtc.decompress_data_direct(bpointer);
+    if(qm.check_hash) xenv.update(bpointer, BLOCKSIZE);
   }
   void decompress_block() {
     auto res = dtc.get_block_ptr();
     block_data = res.first;
     block_size = res.second;
     data_offset = 0;
+    if(qm.check_hash) xenv.update(block_data, block_size);
     // tout << "main thread decompress block " << (void *)block_data << " " << block_size << "\n" << std::flush;
   }
   void getBlockData(char* outp, uint64_t data_size) {
@@ -248,13 +244,7 @@ struct Data_Context_MT {
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {
     if(data_size >= MIN_SHUFFLE_ELEMENTS) {
       if(data_size > shuffleblock.size()) shuffleblock.resize(data_size);
-      uint64_t shuffle_endblock = (data_size + data_offset)/BLOCKSIZE + dtc.blocks_queued;
-      dtc.blocks_processed.check_lt(shuffle_endblock);
-      // tout << "shuffle end is " << shuffle_endblock << " " << dtc.blocks_processed.cached_counter_val << "\n" << std::flush;
       getBlockData(reinterpret_cast<char*>(shuffleblock.data()), data_size);
-      while( dtc.blocks_processed.check_lt(shuffle_endblock) ) {
-        std::this_thread::yield();
-      }
       blosc_unshuffle(shuffleblock.data(), reinterpret_cast<uint8_t*>(outp), data_size, bytesoftype);
     } else if(data_size > 0) {
       getBlockData(outp, data_size);
@@ -347,7 +337,7 @@ struct Data_Context_MT {
             break;
             }
             ret->strings[i].resize(r_string_len);
-            getBlockData(&(ret->strings[i])[0], r_string_len); // don't need to wait!
+            getBlockData(&(ret->strings[i])[0], r_string_len);
           }
         }
         obj = PROTECT(stdvec_string::Make(ret, true)); pt++;
@@ -367,11 +357,7 @@ struct Data_Context_MT {
               temp_string.resize(r_string_len);
             }
             if(data_offset + r_string_len > BLOCKSIZE) {
-              string_endblock = (r_string_len + data_offset)/BLOCKSIZE + dtc.blocks_queued;
               getBlockData(&temp_string[0], r_string_len);
-              while( dtc.blocks_processed.check_lt(string_endblock) ) {
-                std::this_thread::yield();
-              }
             } else {
               getBlockData(&temp_string[0], r_string_len);
             }
@@ -399,15 +385,7 @@ struct Data_Context_MT {
         uint64_t string_endblock;
         readStringHeader(r_string_len, string_encoding);
         std::string temp_attribute_string = std::string(r_string_len, '\0');
-        if(data_offset + r_string_len > BLOCKSIZE) {
-          string_endblock = (r_string_len + data_offset)/BLOCKSIZE + dtc.blocks_queued;
-          getBlockData(&temp_attribute_string[0], r_string_len);
-          while( dtc.blocks_processed.check_lt(string_endblock) ) {
-            std::this_thread::yield();
-          }
-        } else {
-          getBlockData(&temp_attribute_string[0], r_string_len);
-        }
+        getBlockData(&temp_attribute_string[0], r_string_len);
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), processBlock());
       }
     }

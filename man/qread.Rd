@@ -9,9 +9,9 @@ qread(file, use_alt_rep=TRUE, inspect=FALSE, nthreads=1)
 \arguments{
 \item{file}{the file name/path}
 
-\item{use_alt_rep}{Use alt rep when reading in string data.  Default: TRUE}
+\item{use_alt_rep}{Use alt rep when reading in string data.  Default: FALSE}
 
-\item{inspect}{Whether to call qinspect before de-serializing data.  Set to true if you suspect your data may be corrupted.  Default: FALSE}
+\item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
 
 \item{nthreads}{Number of threads to use.  Default 1.}
 }

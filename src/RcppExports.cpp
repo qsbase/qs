@@ -16,43 +16,33 @@ BEGIN_RCPP
 END_RCPP
 }
 // c_qsave
-void c_qsave(RObject x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, int nthreads);
-RcppExport SEXP _qs_c_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP nthreadsSEXP) {
+void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads);
+RcppExport SEXP _qs_c_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RObject >::type x(xSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
     Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
     Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
     Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, nthreads);
+    c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads);
     return R_NilValue;
 END_RCPP
 }
-// c_qinspect
-bool c_qinspect(std::string file);
-RcppExport SEXP _qs_c_qinspect(SEXP fileSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
-    rcpp_result_gen = Rcpp::wrap(c_qinspect(file));
-    return rcpp_result_gen;
-END_RCPP
-}
 // c_qread
-SEXP c_qread(std::string file, bool use_alt_rep, bool inspect, int nthreads);
-RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP inspectSEXP, SEXP nthreadsSEXP) {
+SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads);
+RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
-    Rcpp::traits::input_parameter< bool >::type inspect(inspectSEXP);
+    Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep, inspect, nthreads));
+    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep, strict, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -185,8 +175,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
-    {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 7},
-    {"_qs_c_qinspect", (DL_FUNC) &_qs_c_qinspect, 1},
+    {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
     {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
     {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},

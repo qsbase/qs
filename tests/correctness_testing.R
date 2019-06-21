@@ -79,10 +79,33 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
   return(ret)
 }
 
+rand_strings <- function(n) {
+  s <- sample(0:100, size=n, replace=T)
+  x <- lapply(unique(s), function(si) {
+    qs::randomStrings(sum(s == si), si)
+  }) %>% unlist %>% sample
+  x[sample(n, size=n/10)] <- NA
+  return(x)
+}
+
+nested_tibble <- function() {
+  sub_tibble <- function(nr=600, nc=4) {
+    z <- lapply(1:nc, function(i) rand_strings(nr)) %>% bind_cols %>% setNames(make.unique(paste0(sample(letters, nc), rand_strings(nc)))) %>% as_tibble
+  }
+  tibble(
+    col1 = rand_strings(100),
+    col2 = rand_strings(100),
+    col3 = lapply(1:100, function(i) sub_tibble(nr=600, nc=4)),
+    col4 = lapply(1:100, function(i) sub_tibble(nr=600, nc=4)),
+    col5 = lapply(1:100, function(i) sub_tibble(nr=600, nc=4))
+  ) %>% setNames(make.unique(paste0(sample(letters, 5), rand_strings(5))))
+}
+
 test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
 extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
 reps <- 5
 
+myfile <- "/tmp/ctest.z"
 ################################################################################################
 # some one off tests
 
@@ -90,8 +113,8 @@ reps <- 5
 # https://github.com/traversc/qs/issues/9
 
 x <- data.table(x = 1:26, y = letters)
-qsave(x, file="/tmp/ctest.z")
-xu <- qread("/tmp/ctest.z", use_alt_rep = T)
+qsave(x, file=myfile)
+xu <- qread(myfile, use_alt_rep = T)
 data.table::setnames(xu, 1, "a")
 stopifnot(identical(c("a", "y"), colnames(xu)))
 data.table::setnames(xu, 2, "b")
@@ -100,14 +123,22 @@ stopifnot(identical(c("a", "b"), colnames(xu)))
 ################################################################################################
 
 qsave_rand <- function(x, file) {
-  qsave(x, file="/tmp/ctest.z", preset = "custom", algorithm = sample(c("lz4", "zstd", "lz4hc", "zstd_stream"), 1),
-        compress_level=sample(10,1), shuffle_control = sample(0:15,1), nthreads=sample(5,1) )
+  alg <- sample(c("lz4", "zstd", "lz4hc", "zstd_stream"), 1)
+  nt <- sample(5,1)
+  sc <- sample(0:15,1)
+  cl <- sample(10,1)
+  ch <- sample(c(T,F),1)
+  # print(alg)
+  # print(nt)
+  # print(sc)
+  # print(cl)
+  qsave(x, file=file, preset = "custom", algorithm = alg,
+      compress_level=cl, shuffle_control = sc, nthreads=nt, check_hash = ch )
 }
 
-qread_rand <- function(x, file) {
-  qread("/tmp/ctest.z", 
-        use_alt_rep = sample(c(T,F),1),inspect=T,
-        nthreads=sample(5,1))
+qread_rand <- function(file) {
+  x <- qread(file, use_alt_rep = sample(c(T,F),1), nthreads=sample(5,1), strict=T)
+  return(x)
 }
 
 for(q in 1:reps) {
@@ -119,8 +150,8 @@ for(q in 1:reps) {
       x1 <- rep(letters, length.out=tp) %>% paste(collapse="")
       x1 <- c(NA, "", x1)
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -137,9 +168,9 @@ for(q in 1:reps) {
       cuts <- sample(tp*10, tp+1) %>% sort %>% as.numeric
       x1 <- splitstr(x1, cuts)
       x1 <- c(NA, "", x1)
-      qsave_rand(x1, file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
       time[i] <- Sys.time()
-      z <- qread_rand(file="/tmp/test.z")
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -154,8 +185,8 @@ for(q in 1:reps) {
       x1 <- sample(1:tp, replace=T)
       x1 <- c(NA, x1)
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -171,8 +202,8 @@ for(q in 1:reps) {
       x1 <- rnorm(tp)
       x1 <- c(NA, x1)
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -187,8 +218,8 @@ for(q in 1:reps) {
       
       x1 <- sample(c(T,F,NA), replace=T, size=tp)
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -202,8 +233,8 @@ for(q in 1:reps) {
     for(i in 1:3) {
       x1 <- generateList(sample(1:4, replace=T, size=tp))
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -214,8 +245,8 @@ for(q in 1:reps) {
   for(i in 1:3) {
     x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
     x1 <- data.frame(str=x1,num = runif(1:1000), stringsAsFactors = F)
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     gc()
     stopifnot(identical(z, x1))
   }
@@ -224,8 +255,8 @@ for(q in 1:reps) {
   for(i in 1:3) {
     x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
     x1 <- data.table(str=x1,num = runif(1:1e6))
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     gc()
     stopifnot(all(z==x1))
   }
@@ -235,8 +266,8 @@ for(q in 1:reps) {
     
     x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
     x1 <- tibble(str=x1,num = runif(1:1e6))
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     gc()
     stopifnot(identical(z, x1))
   }
@@ -253,8 +284,8 @@ for(q in 1:reps) {
       Encoding(x3) <- "bytes"
       x4 <- rep(x1, x2, length.out=1e4) %>% paste(collapse=";")
       x1 <- c(x1, x2, x3, x4)
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       gc()
       stopifnot(identical(z, x1))
     }
@@ -273,8 +304,8 @@ for(q in 1:reps) {
       x1 <- complex(real=re, imaginary=im)
       x1 <- c(NA_complex_, x1)
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -288,8 +319,8 @@ for(q in 1:reps) {
     for(i in 1:3) {
       x1 <- factor(rep(letters, length.out=tp), levels=sample(letters), ordered=TRUE)
       time[i] <- Sys.time()
-      qsave_rand(x1, file="/tmp/test.z")
-      z <- qread_rand(file="/tmp/test.z")
+      qsave_rand(x1, file=myfile)
+      z <- qread_rand(file=myfile)
       time[i] <- Sys.time() - time[i]
       gc()
       stopifnot(identical(z, x1))
@@ -305,8 +336,8 @@ for(q in 1:reps) {
     x1 <- random_object_generator(12)
     print(sprintf("Nested list/attributes: %s bytes", object.size(x1) %>% as.numeric))
     time[i] <- Sys.time()
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -322,8 +353,8 @@ for(q in 1:reps) {
       attr(x1[[i]], letters[i]) <- x1[[i+1]]
     }
     time[i] <- Sys.time()
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -335,8 +366,8 @@ for(q in 1:reps) {
   for(i in 1:3) {
     x1 <- 1:1e7
     time[i] <- Sys.time()
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     time[i] <- Sys.time() - time[i]
     gc()
     stopifnot(identical(z, x1))
@@ -352,8 +383,8 @@ for(q in 1:reps) {
     x1[["b"]] <- runif(1e7)
     x1[["c"]] <- qs::randomStrings(1e4)
     time[i] <- Sys.time()
-    qsave_rand(x1, file="/tmp/test.z")
-    z <- qread_rand(file="/tmp/test.z")
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
     stopifnot(identical(z[["a"]], x1[["a"]]))
     stopifnot(identical(z[["b"]], x1[["b"]]))
     stopifnot(identical(z[["c"]], x1[["c"]]))
@@ -361,5 +392,18 @@ for(q in 1:reps) {
     gc()
   }
   print(sprintf("Environment test: %s s", signif(mean(time),4)))
+  
+  time <- vector("numeric", length=3)
+  for(i in 1:3) {
+    x1 <- nested_tibble()
+    time[i] <- Sys.time()
+    qsave_rand(x1, file=myfile)
+    z <- qread_rand(file=myfile)
+    stopifnot(identical(z, x1))
+    time[i] <- Sys.time() - time[i]
+    gc()
+  }
+  print(sprintf("nested tibble test: %s s", signif(mean(time),4)))
+  
   
 }

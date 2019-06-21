@@ -27,9 +27,10 @@
 template <class decompress_env> 
 struct Data_Context {
   std::ifstream & myFile;
-  bool use_alt_rep_bool;
   decompress_env denv;
+  xxhash_env xenv;
   QsMetadata qm;
+  bool use_alt_rep_bool;
   
   uint64_t number_of_blocks;
   std::vector<char> zblock;
@@ -41,7 +42,7 @@ struct Data_Context {
   std::string temp_string;
   
   Data_Context(std::ifstream & mf, QsMetadata qm, bool use_alt_rep) : 
-    myFile(mf), use_alt_rep_bool(use_alt_rep), denv(decompress_env()), qm(qm) {
+    myFile(mf), denv(decompress_env()), xenv(xxhash_env()), qm(qm), use_alt_rep_bool(use_alt_rep) {
     number_of_blocks = readSizeFromFile8(myFile);
     zblock = std::vector<char>(denv.compressBound(BLOCKSIZE));
     block = std::vector<char>(BLOCKSIZE);
@@ -67,6 +68,7 @@ struct Data_Context {
     uint64_t zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
     myFile.read(zblock.data(), zsize);
     block_size = denv.decompress(bpointer, BLOCKSIZE, zblock.data(), zsize);
+    if(qm.check_hash) xenv.update(bpointer, BLOCKSIZE);
   }
   void decompress_block() {
     block_i++;
@@ -76,6 +78,7 @@ struct Data_Context {
     myFile.read(zblock.data(), zsize);
     block_size = denv.decompress(block.data(), BLOCKSIZE, zblock.data(), zsize);
     data_offset = 0;
+    if(qm.check_hash) xenv.update(block.data(), block_size);
   }
   void getBlockData(char* outp, uint64_t data_size) {
     if(data_size <= block_size - data_offset) {

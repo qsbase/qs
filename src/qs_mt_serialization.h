@@ -66,8 +66,8 @@ std::mutex ThreadStream::_mutex_threadstream{};
 
 template <class compress_env> 
 struct Compress_Thread_Context {
-  compress_env cenv;
   std::ofstream* myFile;
+  compress_env cenv;
   
   std::atomic<uint64_t> blocks_total;
   std::atomic<uint64_t> blocks_written;
@@ -149,7 +149,7 @@ struct Compress_Thread_Context {
     }
   }
   
-  Compress_Thread_Context(std::ofstream* mf, unsigned int nt, QsMetadata qm) : cenv(compress_env()), myFile(mf), blocks_total(0), blocks_written(0) {
+  Compress_Thread_Context(std::ofstream* mf, unsigned int nt, QsMetadata qm) : myFile(mf), cenv(compress_env()), blocks_total(0), blocks_written(0) {
     compress_level = qm.compress_level;
     nthreads = nt - 1;
     done = false;
@@ -195,7 +195,7 @@ struct Compress_Thread_Context {
   
   void push_ptr(char* ptr, unsigned int datasize) {
     uint64_t block_check = blocks_total % nthreads;
-
+    
     // tout << "push ptr " << block_check << "\n" << std::flush;
 
     while (data_ready[block_check]) {
@@ -211,6 +211,7 @@ struct Compress_Thread_Context {
 template <class compress_env> 
 struct CompressBuffer_MT {
   std::ofstream * myFile;
+  xxhash_env xenv;
   Compress_Thread_Context<compress_env> ctc;
   QsMetadata qm;
   
@@ -222,7 +223,7 @@ struct CompressBuffer_MT {
   uint64_t number_of_blocks = 0;
   char* block_data_ptr;
   
-  CompressBuffer_MT(std::ofstream * f, QsMetadata _qm, unsigned int nthreads) : myFile(f), ctc(f, nthreads, _qm), qm(_qm) {
+  CompressBuffer_MT(std::ofstream * f, QsMetadata _qm, unsigned int nthreads) : myFile(f), xenv(xxhash_env()), ctc(f, nthreads, _qm), qm(_qm) {
     block_data_ptr = ctc.get_new_block_ptr();
   }
   void flush() {
@@ -234,6 +235,7 @@ struct CompressBuffer_MT {
     }
   }
   void push(char* data, uint64_t len, bool contiguous = false) {
+    if(qm.check_hash) xenv.update(data, len);
     uint64_t current_pointer_consumed = 0;
     while(current_pointer_consumed < len) {
       if( (current_blocksize == BLOCKSIZE) || ((BLOCKSIZE - current_blocksize < BLOCKRESERVE) && !contiguous) ) {
@@ -278,17 +280,24 @@ struct CompressBuffer_MT {
   }
   
   // to do: use SEXP instead of RObject?
-  void pushObj(RObject & x, bool attributes_processed = false) {
+  void pushObj(SEXP & x, bool attributes_processed = false) {
     if(!attributes_processed && stypes.find(TYPEOF(x)) != stypes.end()) {
-      std::vector<std::string> anames = x.attributeNames();
+      std::vector<SEXP> anames;
+      std::vector<SEXP> attrs;
+      SEXP alist = ATTRIB(x);
+      while(alist != R_NilValue) {
+        anames.push_back(PRINTNAME(TAG(alist)));
+        attrs.push_back(CAR(alist));
+        alist = CDR(alist);
+      }
       if(anames.size() != 0) {
         writeAttributeHeader_common(anames.size(), this);
         pushObj(x, true);
         for(uint64_t i=0; i<anames.size(); i++) {
-          writeStringHeader_common(anames[i].size(),CE_NATIVE, this);
-          push(&anames[i][0], anames[i].size(), true);
-          RObject xa = x.attr(anames[i]);
-          pushObj(xa);
+          uint64_t alen = strlen(CHAR(anames[i]));
+          writeStringHeader_common(alen,CE_NATIVE, this);
+          push(const_cast<char*>(CHAR(anames[i])), alen, true);
+          pushObj(attrs[i]);
         }
       } else {
         pushObj(x, true);
@@ -296,9 +305,8 @@ struct CompressBuffer_MT {
     } else if(TYPEOF(x) == STRSXP) {
       uint64_t dl = Rf_xlength(x);
       writeHeader_common(STRSXP, dl, this);
-      CharacterVector xc = CharacterVector(x);
       for(uint64_t i=0; i<dl; i++) {
-        SEXP xi = xc[i];
+        SEXP xi = STRING_ELT(x, i);
         if(xi == NA_STRING) {
           push(reinterpret_cast<char*>(const_cast<unsigned char*>(&string_header_NA)), 1);
         } else {
@@ -311,9 +319,8 @@ struct CompressBuffer_MT {
       uint64_t dl = Rf_xlength(x);
       writeHeader_common(TYPEOF(x), dl, this);
       if(TYPEOF(x) == VECSXP) {
-        List xl = List(x);
         for(uint64_t i=0; i<dl; i++) {
-          RObject xi = xl[i];
+          SEXP xi = VECTOR_ELT(x, i);
           pushObj(xi);
         }
       } else {
@@ -354,15 +361,16 @@ struct CompressBuffer_MT {
         }
       }
     } else { // other non-supported SEXPTYPEs use the built in R serialization method
-      RawVector xserialized = serializeToRaw(x);
-      if(xserialized.size() < 4294967296) {
+      SEXP xserialized = serializeToRaw(x);
+      uint64_t xs_size = Rf_xlength(xserialized);
+      if(xs_size < 4294967296) {
         push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_32)), 1);
-        push_pod(static_cast<uint32_t>(xserialized.size()), true );
+        push_pod(static_cast<uint32_t>(xs_size), true );
       } else {
         push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_64)), 1);
-        push_pod(static_cast<uint64_t>(xserialized.size()), true );
+        push_pod(static_cast<uint64_t>(xs_size), true );
       }
-      push(reinterpret_cast<char*>(RAW(xserialized)), xserialized.size(), true);
+      push(reinterpret_cast<char*>(RAW(xserialized)), xs_size, true);
     }
   }
 };

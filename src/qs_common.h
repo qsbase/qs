@@ -52,6 +52,8 @@ https://github.com/traversc/qs
 #include "BLOSC/shuffle_routines.h"
 #include "BLOSC/unshuffle_routines.h"
 
+#include "xxhash/xxhash.c" // static linking
+
 #include <R_ext/Rdynload.h>
 
 using namespace Rcpp;
@@ -330,10 +332,15 @@ inline POD unaligned_cast(char* data, uint64_t offset) {
   return y;
 }
 
-
+// maximum value is 7, reserve bit shared with shuffle bit
+// if we need more slots we will have to use other reserve bits
+enum class compalg : unsigned char {
+  zstd = 0, lz4 = 1, lz4hc = 2, zstd_stream = 3
+};
 // qs reserve header details
 // reserve[0] unused
-// reserve[1] unused
+// reserve[1] (low byte) 1 = hash of serialized object written to last 4 bytes of file -- before 16.3, no hash check was performed
+// reserve[1] (high byte) unused
 // reserve[2] (low byte) shuffle control: 0x01 = logical shuffle, 0x02 = integer shuffle, 0x04 = double shuffle
 // reserve[2] (high byte) algorithm: 0x01 = lz4, 0x00 = zstd, 0x02 = "lz4hc", 0x03 = zstd_stream
 // reserve[3] endian: 1 = big endian, 0 = little endian
@@ -345,61 +352,70 @@ struct QsMetadata {
   bool real_shuffle;
   bool cplx_shuffle;
   unsigned char endian;
-  QsMetadata(std::string preset="balanced", std::string algorithm = "lz4", int compress_level=1, int shuffle_control=15) {
+  bool check_hash;
+  
+  //constructor from qsave
+  QsMetadata(std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
     if(preset == "fast") {
-      this->compress_level = 150;
+      this->compress_level = 100;
       shuffle_control = 0;
-      compress_algorithm = 1;
+      compress_algorithm = static_cast<unsigned char>(compalg::lz4);
     } else if(preset == "balanced") {
       this->compress_level = 1;
       shuffle_control = 15;
-      compress_algorithm = 1;
+      compress_algorithm = static_cast<unsigned char>(compalg::lz4);
     } else if(preset == "high") {
+      compress_algorithm = static_cast<unsigned char>(compalg::zstd);
       this->compress_level = 4;
       shuffle_control = 15;
-      compress_algorithm = 0;
     } else if(preset == "archive") {
+      compress_algorithm = static_cast<unsigned char>(compalg::zstd_stream);
       this->compress_level = 14;
       shuffle_control = 15;
-      compress_algorithm = 3;
+      compress_algorithm = static_cast<unsigned char>(compalg::zstd_stream);
     } else if(preset == "custom") {
       if(algorithm == "zstd") {
-        compress_algorithm = 0;
+        compress_algorithm = static_cast<unsigned char>(compalg::zstd);
         this->compress_level = compress_level;
         if(compress_level > 22 || compress_level < -50) throw std::runtime_error("zstd compress_level must be an integer between -50 and 22");
       } else if(algorithm == "zstd_stream") {
-        compress_algorithm = 3;
+        compress_algorithm = static_cast<unsigned char>(compalg::zstd_stream);
         this->compress_level = compress_level;
         if(compress_level > 22 || compress_level < -50) throw std::runtime_error("zstd compress_level must be an integer between -50 and 22");
       } else if(algorithm == "lz4") {
-        compress_algorithm = 1;
+        compress_algorithm = static_cast<unsigned char>(compalg::lz4);
         this->compress_level = compress_level;
         if(compress_level < 1) throw std::runtime_error("lz4 compress_level must be an integer greater than 1");
       }  else if(algorithm == "lz4hc") {
-        compress_algorithm = 2;
+        compress_algorithm = static_cast<unsigned char>(compalg::lz4hc);
         this->compress_level = compress_level;
         if(compress_level < 1 || compress_level > 12) throw std::runtime_error("lz4hc compress_level must be an integer between 1 and 12");
       } else {
         throw std::runtime_error("algorithm must be one of zstd, lz4, lz4hc or zstd_stream");
       }
-      if(shuffle_control < 0 || shuffle_control > 15) throw std::runtime_error("shuffle_control must be an integer between 0 and 15");
     } else {
       throw std::runtime_error("preset must be one of fast, balanced (default), high, archive or custom");
     }
+    if(shuffle_control < 0 || shuffle_control > 15) throw std::runtime_error("shuffle_control must be an integer between 0 and 15");
     lgl_shuffle = shuffle_control & 0x01;
     int_shuffle = shuffle_control & 0x02;
     real_shuffle = shuffle_control & 0x04;
     cplx_shuffle = shuffle_control & 0x08;
     endian = is_big_endian() ? 1 : 0;
+    this->check_hash = check_hash;
   }
-  QsMetadata(unsigned char shuffle_control, unsigned char algo, int cl) : 
-    compress_algorithm(algo), compress_level(cl) {
-    lgl_shuffle = shuffle_control & 0x01;
-    int_shuffle = shuffle_control & 0x02;
-    real_shuffle = shuffle_control & 0x04;
-    cplx_shuffle = shuffle_control & 0x08;
-    endian = is_big_endian() ? 1 : 0;
-  }
+  
+  // defunct
+  // QsMetadata(unsigned char shuffle_control, unsigned char algo, int cl) : 
+  //   compress_algorithm(algo), compress_level(cl) {
+  //   lgl_shuffle = shuffle_control & 0x01;
+  //   int_shuffle = shuffle_control & 0x02;
+  //   real_shuffle = shuffle_control & 0x04;
+  //   cplx_shuffle = shuffle_control & 0x08;
+  //   endian = is_big_endian() ? 1 : 0;
+  // }
+  
+  // constructor from q_read
   QsMetadata(std::ifstream & myFile) {
     std::array<unsigned char,4> reserve_bits;
     myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
@@ -411,24 +427,25 @@ struct QsMetadata {
     int_shuffle = reserve_bits[2] & 0x02;
     real_shuffle = reserve_bits[2] & 0x04;
     cplx_shuffle = reserve_bits[2] & 0x08;
-    endian = sys_endian;
+    check_hash = reserve_bits[1];
   }
   void writeToFile(std::ofstream & myFile) {
     std::array<unsigned char,4> reserve_bits = {0,0,0,0};
+    reserve_bits[1] = check_hash;
     reserve_bits[2] += compress_algorithm << 4;
     reserve_bits[3] = is_big_endian() ? 1 : 0;
     reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
-    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4); // some reserve bits for future use
+    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
   }
-  void writeToFile(std::ofstream & myFile, unsigned char shuffle_control) {
-    std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-    reserve_bits[2] += compress_algorithm << 4;
-    reserve_bits[3] = is_big_endian() ? 1 : 0;
-    reserve_bits[2] += shuffle_control;
-    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4); // some reserve bits for future use
-  }
+  // void writeToFile(std::ofstream & myFile, unsigned char shuffle_control) {
+  //   std::array<unsigned char,4> reserve_bits = {0,0,0,0};
+  //   reserve_bits[1] = check_hash;
+  //   reserve_bits[2] += compress_algorithm << 4;
+  //   reserve_bits[3] = is_big_endian() ? 1 : 0;
+  //   reserve_bits[2] += shuffle_control;
+  //   myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
+  // }
 };
-
 
 // Normalize lz4/zstd function arguments so we can use function types
 typedef size_t (*compress_fun)(void*, size_t, const void*, size_t, int);
@@ -786,6 +803,36 @@ void writeStringHeader_common(uint64_t length, cetype_t ce_enc, T * sobj) {
 // common utility functions for deserialization
 ////////////////////////////////////////////////////////////////
 
+uint32_t validate_hash(QsMetadata qm, std::ifstream & myFile, uint32_t computed_hash, bool strict) {
+  if(qm.check_hash) {
+    if(myFile.peek() == EOF) {
+      if(strict) throw std::runtime_error("Warning: end of file reached, but hash checksum expected, data may be corrupted");
+      Rcerr << "Warning: end of file reached, but hash checksum expected, data may be corrupted" << std::endl;
+    } else {
+      std::array<char,4> a = {0,0,0,0};
+      myFile.read(a.data(),4);
+      if(myFile.gcount() != 4) {
+        if(strict) throw std::runtime_error("Warning: hash checksum expected, but not found, data may be corrupted");
+        Rcerr << "Warning: hash checksum expected, but not found, data may be corrupted" << std::endl;
+      }
+      uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
+      if(computed_hash != recorded_hash) {
+        if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
+           std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
+        Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
+      }
+      return recorded_hash;
+      // std::cout << "hashes: computed, recorded: " << computed_hash << ", " << recorded_hash << std::endl;
+    }
+  } else {
+    if(myFile.peek() != EOF) {
+      if(strict) throw std::runtime_error("Warning: end of file expected but not reached, data may be corrupted");
+      Rcerr << "Warning: end of file expected but not reached, data may be corrupted" << std::endl;
+    }
+  }
+  return 0;
+}
+
 // R stack tracker using RAII
 // protection handling using RAII should have no issues with longjmp
 // ref: https://developer.r-project.org/Blog/public/2019/03/28/use-of-c---in-packages/
@@ -1036,6 +1083,106 @@ inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, 
   throw std::runtime_error("something went wrong (reading string header)");
 }
 
+////////////////////////////////////////////////////////////////
+// Compress and decompress templates
+////////////////////////////////////////////////////////////////
+
+#define XXH_SEED 12345
+// seed is 12345
+struct xxhash_env {
+  XXH32_state_s* x;
+  xxhash_env() : x(XXH32_createState()) {
+    XXH_errorcode ret = XXH32_reset(x, XXH_SEED);
+    if(ret == XXH_ERROR) throw std::runtime_error("error in hashing function");
+  }
+  ~xxhash_env() {
+    XXH32_freeState(x);
+  }
+  void reset() {
+    XXH_errorcode ret = XXH32_reset(x, XXH_SEED);
+    if(ret == XXH_ERROR) throw std::runtime_error("error in hashing function");
+  }
+  void update(const void* input, size_t length) {
+    XXH_errorcode ret = XXH32_update(x, input, length);
+    if(ret == XXH_ERROR) throw std::runtime_error("error in hashing function");
+    // std::cout << digest() << std::endl;
+  }
+  uint32_t digest() {
+    return XXH32_digest(x);
+  }
+};
+
+struct zstd_compress_env {
+  // ZSTD_CCtx* zcs;
+  // zstd_compress_env() : zcs(ZSTD_createCCtx()) {}
+  // ~zstd_compress_env() {
+  //   ZSTD_freeCCtx(zcs);
+  // }
+  size_t compress( void* dst, size_t dstCapacity,
+                   const void* src, size_t srcSize,
+                   int compressionLevel) {
+    // return ZSTD_compressCCtx(zcs, dst, dstCapacity, src, srcSize, compressionLevel);
+    size_t return_value = ZSTD_compress(dst, dstCapacity, src, srcSize, compressionLevel);
+    if(ZSTD_isError(return_value)) throw std::runtime_error("zstd compression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return ZSTD_compressBound(srcSize);
+  }
+};
+
+struct lz4_compress_env {
+  // std::vector<char> zcs;
+  // char* state;
+  // lz4_compress_env() {
+  //   zcs = std::vector<char>(LZ4_sizeofState());
+  //   state = zcs.data();
+  // }
+  size_t compress( void* dst, size_t dstCapacity,
+                   const void* src, size_t srcSize,
+                   int compressionLevel) {
+    // return LZ4_compress_fast_extState(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
+    //                          reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
+    int return_value = LZ4_compress_fast(reinterpret_cast<char*>(const_cast<void*>(src)), 
+                                         reinterpret_cast<char*>(const_cast<void*>(dst)),
+                                         static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
+                                         compressionLevel);
+    if(return_value == 0) throw std::runtime_error("lz4 compression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return LZ4_compressBound(srcSize);
+  }
+};
+
+struct lz4hc_compress_env {
+  // std::vector<char> zcs;
+  // char* state;
+  // lz4hc_compress_env() {
+  //   zcs = std::vector<char>(LZ4_sizeofStateHC());
+  //   state = zcs.data();
+  // }
+  size_t compress( void* dst, size_t dstCapacity,
+                   const void* src, size_t srcSize,
+                   int compressionLevel) {
+    // xenv.update(src, srcSize);
+    // return LZ4_compress_HC_extStateHC(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
+    //                                   reinterpret_cast<char*>(const_cast<void*>(dst)),
+    //                                   static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
+    int return_value = LZ4_compress_HC(reinterpret_cast<char*>(const_cast<void*>(src)), 
+                                       reinterpret_cast<char*>(const_cast<void*>(dst)),
+                                       static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
+                                       compressionLevel);
+    if(return_value == 0) throw std::runtime_error("lz4hc compression error");
+    return return_value;
+  }
+  size_t compressBound(size_t srcSize) {
+    return LZ4_compressBound(srcSize);
+  }
+};
+
+
 // Explicit decompression context (zstd v. 1.4.0)
 struct zstd_decompress_env {
   // ZSTD_DCtx* zcs;
@@ -1066,6 +1213,7 @@ struct lz4_decompress_env {
   lz4_decompress_env() : bound(LZ4_compressBound(BLOCKSIZE)) {}
   size_t decompress( void* dst, size_t dstCapacity,
                      const void* src, size_t compressedSize) {
+    // std::cout << "decomp " << compressedSize << std::endl;
     if(compressedSize > bound) throw std::runtime_error("Malformed compress block: compressed size > compress bound");
     int return_value = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
                                            reinterpret_cast<char*>(const_cast<void*>(dst)),

@@ -24,86 +24,18 @@
 // serialization functions
 ////////////////////////////////////////////////////////////////
 
-struct zstd_compress_env {
-  // ZSTD_CCtx* zcs;
-  // zstd_compress_env() : zcs(ZSTD_createCCtx()) {}
-  // ~zstd_compress_env() {
-  //   ZSTD_freeCCtx(zcs);
-  // }
-  size_t compress( void* dst, size_t dstCapacity,
-                   const void* src, size_t srcSize,
-                   int compressionLevel) {
-    // return ZSTD_compressCCtx(zcs, dst, dstCapacity, src, srcSize, compressionLevel);
-    size_t return_value = ZSTD_compress(dst, dstCapacity, src, srcSize, compressionLevel);
-    if(ZSTD_isError(return_value)) throw std::runtime_error("zstd compression error");
-    return return_value;
-  }
-  size_t compressBound(size_t srcSize) {
-    return ZSTD_compressBound(srcSize);
-  }
-};
-
-struct lz4_compress_env {
-  // std::vector<char> zcs;
-  // char* state;
-  // lz4_compress_env() {
-  //   zcs = std::vector<char>(LZ4_sizeofState());
-  //   state = zcs.data();
-  // }
-  size_t compress( void* dst, size_t dstCapacity,
-                   const void* src, size_t srcSize,
-                   int compressionLevel) {
-    // return LZ4_compress_fast_extState(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
-    //                          reinterpret_cast<char*>(const_cast<void*>(dst)),
-    //                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
-    int return_value = LZ4_compress_fast(reinterpret_cast<char*>(const_cast<void*>(src)), 
-                                         reinterpret_cast<char*>(const_cast<void*>(dst)),
-                                         static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
-                                         compressionLevel);
-    if(return_value == 0) throw std::runtime_error("lz4 compression error");
-    return return_value;
-  }
-  size_t compressBound(size_t srcSize) {
-    return LZ4_compressBound(srcSize);
-  }
-};
-
-struct lz4hc_compress_env {
-  // std::vector<char> zcs;
-  // char* state;
-  // lz4hc_compress_env() {
-  //   zcs = std::vector<char>(LZ4_sizeofStateHC());
-  //   state = zcs.data();
-  // }
-  size_t compress( void* dst, size_t dstCapacity,
-                   const void* src, size_t srcSize,
-                   int compressionLevel) {
-    // return LZ4_compress_HC_extStateHC(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
-    //                                   reinterpret_cast<char*>(const_cast<void*>(dst)),
-    //                                   static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
-    int return_value = LZ4_compress_HC(reinterpret_cast<char*>(const_cast<void*>(src)), 
-                                       reinterpret_cast<char*>(const_cast<void*>(dst)),
-                                       static_cast<int>(srcSize), static_cast<int>(dstCapacity), 
-                                       compressionLevel);
-    if(return_value == 0) throw std::runtime_error("lz4hc compression error");
-    return return_value;
-  }
-  size_t compressBound(size_t srcSize) {
-    return LZ4_compressBound(srcSize);
-  }
-};
-
 template <class compress_env> 
 struct CompressBuffer {
   std::ofstream & myFile;
   QsMetadata qm;
   compress_env cenv;
+  xxhash_env xenv;
   uint64_t number_of_blocks = 0;
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
   std::vector<char> block = std::vector<char>(BLOCKSIZE);
   uint64_t current_blocksize=0;
   std::vector<char> zblock;
-  CompressBuffer(std::ofstream & f, QsMetadata qm) : myFile(f), qm(qm), cenv(compress_env()) {
+  CompressBuffer(std::ofstream & f, QsMetadata qm) : myFile(f), qm(qm), cenv(compress_env()), xenv(xxhash_env()) {
     zblock = std::vector<char>(cenv.compressBound(BLOCKSIZE));
   }
   void flush() {
@@ -116,6 +48,7 @@ struct CompressBuffer {
     }
   }
   void push(char* data, uint64_t len, bool contiguous = false) {
+    if(qm.check_hash) xenv.update(data, len);
     uint64_t current_pointer_consumed = 0;
     while(current_pointer_consumed < len) {
       if( (current_blocksize == BLOCKSIZE) || ((BLOCKSIZE - current_blocksize < BLOCKRESERVE) && !contiguous) ) {
@@ -150,26 +83,24 @@ struct CompressBuffer {
     push(reinterpret_cast<char*>(&pod), sizeof(pod), contiguous);
   }
   
-  void pushObj(RObject & x, bool attributes_processed = false) {
+  void pushObj(SEXP & x, bool attributes_processed = false) {
     if(!attributes_processed && stypes.find(TYPEOF(x)) != stypes.end()) {
-      // Using SEXP and C interface was slightly slower than Rcpp objects for some reason (v0.16.2)
-      // std::vector<const char*> anames;
-      // std::vector<SEXP> attrs;
-      // SEXP alist = ATTRIB(x);
-      // while(alist != R_NilValue) {
-      //   anames.push_back(CHAR(PRINTNAME(TAG(alist))));
-      //   attrs.push_back(CAR(alist));
-      //   alist = CDR(alist);
-      // }
-      std::vector<std::string> anames = x.attributeNames();
+      std::vector<SEXP> anames;
+      std::vector<SEXP> attrs;
+      SEXP alist = ATTRIB(x);
+      while(alist != R_NilValue) {
+        anames.push_back(PRINTNAME(TAG(alist)));
+        attrs.push_back(CAR(alist));
+        alist = CDR(alist);
+      }
       if(anames.size() != 0) {
         writeAttributeHeader_common(anames.size(), this);
         pushObj(x, true);
         for(uint64_t i=0; i<anames.size(); i++) {
-          writeStringHeader_common(anames[i].size(),CE_NATIVE, this);
-          push(&anames[i][0], anames[i].size(), true);
-          RObject xa = x.attr(anames[i]);
-          pushObj(xa);
+          uint64_t alen = strlen(CHAR(anames[i]));
+          writeStringHeader_common(alen,CE_NATIVE, this);
+          push(const_cast<char*>(CHAR(anames[i])), alen, true);
+          pushObj(attrs[i]);
         }
       } else {
         pushObj(x, true);
@@ -177,9 +108,8 @@ struct CompressBuffer {
     } else if(TYPEOF(x) == STRSXP) {
       uint64_t dl = Rf_xlength(x);
       writeHeader_common(STRSXP, dl, this);
-      CharacterVector xc = CharacterVector(x);
       for(uint64_t i=0; i<dl; i++) {
-        SEXP xi = xc[i];
+        SEXP xi = STRING_ELT(x, i);
         if(xi == NA_STRING) {
           push(reinterpret_cast<char*>(const_cast<unsigned char*>(&string_header_NA)), 1);
         } else {
@@ -192,9 +122,8 @@ struct CompressBuffer {
       uint64_t dl = Rf_xlength(x);
       writeHeader_common(TYPEOF(x), dl, this);
       if(TYPEOF(x) == VECSXP) {
-        List xl = List(x);
         for(uint64_t i=0; i<dl; i++) {
-          RObject xi = xl[i];
+          SEXP xi = VECTOR_ELT(x, i);
           pushObj(xi);
         }
       } else {
@@ -235,15 +164,16 @@ struct CompressBuffer {
         }
       }
     } else { // other non-supported SEXPTYPEs use the built in R serialization method
-      RawVector xserialized = serializeToRaw(x);
-      if(xserialized.size() < 4294967296) {
+      SEXP xserialized = serializeToRaw(x);
+      uint64_t xs_size = Rf_xlength(xserialized);
+      if(xs_size < 4294967296) {
         push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_32)), 1);
-        push_pod(static_cast<uint32_t>(xserialized.size()), true );
+        push_pod(static_cast<uint32_t>(xs_size), true );
       } else {
         push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_64)), 1);
-        push_pod(static_cast<uint64_t>(xserialized.size()), true );
+        push_pod(static_cast<uint64_t>(xs_size), true );
       }
-      push(reinterpret_cast<char*>(RAW(xserialized)), xserialized.size(), true);
+      push(reinterpret_cast<char*>(RAW(xserialized)), xs_size, true);
     }
   }
 };
