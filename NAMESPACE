@@ -1,7 +1,7 @@
 import(RApiSerialize)
 importFrom(Rcpp,sourceCpp)
 useDynLib(qs, .registration = TRUE)
-export("qsave", "qread", "qinspect", "qdump", "zstd_compress_bound", 
+export("qsave", "qread", "qdump", "zstd_compress_bound", 
        "zstd_compress_raw", "zstd_decompress_raw", "lz4_compress_bound", 
        "lz4_compress_raw", "lz4_decompress_raw", "is_big_endian", 
        "randomStrings", "convertToAlt", "blosc_shuffle_raw", "blosc_unshuffle_raw")

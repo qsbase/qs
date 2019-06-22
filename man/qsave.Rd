@@ -6,7 +6,7 @@
 \usage{
 qsave(x, file, 
 preset = "balanced", algorithm = "lz4", compress_level = 1L, 
-shuffle_control = 15L, nthreads = 1)
+shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 }
 \arguments{
 \item{x}{the object to serialize.}

@@ -343,7 +343,6 @@ struct Data_Context_MT {
         obj = PROTECT(stdvec_string::Make(ret, true)); pt++;
       } else {
         obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
-        uint64_t string_endblock;
         for(uint64_t i=0; i<r_array_len; i++) {
           uint32_t r_string_len;
           cetype_t string_encoding = CE_NATIVE;
@@ -382,7 +381,6 @@ struct Data_Context_MT {
       for(uint64_t i=0; i<number_of_attributes; i++) {
         uint32_t r_string_len;
         cetype_t string_encoding;
-        uint64_t string_endblock;
         readStringHeader(r_string_len, string_encoding);
         std::string temp_attribute_string = std::string(r_string_len, '\0');
         getBlockData(&temp_attribute_string[0], r_string_len);
