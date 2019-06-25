@@ -1,0 +1,76 @@
+if(F) {
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.12.tar.gz", "qs12") # zstd block compress only
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.13.1.tar.gz", "qs131") # zstd block compress only
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.14.1.tar.gz", "qs141") # zstd and lz4 block compress, byte shuffling
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  
+  # test if pacakges can be loaded
+  library(qs12)
+  library(qs131)
+  library(qs141)
+  library(qs151)
+  library(qs161)
+  library(qs) # v 0.17.1
+}
+
+file <- "/tmp/test.z"
+
+dataframeGen <- function() {
+  nr <- 1e6
+  data.frame(a=rnorm(nr), 
+             b=rpois(100,nr),
+             c=sample(qs::starnames[["IAU Name"]],nr,T), 
+             d=factor(sample(state.name,nr,T)), stringsAsFactors = F)
+}
+
+listGen <- function() {
+  as.list(sample(1e6))
+}
+
+test_compatability <- function(save, read_funs) {
+  x <- dataframeGen()
+  save(x)
+  for(i in 1:length(read_funs)) {
+    xu <- read_funs[[i]](file)
+    stopifnot(identical(x, xu))
+  }
+  x <- listGen()
+  save(x)
+  for(i in 1:length(read_funs)) {
+    xu <- read_funs[[i]](file)
+    stopifnot(identical(x, xu))
+  }
+}
+
+qs12_save <- function(x) qs12::qsave(x, file)
+qs131_save <- function(x) qs131::qsave(x, file)
+qs141_lz4_save <- function(x) qs141::qsave(x, file, preset = "custom", algorithm = "lz4")
+qs141_zstd_save <- function(x) qs141::qsave(x, file, preset = "custom", algorithm = "zstd")
+qs151_lz4_save <- function(x) qs151::qsave(x, file, preset = "custom", algorithm = "lz4")
+qs151_zstd_save <- function(x) qs151::qsave(x, file, preset = "custom", algorithm = "zstd")
+qs161_lz4_save <- function(x) qs161::qsave(x, file, preset = "custom", algorithm = "lz4")
+qs161_zstd_save <- function(x) qs161::qsave(x, file, preset = "custom", algorithm = "zstd")
+qs161_zstd_stream_save <- function(x) qs161::qsave(x, file, preset = "custom", algorithm = "zstd_stream")
+qs171_lz4_save <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "lz4")
+qs171_zstd_save <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd")
+qs171_zstd_stream_save <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream")
+qs171_zstd_stream_save_nohash <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream", check_hash = F)
+qs171_no_shuffle <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd", shuffle_control = 0)
+
+print("qs12 save"); test_compatability(qs12_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs131 save"); test_compatability(qs131_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs141 lz4 save"); test_compatability(qs141_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs141 zstd save"); test_compatability(qs141_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs151 lz4 save"); test_compatability(qs151_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs151 zstd save"); test_compatability(qs151_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs161 lz4 save"); test_compatability(qs161_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs161 zstd save"); test_compatability(qs161_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs161 zstd stream save"); test_compatability(qs161_zstd_stream_save, list(qs161::qread, qs::qread))
+print("qs161 lz4 save"); test_compatability(qs171_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs171 zstd save"); test_compatability(qs171_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs::qread))
+print("qs171 zstd stream save"); test_compatability(qs171_zstd_stream_save, list(qs::qread)) # 0.16.1_zstd_stream_read cannot read 0.17.1_stream_read due to additional checksum at end of file
+print("qs171 zstd stream save no hash"); test_compatability(qs171_zstd_stream_save_nohash, list(qs161::qread, qs::qread))
+print("qs171 no shuffle save"); test_compatability(qs171_no_shuffle, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs::qread))
+
+

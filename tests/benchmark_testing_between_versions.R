@@ -1,6 +1,3 @@
-suppressMessages(library(qs))
-suppressMessages(library(dplyr))
-
 file <- "/tmp/test.z"
 
 dataframeGen <- function() {
@@ -15,14 +12,9 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-# grid <- expand.grid(data = c("list", "dataframe"), 
-#                     preset = c("fast", "balanced", "high", "archive"), 
-#                     nt = c(1,4), reps=1:3, stringsAsFactors = F)
-# grid <- grid %>% filter(! (preset == "archive" & nt == 4) )
-
-grid <- expand.grid(data = c("list", "dataframe"), 
+grid <- expand.grid(ver = c(14:17), data = c("list", "dataframe"), 
                     preset = c("fast", "balanced", "high"), 
-                    nt = c(1,4), reps=1:25, stringsAsFactors = F)
+                    reps=1:5, stringsAsFactors = F)
 
 write_time <- numeric(nrow(grid))
 read_time <- numeric(nrow(grid))
@@ -32,12 +24,25 @@ for(i in 1:nrow(grid)) {
   } else if(grid$data[i] == "dataframe") {
     x <- dataframeGen()
   }
+  if(grid$ver[i] == 14) {
+    save <- qs141::qsave
+    read <- qs141::qread
+  } else if(grid$ver[i] == 15) {
+    save <- qs151::qsave
+    read <- qs151::qread
+  } else if(grid$ver[i] == 16) {
+    save <- qs161::qsave
+    read <- qs161::qread
+  } else if(grid$ver[i] == 17) {
+    save <- function(...) qs::qsave(..., check_hash = F)
+    read <- qs::qread
+  }
   time <- as.numeric(Sys.time())
-  qsave(x, file, preset = grid$preset[i], nthreads = grid$nt[i])
+  save(x, file, preset = grid$preset[i])
   write_time[i] <- 1000 * (as.numeric(Sys.time()) - time)
   rm(x); gc()
   time <- as.numeric(Sys.time())
-  x <- qread(file, nthreads=grid$nt[i])
+  x <- read(file)
   read_time[i] <- 1000 * (as.numeric(Sys.time()) - time)
   rm(x); gc()
 }
@@ -45,7 +50,7 @@ for(i in 1:nrow(grid)) {
 grid$write_time <- write_time
 grid$read_time <- read_time
 
-grid %>% group_by(data, preset, nt) %>%
+grid %>% group_by(data, ver, preset) %>%
   summarize(n=n(), mean_read_time = mean(read_time),
             median_read_time = median(read_time),
             mean_write_time = mean(write_time),

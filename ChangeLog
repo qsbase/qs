@@ -1,11 +1,17 @@
+Version 0.17.1 (2019-6-24)
+   * Re-write of `qdump` function to output more information
+   * Added regression unit testing for previous versions (tests/regression_testing.R")
+
 Version 0.16.3 (2019-6-21)
    * Use hash checksums for checking file integrity using the `xxhash` library
       * New parameter: `qsave` -- `check_hash`, computes a checksum on the serialized data
       * New paramter: `qread` -- `strict`, throws an error if checksum does not pre-computed value
    * `qdump` function reports checksums
    * Performance optimizations -- use C interface directly rather than Rcpp containers
+      * About 180% serialization speed improvement for large lists (e.g., `as.list(runif(1e6))`)
    * Removed `qinspect` function as checks are now performed within serialization functiosn directly
-   * Additional error checking for proper compression and serialization (R should not crash even if a file is corrupted)
+   * Additional error checking for proper compression and serialization
+      * The goal is R should not crash even if a file is corrupted
 
 Version 0.16.2 (2019-6-15)
    * Added `Set_elt` method for alt-rep string class (https://github.com/traversc/qs/issues/9)

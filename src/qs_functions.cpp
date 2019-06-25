@@ -207,83 +207,89 @@ RObject c_qdump(std::string file) {
     throw std::runtime_error("Failed to open file");
   }
   QsMetadata qm(myFile);
+  List outvec;
+  dumpMetadata(outvec, qm);
+  uint64_t totalsize = readSizeFromFile8(myFile);
+  std::streampos current = myFile.tellg();
+  myFile.ignore(std::numeric_limits<std::streamsize>::max());
+  uint64_t readable_bytes = myFile.gcount();
+  myFile.seekg(current);
   if(qm.compress_algorithm == 3) { // zstd_stream
-    uint64_t totalsize = readSizeFromFile8(myFile);
-    
-    std::streampos current = myFile.tellg();
-    myFile.ignore(std::numeric_limits<std::streamsize>::max());
-    uint64_t readable_bytes = myFile.gcount();
-    myFile.seekg(current);
     if(qm.check_hash) readable_bytes -= 4;
-    std::vector<char> input(readable_bytes);
-    myFile.read(input.data(), readable_bytes);
-    
+    RawVector input(readable_bytes);
     RawVector output(totalsize);
+    char* inp = reinterpret_cast<char*>(RAW(input));
     char* outp = reinterpret_cast<char*>(RAW(output));
-    ZSTD_decompress(outp, totalsize, input.data(), readable_bytes);
+    myFile.read(inp, readable_bytes);
+    auto zstream = zstd_decompress_stream_simple(outp, totalsize, inp, readable_bytes);
+    bool is_error = zstream.decompress();
     uint32_t computed_hash = XXH32(outp, totalsize, XXH_SEED);
-
-    output.attr("computed_hash") = computed_hash;
+    
+    // append results
+    outvec["readable_bytes"] = std::to_string(readable_bytes);
+    outvec["decompressed_size"] = std::to_string(totalsize);
+    outvec["computed_hash"] = std::to_string(computed_hash);
     if(qm.check_hash) {
-      std::array<char,4> a = {0,0,0,0};
-      myFile.read(a.data(),4);
-      uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-      output.attr("recorded_hash") = recorded_hash;
+      uint32_t recorded_hash = readSizeFromFile4(myFile);
+      outvec["recorded_hash"] = std::to_string(recorded_hash);
     }
-    return output;
-  } else if(qm.compress_algorithm == 0) {
-    uint64_t number_of_blocks = readSizeFromFile8(myFile);
-    auto denv = zstd_decompress_env();
-    std::vector<char> zblock(denv.compressBound(BLOCKSIZE));
-    std::vector<char>block(BLOCKSIZE);
-    List output = List(number_of_blocks);
+    outvec["compressed_data"] = input;
+    outvec["uncompressed_data"] = output;
+    if(is_error) {
+      outvec["error"] = "decompression_error";
+    }
+  } else if(qm.compress_algorithm == 0 || qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+    decompress_fun dfun;
+    cbound_fun cbfun;
+    iserror_fun errfun;
+    if(qm.compress_algorithm == 0) {
+      dfun = ZSTD_decompress;
+      cbfun = ZSTD_compressBound;
+      errfun = ZSTD_isError;
+    } else {
+      dfun = LZ4_decompress_fun;
+      cbfun = LZ4_compressBound_fun;
+      errfun = LZ4_isError_fun;
+    }
+    if(qm.check_hash) readable_bytes -= 4;
+    std::vector<char> zblock(cbfun(BLOCKSIZE));
+    std::vector<char> block(BLOCKSIZE);
+    List output = List(totalsize);
+    List input = List(totalsize);
+    IntegerVector block_sizes(totalsize);
+    IntegerVector zblock_sizes(totalsize);
     xxhash_env xenv = xxhash_env();
-    for(uint64_t i=0; i<number_of_blocks; i++) {
-      std::array<char, 4> zsize_ar = {0,0,0,0};
-      myFile.read(zsize_ar.data(), 4);
-      uint64_t zsize = unaligned_cast<uint32_t>(zsize_ar.data(),0);
+    for(uint64_t i=0; i<totalsize; i++) {
+      uint64_t zsize = readSizeFromFile4(myFile);
+      if(static_cast<uint64_t>(myFile.gcount()) != 4) break;
       myFile.read(zblock.data(), zsize);
-      uint64_t block_size = denv.decompress(block.data(), BLOCKSIZE, zblock.data(), zsize);
-      xenv.update(block.data(), block_size);
-      output[i] = RawVector(block.begin(), block.begin() + block_size);
+      if(static_cast<uint64_t>(myFile.gcount()) != zsize) break;
+      uint64_t block_size = dfun(block.data(), BLOCKSIZE, zblock.data(), zsize);
+      if(!errfun(block_size)) {
+        xenv.update(block.data(), block_size);
+        output[i] = RawVector(block.begin(), block.begin() + block_size);
+        input[i] = RawVector(zblock.begin(), zblock.begin() + zsize);
+        zblock_sizes[i] = zsize;
+        block_sizes[i] = block_size;
+      }
     }
-    output.attr("computed_hash") = xenv.digest();
+    // append results
+    outvec["readable_bytes"] = std::to_string(readable_bytes);
+    outvec["number_of_blocks"] = std::to_string(totalsize);
+    outvec["compressed_block_sizes"] = zblock_sizes;
+    outvec["decompressed_block_sizes"] = block_sizes;
+    outvec["computed_hash"] = std::to_string(xenv.digest());
     if(qm.check_hash) {
-      std::array<char,4> a = {0,0,0,0};
-      myFile.read(a.data(),4);
-      uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-      output.attr("recorded_hash") = recorded_hash;
+      uint32_t recorded_hash = readSizeFromFile4(myFile);
+      outvec["recorded_hash"] = std::to_string(recorded_hash);
     }
-    return output;
-  } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
-    uint64_t number_of_blocks = readSizeFromFile8(myFile);
-    auto denv = lz4_decompress_env();
-    std::vector<char> zblock(denv.compressBound(BLOCKSIZE));
-    std::vector<char>block(BLOCKSIZE);
-    List output = List(number_of_blocks);
-    xxhash_env xenv = xxhash_env();
-    for(uint64_t i=0; i<number_of_blocks; i++) {
-      std::array<char, 4> zsize_ar = {0,0,0,0};
-      myFile.read(zsize_ar.data(), 4);
-      uint64_t zsize = unaligned_cast<uint32_t>(zsize_ar.data(),0);
-      myFile.read(zblock.data(), zsize);
-      uint64_t block_size = denv.decompress(block.data(), BLOCKSIZE, zblock.data(), zsize);
-      xenv.update(block.data(), block_size);
-      output[i] = RawVector(block.begin(), block.begin() + block_size);
-    }
-    output.attr("computed_hash") = xenv.digest();
-    if(qm.check_hash) {
-      std::array<char,4> a = {0,0,0,0};
-      myFile.read(a.data(),4);
-      uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-      output.attr("recorded_hash") = recorded_hash;
-    }
-    return output;
+    outvec["compressed_data"] = input;
+    outvec["uncompressed_data"] = output;
   } else {
-    throw std::runtime_error("Invalid compression algorithm in file");
+    outvec["error"] = "unknown compression";
   }
+  return outvec;
 }
-
 
 // void qs_use_alt_rep(bool s) {
 //   use_alt_rep_bool = s;

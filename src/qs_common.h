@@ -36,6 +36,7 @@ https://github.com/traversc/qs
 #include <vector>
 #include <climits>
 #include <limits>
+#include <stdint.h>
 
 #include <atomic>
 #include <thread>
@@ -313,7 +314,7 @@ static const std::set<SEXPTYPE> stypes = {REALSXP, INTSXP, LGLSXP, STRSXP, CHARS
 
 inline void writeSizeToFile8(std::ofstream & myFile, uint64_t x) {uint64_t x_temp = static_cast<uint64_t>(x); myFile.write(reinterpret_cast<char*>(&x_temp),8);}
 inline void writeSizeToFile4(std::ofstream & myFile, uint64_t x) {uint32_t x_temp = static_cast<uint32_t>(x); myFile.write(reinterpret_cast<char*>(&x_temp),4);}
-uint64_t readSizeFromFile4(std::ifstream & myFile) {
+uint32_t readSizeFromFile4(std::ifstream & myFile) {
   std::array<char,4> a = {0,0,0,0};
   myFile.read(a.data(),4);
   return *reinterpret_cast<uint32_t*>(a.data());
@@ -401,7 +402,7 @@ struct QsMetadata {
     int_shuffle = shuffle_control & 0x02;
     real_shuffle = shuffle_control & 0x04;
     cplx_shuffle = shuffle_control & 0x08;
-    endian = is_big_endian() ? 1 : 0;
+    endian = is_big_endian() ? 0x01 : 0x00;
     this->check_hash = check_hash;
   }
   
@@ -419,7 +420,7 @@ struct QsMetadata {
   QsMetadata(std::ifstream & myFile) {
     std::array<unsigned char,4> reserve_bits;
     myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
-    unsigned char sys_endian = is_big_endian() ? 1 : 0;
+    unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
     if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
     compress_algorithm = reserve_bits[2] >> 4;
     compress_level = 1;
@@ -428,12 +429,13 @@ struct QsMetadata {
     real_shuffle = reserve_bits[2] & 0x04;
     cplx_shuffle = reserve_bits[2] & 0x08;
     check_hash = reserve_bits[1];
+    endian = reserve_bits[3];
   }
   void writeToFile(std::ofstream & myFile) {
     std::array<unsigned char,4> reserve_bits = {0,0,0,0};
     reserve_bits[1] = check_hash;
     reserve_bits[2] += compress_algorithm << 4;
-    reserve_bits[3] = is_big_endian() ? 1 : 0;
+    reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
     reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
     myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
   }
@@ -451,6 +453,7 @@ struct QsMetadata {
 typedef size_t (*compress_fun)(void*, size_t, const void*, size_t, int);
 typedef size_t (*decompress_fun)(void*, size_t, const void*, size_t);
 typedef size_t (*cbound_fun)(size_t);
+typedef unsigned (*iserror_fun)(size_t);
 
 size_t LZ4_compressBound_fun(size_t srcSize) {
   return LZ4_compressBound(srcSize);
@@ -474,11 +477,24 @@ size_t LZ4_compress_HC_fun( void* dst, size_t dstCapacity,
 
 size_t LZ4_decompress_fun( void* dst, size_t dstCapacity,
                            const void* src, size_t compressedSize) {
-  return LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)), 
+  int ret = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)), 
                              reinterpret_cast<char*>(const_cast<void*>(dst)),
                              static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
-  
+  if(ret < 0) {
+    return SIZE_MAX;
+  } else {
+    return ret;
+  }
 }
+  
+unsigned LZ4_isError_fun(size_t retval) {
+  if(retval == SIZE_MAX) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////
 // common utility functions for serialization (stream)
@@ -1230,4 +1246,68 @@ struct lz4_decompress_env {
   }
 };
 
+
+////////////////////////////////////////////////////////////////
+// qdump/debug helper functions
+////////////////////////////////////////////////////////////////
+
+void dumpMetadata(List& output, QsMetadata& qm) {
+  switch(qm.compress_algorithm) {
+  case 0:
+    output["compress_algorithm"] = "zstd";
+    break;
+  case 1:
+    output["compress_algorithm"] = "lz4";
+    break;
+  case 2:
+    output["compress_algorithm"] = "lz4hc";
+    break;
+  case 3:
+    output["compress_algorithm"] = "zstd_stream";
+    break;
+  default:
+    output["compress_algorithm"] = "unknown";
+    break;
+  }
+  output["compress_level"] = qm.compress_level;
+  output["lgl_shuffle"] = qm.lgl_shuffle;
+  output["int_shuffle"] = qm.int_shuffle;
+  output["real_shuffle"] = qm.real_shuffle;
+  output["cplx_shuffle"] = qm.cplx_shuffle;
+  output["endian"] = static_cast<int>(qm.endian);
+  output["check_hash"] = qm.check_hash;
+}
+
+// simple decompress stream context
+
+struct zstd_decompress_stream_simple {
+  ZSTD_inBuffer zin;
+  ZSTD_outBuffer zout;
+  ZSTD_DStream* zds;
+  
+  zstd_decompress_stream_simple(char* outp, size_t outsize, char* inp, size_t insize) {
+    zout.pos = 0;
+    zout.dst = outp;
+    zout.size = outsize;
+    zin.pos = 0;
+    zin.src = inp;
+    zin.size = insize;
+    zds = ZSTD_createDStream();
+  }
+  
+  // returns true if error
+  bool decompress() {
+    while(zout.pos < zout.size) {
+      size_t return_value = ZSTD_decompressStream(zds, &zout, &zin);
+      if(ZSTD_isError(return_value)) return true;
+    }
+    return false;
+  }
+  ~zstd_decompress_stream_simple() {
+    ZSTD_freeDStream(zds);
+  }
+};
+
 #endif
+
+
