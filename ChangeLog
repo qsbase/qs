@@ -1,3 +1,7 @@
+Version 0.17.2 (2019-7-6)
+   * Remove `restrict` keyword from R source files due to Solaris CRAN checks
+   * Remove executable file permission from src/* files due to OSX CRAN detecting license files as executable
+
 Version 0.17.1 (2019-6-24)
    * Re-write of `qdump` function to output more information
    * Added regression unit testing for previous versions (tests/regression_testing.R")
