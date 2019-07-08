@@ -406,5 +406,9 @@ for(q in 1:reps) {
   print(sprintf("nested tibble test: %s s", signif(mean(time),4)))
   
  }
+
+rm(list=ls())
+gc()
+
 print("tests done")
 

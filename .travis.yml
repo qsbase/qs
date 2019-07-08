@@ -14,7 +14,7 @@ install:
   - ./run.sh install_aptget r-cran-rcpp r-cran-knitr r-cran-rmarkdown r-cran-dplyr r-cran-data.table r-cran-rapiserialize && ./run.sh install_github traversc/qs
 
 script:
-  - ./run.sh run_tests && Rscript tests/correctness_testing.R
+  - ./run.sh run_tests && free -h && Rscript tests/correctness_testing.R && free -h
   
 after_failure:
   - ./run.sh dump_logs
