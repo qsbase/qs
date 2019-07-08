@@ -155,13 +155,14 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }
+  Protect_Tracker pt = Protect_Tracker();
   QsMetadata qm(myFile);
   if(qm.compress_algorithm == 3) { // zstd_stream
     uint64_t totalsize = readSizeFromFile8(myFile);
     ZSTD_streamRead sr(myFile, qm, totalsize);
     Data_Context_Stream<ZSTD_streamRead> dc(sr, qm, use_alt_rep);
     // std::cout << dc.xenv.digest() << std::endl;
-    SEXP ret = dc.processBlock();
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
     validate_hash(qm, myFile, dc.dsc.xenv.digest(), strict);
     return ret;
   } else {
@@ -169,12 +170,12 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
       if(qm.compress_algorithm == 0) {
         Data_Context<zstd_decompress_env> dc(myFile, qm, use_alt_rep);
         // std::cout << dc.xenv.digest() << std::endl;
-        SEXP ret = dc.processBlock();
+        SEXP ret = PROTECT(dc.processBlock()); pt++;
         validate_hash(qm, myFile, dc.xenv.digest(), strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context<lz4_decompress_env> dc(myFile, qm, use_alt_rep);
-        SEXP ret = dc.processBlock();
+        SEXP ret = PROTECT(dc.processBlock()); pt++;
         validate_hash(qm, myFile, dc.xenv.digest(), strict);
         return ret;
       } else {
@@ -183,13 +184,13 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
     } else {
       if(qm.compress_algorithm == 0) {
         Data_Context_MT<zstd_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
-        SEXP ret = dc.processBlock(); // is protect unnecessary since we aren't calling any R function before return?
+        SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
         validate_hash(qm, myFile, dc.xenv.digest(), strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
-        SEXP ret = dc.processBlock(); // is protect unnecessary since we aren't calling any R function before return?
+        SEXP ret = PROTECT(dc.processBlock()); pt++; // is protect unnecessary since we aren't calling any R function before return?
         dc.dtc.finish();
         validate_hash(qm, myFile, dc.xenv.digest(), strict);
         return ret;
