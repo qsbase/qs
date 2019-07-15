@@ -9,7 +9,7 @@ qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
 \arguments{
 \item{file}{the file name/path}
 
-\item{use_alt_rep}{Use alt rep when reading in string data.  Default: FALSE}
+\item{use_alt_rep}{Use alt rep when reading in string data.  Default: FALSE.  (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
 
 \item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
 

@@ -1,3 +1,7 @@
+Version 0.18.1 (2019-7-14)
+   * Revised header format in order to include more information -- files created by 0/18.1 cannot by read by earlier versions
+   * Remove R version restriction.  Previously, `qs` required R >= 3.5.0.  R alt-rep functionality will not be used in earlier versions.  
+
 Version 0.17.3 (2019-7-8)
    * Fixed unprotected variable issue found by rchk (https://github.com/kalibera/rchk)
 

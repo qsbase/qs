@@ -57,6 +57,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
   }
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
+  auto header_end_pos = myFile.tellp();
   writeSizeToFile8(myFile, 0); // number of compressed blocks
   if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
     // if(nthreads > 1) Rcpp::Rcerr << "zstd_stream currently supports only 1 thread" << std::endl;
@@ -66,7 +67,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
     sw.flush();
     // std::cout << vbuf.sobj.xenv.digest() << std::endl;
     if(qm.check_hash) writeSizeToFile4(myFile, vbuf.sobj.xenv.digest());
-    myFile.seekp(4);
+    myFile.seekp(header_end_pos);
     writeSizeToFile8(myFile, sw.bytes_written);
   } else {
     if(nthreads <= 1) {
@@ -76,7 +77,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(4);
+        myFile.seekp(header_end_pos);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
         CompressBuffer<lz4_compress_env> vbuf(myFile, qm);
@@ -84,7 +85,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(4);
+        myFile.seekp(header_end_pos);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
         CompressBuffer<lz4hc_compress_env> vbuf(myFile, qm);
@@ -92,7 +93,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(4);
+        myFile.seekp(header_end_pos);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else {
         throw std::runtime_error("invalid compression algorithm selected");
@@ -105,7 +106,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.ctc.finish();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(4);
+        myFile.seekp(header_end_pos);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
         CompressBuffer_MT<lz4_compress_env> vbuf(&myFile, qm, nthreads);
@@ -114,7 +115,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.ctc.finish();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(4);
+        myFile.seekp(header_end_pos);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
         CompressBuffer_MT<lz4hc_compress_env> vbuf(&myFile, qm, nthreads);
@@ -123,7 +124,7 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.ctc.finish();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(4);
+        myFile.seekp(header_end_pos);
         writeSizeToFile8(myFile, vbuf.number_of_blocks);
       } else {
         throw std::runtime_error("invalid compression algorithm selected");
@@ -190,7 +191,7 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
-        SEXP ret = PROTECT(dc.processBlock()); pt++; // is protect unnecessary since we aren't calling any R function before return?
+        SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
         validate_hash(qm, myFile, dc.xenv.digest(), strict);
         return ret;
@@ -426,8 +427,10 @@ std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytes
 // functions for users to investigate alt rep data
 ////////////////////////////////////////////////////////////////
 
+
 // [[Rcpp::export]]
 SEXP convertToAlt(CharacterVector x) {
+#ifdef ALTREP_SUPPORTED
   auto ret = new stdvec_data(x.size());
   for(int i=0; i < x.size(); i++) {
     SEXP xi = x[i];
@@ -458,6 +461,10 @@ SEXP convertToAlt(CharacterVector x) {
     }
   }
   return stdvec_string::Make(ret, true);
+#else
+  Rcerr << "this function is not available in R < 3.5.0" << std::endl;
+  return R_NilValue;
+#endif
 }
 
 

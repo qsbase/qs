@@ -1,5 +1,6 @@
 #include "qs_common.h"
 
+// built in zstd streaming context
 struct ZSTD_streamWrite {
   std::ofstream & myFile;
   xxhash_env xenv;
@@ -9,8 +10,7 @@ struct ZSTD_streamWrite {
   ZSTD_inBuffer zin;
   ZSTD_outBuffer zout;
   ZSTD_CStream* zcs;
-  ZSTD_streamWrite(std::ofstream & mf, QsMetadata qm) : myFile(mf), xenv(xxhash_env()), qm(qm) {
-    bytes_written = 0;
+  ZSTD_streamWrite(std::ofstream & mf, QsMetadata qm) : myFile(mf), xenv(xxhash_env()), qm(qm), bytes_written(0) {
     size_t outblocksize = ZSTD_CStreamOutSize();
     outblock = std::vector<char>(outblocksize);
     zcs = ZSTD_createCStream();
@@ -50,6 +50,25 @@ struct ZSTD_streamWrite {
     } while (remain != 0);
   }
 };
+
+// posix pipe context
+struct pipe_streamWrite {
+  FILE * myPipe;
+  xxhash_env xenv;
+  QsMetadata qm;
+  uint64_t bytes_written;
+  // std::vector<char> outblock;
+  pipe_streamWrite(FILE * mf, QsMetadata qm) : myPipe(mf), xenv(xxhash_env()), qm(qm), bytes_written(0) {}
+  void push(char * data, uint64_t length) {
+    if(qm.check_hash) xenv.update(data, length);
+    fwrite_check(data, length, myPipe);
+  }
+  template<typename POD>
+  void push_pod(POD pod) {
+    push(reinterpret_cast<char*>(&pod), sizeof(pod));
+  }
+};
+
 
 template <class StreamClass> 
 struct CompressBufferStream {

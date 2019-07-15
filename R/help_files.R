@@ -86,7 +86,7 @@ qsave <- function(x, file, preset="balanced", algorithm="lz4", compress_level=1L
 #' Reads a object in a file serialized to disk
   #' @usage qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
 #' @param file the file name/path
-#' @param use_alt_rep Use alt rep when reading in string data.  Default: FALSE
+#' @param use_alt_rep Use alt rep when reading in string data.  Default: FALSE.  (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
 #' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
 #' @param nthreads Number of threads to use.  Default 1.  
 #' @return The de-serialized object
@@ -251,6 +251,7 @@ NULL
 #' Convert character vector to alt-rep
 #' 
 #' A function for generating a alt-rep object from a character vector, for users to experiment with the alt-rep system. 
+#' This function is not available in R versions earlier than 3.5.0.
 #' @usage convertToAlt(x)
 #' @param x The character vector
 #' @return The character vector in alt-rep form

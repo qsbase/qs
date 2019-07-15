@@ -307,6 +307,7 @@ struct Data_Context_MT {
       if(r_array_len > 0) getBlockData(reinterpret_cast<char*>(RAW(obj)), r_array_len);
       break;
     case STRSXP:
+#ifdef ALTREP_SUPPORTED
       if(use_alt_rep_bool) {
         auto ret = new stdvec_data(r_array_len);
         for(uint64_t i=0; i < r_array_len; i++) {
@@ -342,6 +343,7 @@ struct Data_Context_MT {
         }
         obj = PROTECT(stdvec_string::Make(ret, true)); pt++;
       } else {
+#endif
         obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
         for(uint64_t i=0; i<r_array_len; i++) {
           uint32_t r_string_len;
@@ -363,7 +365,9 @@ struct Data_Context_MT {
             SET_STRING_ELT(obj, i, Rf_mkCharLenCE(temp_string.data(), r_string_len, string_encoding));
           }
         }
+#ifdef ALTREP_SUPPORTED
       }
+#endif
       break;
     case S4SXP:
     {

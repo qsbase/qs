@@ -24,6 +24,7 @@ https://github.com/traversc/qs
 #include <Rcpp.h>
 
 #include <fstream>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <algorithm>
@@ -40,7 +41,6 @@ https://github.com/traversc/qs
 
 #include <atomic>
 #include <thread>
-#include <condition_variable>
 
 #include <R.h>
 #include <Rinternals.h>
@@ -60,9 +60,14 @@ https://github.com/traversc/qs
 using namespace Rcpp;
 
 
+
+
+
 ////////////////////////////////////////////////////////////////
 // alt rep string class
 ////////////////////////////////////////////////////////////////
+#if R_VERSION >= R_Version(3, 5, 0)
+#define ALTREP_SUPPORTED
 
 // load alt-rep header -- see altrepisode package by Romain Francois
 #if R_VERSION < R_Version(3, 6, 0)
@@ -240,6 +245,12 @@ void init_stdvec_double(DllInfo* dll){
   stdvec_string::Init(dll);
 }
 
+#else
+// [[Rcpp::init]]
+void init_stdvec_double(DllInfo* dll){
+  // do nothing -- need a dummy function becasue of Rcpp attributes
+}
+#endif
 ////////////////////////////////////////////////////////////////
 // common utility functions and constants
 ////////////////////////////////////////////////////////////////
@@ -333,10 +344,34 @@ inline POD unaligned_cast(char* data, uint64_t offset) {
   return y;
 }
 
+// file descriptor read and write with error checking
+size_t fread_check(void * ptr, size_t count, FILE * stream, bool check_size=true) {
+  size_t return_value = fread(ptr, 1, count, stream);
+  if(ferror(stream)) throw std::runtime_error("error reading from stream");
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error reading from stream");
+    }
+  }
+  return return_value;
+}
+
+// file descriptor read and write with error checking
+size_t fwrite_check(void * ptr, size_t count, FILE * stream, bool check_size=true) {
+  size_t return_value = fwrite(ptr, 1, count, stream);
+  if(ferror(stream)) throw std::runtime_error("error writing to stream");
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to stream");
+    }
+  }
+  return return_value;
+}
+
 // maximum value is 7, reserve bit shared with shuffle bit
 // if we need more slots we will have to use other reserve bits
 enum class compalg : unsigned char {
-  zstd = 0, lz4 = 1, lz4hc = 2, zstd_stream = 3
+  zstd = 0, lz4 = 1, lz4hc = 2, zstd_stream = 3, pipe = 4
 };
 // qs reserve header details
 // reserve[0] unused
@@ -387,10 +422,13 @@ struct QsMetadata {
         compress_algorithm = static_cast<unsigned char>(compalg::lz4);
         this->compress_level = compress_level;
         if(compress_level < 1) throw std::runtime_error("lz4 compress_level must be an integer greater than 1");
-      }  else if(algorithm == "lz4hc") {
+      } else if(algorithm == "lz4hc") {
         compress_algorithm = static_cast<unsigned char>(compalg::lz4hc);
         this->compress_level = compress_level;
         if(compress_level < 1 || compress_level > 12) throw std::runtime_error("lz4hc compress_level must be an integer between 1 and 12");
+      } else if(algorithm == "pipe") {
+        compress_algorithm = static_cast<unsigned char>(compalg::pipe);
+        this->compress_level = 0;
       } else {
         throw std::runtime_error("algorithm must be one of zstd, lz4, lz4hc or zstd_stream");
       }
@@ -406,20 +444,25 @@ struct QsMetadata {
     this->check_hash = check_hash;
   }
   
-  // defunct
-  // QsMetadata(unsigned char shuffle_control, unsigned char algo, int cl) : 
-  //   compress_algorithm(algo), compress_level(cl) {
-  //   lgl_shuffle = shuffle_control & 0x01;
-  //   int_shuffle = shuffle_control & 0x02;
-  //   real_shuffle = shuffle_control & 0x04;
-  //   cplx_shuffle = shuffle_control & 0x08;
-  //   endian = is_big_endian() ? 1 : 0;
-  // }
+  // 0x0B0E0A0C
+  bool checkMagicNumber(std::array<unsigned char, 4> & reserve_bits) {
+    if(reserve_bits[0] != 0x0B) return false;
+    if(reserve_bits[1] != 0x0E) return false;
+    if(reserve_bits[2] != 0x0A) return false;
+    if(reserve_bits[3] != 0x0C) return false;
+    return true;
+  }
   
   // constructor from q_read
   QsMetadata(std::ifstream & myFile) {
-    std::array<unsigned char,4> reserve_bits;
+    std::array<unsigned char,4> reserve_bits = {0,0,0,0};
     myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
+    // version 2
+    if(reserve_bits[0] != 0) {
+      if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
+      myFile.ignore(4); // empty reserve bits
+      myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
+    }
     unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
     if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
     compress_algorithm = reserve_bits[2] >> 4;
@@ -431,22 +474,51 @@ struct QsMetadata {
     check_hash = reserve_bits[1];
     endian = reserve_bits[3];
   }
-  void writeToFile(std::ofstream & myFile) {
+  
+  // constructor from q_read_pipe
+  // must have magic number bits; version 1 is not applicable for pipes
+  QsMetadata(FILE * myPipe) {
     std::array<unsigned char,4> reserve_bits = {0,0,0,0};
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, myPipe);
+    if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, myPipe); // empty reserve bits
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, myPipe);
+    unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
+    if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
+    compress_algorithm = reserve_bits[2] >> 4;
+    compress_level = 1;
+    lgl_shuffle = reserve_bits[2] & 0x01;
+    int_shuffle = reserve_bits[2] & 0x02;
+    real_shuffle = reserve_bits[2] & 0x04;
+    cplx_shuffle = reserve_bits[2] & 0x08;
+    check_hash = reserve_bits[1];
+    endian = reserve_bits[3];
+  }
+  
+  // version 2
+  void writeToFile(std::ofstream & myFile) {
+    std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
+    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
+    reserve_bits = {0,0,0,0};
+    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
     reserve_bits[1] = check_hash;
     reserve_bits[2] += compress_algorithm << 4;
     reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
     reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
     myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
   }
-  // void writeToFile(std::ofstream & myFile, unsigned char shuffle_control) {
-  //   std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-  //   reserve_bits[1] = check_hash;
-  //   reserve_bits[2] += compress_algorithm << 4;
-  //   reserve_bits[3] = is_big_endian() ? 1 : 0;
-  //   reserve_bits[2] += shuffle_control;
-  //   myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
-  // }
+  
+  void writeToPipe(FILE * myPipe) {
+    std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, myPipe);
+    reserve_bits = {0,0,0,0};
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, myPipe);
+    reserve_bits[1] = check_hash;
+    reserve_bits[2] += compress_algorithm << 4;
+    reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
+    reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, myPipe);
+  }
 };
 
 // Normalize lz4/zstd function arguments so we can use function types
@@ -847,6 +919,23 @@ uint32_t validate_hash(QsMetadata qm, std::ifstream & myFile, uint32_t computed_
     }
   }
   return 0;
+}
+
+// current does not check end of stream -- should this be checked?
+uint32_t validate_hash(QsMetadata qm, FILE * myPipe, uint32_t computed_hash, bool strict) {
+  if(qm.check_hash) {
+    std::array<char,4> a = {0,0,0,0};
+    fread_check(a.data(),4, myPipe);
+    uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
+    if(computed_hash != recorded_hash) {
+      if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
+         std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
+      Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
+    }
+    return recorded_hash;
+  } else {
+    return 0;
+  }
 }
 
 // R stack tracker using RAII
@@ -1309,5 +1398,4 @@ struct zstd_decompress_stream_simple {
 };
 
 #endif
-
 
