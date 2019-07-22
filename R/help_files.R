@@ -2,20 +2,21 @@
 # Copyright (C) 2019-present Travers Ching
 # 
 # This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 # 
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+# GNU General Public License for more details.
 # 
-# You should have received a copy of the GNU Affero General Public License
+# You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # 
 # You can contact the author at:
 #   https://github.com/traversc/qs
+
 
 #' qsave
 #' 
@@ -83,7 +84,7 @@ qsave <- function(x, file, preset="balanced", algorithm="lz4", compress_level=1L
 
 #' qread
 #' 
-#' Reads a object in a file serialized to disk
+#' Reads an object in a file serialized to disk
   #' @usage qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
 #' @param file the file name/path
 #' @param use_alt_rep Use alt rep when reading in string data.  Default: FALSE.  (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
@@ -121,6 +122,93 @@ qread <- function(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1) {
   c_qread(normalizePath(file, mustWork=FALSE), use_alt_rep, strict, nthreads)
 }
 
+#' qsave_pipe
+#' 
+#' Saves (serializes) an object to a R connection.  
+#' @usage qsave_pipe(x, scon, shuffle_control = 15L, check_hash=TRUE, check_mode=TRUE)
+#' @param x the object to serialize.
+#' @param scon A string or an R connection (opened in "wb" mode). 
+#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
+#' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
+#' @param check_mode Check mode of connection object (should be "wb"), default: TRUE
+#' @details 
+#' This function serializes and compresses an R object to a stream using an R connection, e.g. a `pipe`, or a file descriptor if scon is a string. 
+#' The R connection could be file descriptor handle to an external compression algorithm, to a socket etc.  
+#' Note: this is not compatible with the `qsave/qread` set of functions, as `qs` has no way to know what happens after writing to the stream.  
+#' If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.   
+#' @examples 
+#' \dontrun{
+#' x <- data.frame(int = sample(1e3, replace=TRUE), 
+#'                  num = rnorm(1e3), 
+#'                  char = randomStrings(1e3), stringsAsFactors = FALSE)
+#' 
+#' # Example 1: using Brotli as external compression
+#' bsave <- "brotli > myfile.br"
+#' qsave_pipe(x, connection = bsave) # pipe to Brotli's stdin
+#' close(bsave)
+#' bread <- "brotli -dc myfile.br"
+#' x2 <- qread_pipe(connection = bread) # read from output of Brotli's stdout
+#' close(bread)
+#' identical(x, x2) # returns true
+#' 
+#' # Example 2: using built in gzip
+#' gsave <- gzfile("myfile.gz", "wb")
+#' qsave_pipe(x, connection = bsave)
+#' close(gsave)
+#' gread <- gzfile("myfile.gz", "rb")
+#' x2 <- qread_pipe(connection = gread)
+#' close(gread)
+#' identical(x, x2) # returns true
+#' }
+#' @export
+qsave_pipe <- function(x, scon, shuffle_control=15L, check_hash = TRUE, check_mode = TRUE) {
+  if(inherits(scon, "connection")) {
+    if(check_mode) {
+      if(summary(scon)[["mode"]] != "wb") {
+        stop("connection mode should probably be 'wb'")
+      }
+    }
+    c_qsave_rconn(x, scon, shuffle_control, check_hash)
+  } else {
+    if(.Platform$OS.type == "windows") {
+      mode <- "wb"
+    } else {
+      mode <- "w"
+    }
+    c_qsave_fd(x, scon, shuffle_control, check_hash, mode)
+  }
+}
+
+
+#' qread_pipe
+#' 
+#' Reads an object from a pipe
+#' @usage qread_pipe(scon, use_alt_rep=FALSE, strict=FALSE, check_mode = TRUE)
+#' @param scon A string or an R connection (opened in "rb" mode).
+#' @param use_alt_rep Use alt rep when reading in string data.  Default: FALSE.  (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
+#' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
+#' @param check_mode Check mode of connection object (should be "rb"), default: TRUE
+#' @return The de-serialized object
+#' @details
+#' See `?qsave_pipe` for additional details and examples.  
+#' @export
+qread_pipe <- function(scon, use_alt_rep=FALSE, strict=FALSE, check_mode = TRUE) {
+  if(inherits(scon, "connection")) {
+    if(check_mode) {
+      if(summary(scon)[["mode"]] != "rb") {
+        stop("connection mode should probably be 'rb'")
+      }
+    }
+    c_qread_rconn(scon, use_alt_rep, strict)
+  } else {
+    if(.Platform$OS.type == "windows") {
+      mode <- "rb"
+    } else {
+      mode <- "r"
+    }
+    c_qread_fd(scon, use_alt_rep, strict, mode)
+  }
+}
 
 #' qdump
 #' 

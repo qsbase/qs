@@ -1,3 +1,23 @@
+/* qs - Quick Serialization of R Objects
+ Copyright (C) 2019-present Travers Ching
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+ You can contact the author at:
+ https://github.com/traversc/qs
+ */
+
 #include "qs_common.h"
 
 struct ZSTD_streamRead {
@@ -14,6 +34,8 @@ struct ZSTD_streamRead {
   ZSTD_inBuffer zin;
   ZSTD_outBuffer zout;
   ZSTD_DStream* zds;
+  uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
+  uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
   xxhash_env xenv;
   ZSTD_streamRead(std::ifstream & mf, QsMetadata qm, uint64_t dbt) : 
     myFile(mf), qm(qm), decompressed_bytes_total(dbt), xenv(xxhash_env()) {
@@ -32,6 +54,8 @@ struct ZSTD_streamRead {
     zin.size = 0;
     zin.pos = 0;
     zin.src = inblock.data();
+    blocksize = 0;
+    blockoffset = 0;
     
     // need to reserve some bytes for the hash check at the end
     // ref https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file
@@ -74,14 +98,14 @@ struct ZSTD_streamRead {
     decompressed_bytes_read += zout->pos - temp;
     xenv.update(reinterpret_cast<char*>(zout->dst)+temp, zout->pos - temp);
   }
-  void getBlock(uint64_t & blocksize, uint64_t & bytesused) {
+  void getBlock() {
     if(decompressed_bytes_read >= decompressed_bytes_total) return;
     char * ptr = outblock.data();
-    if(blocksize > bytesused) {
+    if(blocksize > blockoffset) {
       // dst should never overlap since blocksize > minblocksize
       // 7/14/2019: is this really true? let's use memmove to be safe
-      std::memmove(ptr, ptr + bytesused, blocksize - bytesused); 
-      zout.pos = blocksize - bytesused;
+      std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset); 
+      zout.pos = blocksize - blockoffset;
     } else {
       zout.pos = 0;
     }
@@ -102,16 +126,15 @@ struct ZSTD_streamRead {
       }
     }
     blocksize = zout.pos;
-    bytesused = 0;
+    blockoffset = 0;
   }
-  void copyData(uint64_t & blocksize, uint64_t & bytesused,
-                char* dst,uint64_t dst_size) {
+  void copyData(char* dst,uint64_t dst_size) {
     char * ptr = outblock.data();
     // dst should never overlap since blocksize > MINBLOCKSIZE
-    if(dst_size > blocksize - bytesused) {
-      // std::cout << blocksize - bytesused << " data cpy\n";
-      std::memcpy(dst, ptr + bytesused, blocksize - bytesused);
-      zout.pos = blocksize - bytesused;
+    if(dst_size > blocksize - blockoffset) {
+      // std::cout << blocksize - blockoffset << " data cpy\n";
+      std::memcpy(dst, ptr + blockoffset, blocksize - blockoffset);
+      zout.pos = blocksize - blockoffset;
       zout.dst = dst;
       zout.size = dst_size;
       while(zout.pos < dst_size) {
@@ -136,92 +159,282 @@ struct ZSTD_streamRead {
           }
         }
       }
-      bytesused = 0;
+      blockoffset = 0;
       blocksize = 0;
     } else {
-      std::memcpy(dst, ptr + bytesused, dst_size);
-      bytesused += dst_size;
+      std::memcpy(dst, ptr + blockoffset, dst_size);
+      blockoffset += dst_size;
     }
     zout.dst = outblock.data();
     zout.size = maxblocksize;
-    if(blocksize - bytesused < BLOCKRESERVE) {
-      getBlock(blocksize, bytesused);
+    if(blocksize - blockoffset < BLOCKRESERVE) {
+      getBlock();
     }
   }
 };
 
-
-struct pipe_streamRead {
-  FILE * myPipe;
+#ifdef USE_R_CONNECTION
+struct rconn_streamRead {
+  Rconnection con;
   QsMetadata qm;
-  uint64_t bytes_read;
   std::vector<char> outblock;
+  uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
+  uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
   xxhash_env xenv;
-  pipe_streamRead(FILE * mf, QsMetadata qm) : 
-    myPipe(mf), qm(qm), bytes_read(0), 
-    outblock(std::vector<char>(BLOCKSIZE*2)),
-    xenv(xxhash_env()) {}
-  void getBlock(uint64_t & blocksize, uint64_t & bytesused) {
+  uint32_t hashable_bytes;
+  std::array<char, 4> hash_reserve;
+  rconn_streamRead(Rconnection _con, QsMetadata qm) : 
+    con(_con), qm(qm),
+    outblock(std::vector<char>(BLOCKSIZE+BLOCKRESERVE)), blocksize(0), blockoffset(0),
+    xenv(xxhash_env()), hashable_bytes(0), hash_reserve{{0,0,0,0}} {}
+  
+  // fread with updating hash as necessary
+  size_t fread_update(char * ptr, size_t count, bool check_size=true) {
+    size_t return_value = R_ReadConnection(con, ptr, count);
+    if(check_size) {
+      if(return_value != count) {
+        throw std::runtime_error("error reading from stream (wrong size)");
+      }
+    }
+    // std::cout << "rv: " << return_value << "\n";
+    if(!qm.check_hash) return return_value;
+    if(return_value == 0) return return_value;
+    
+    // compute hash, reserve at least 4 bytes from hashing
+    uint32_t previous_hashable_bytes = hashable_bytes;
+    hashable_bytes = hashable_bytes + return_value;
+    if(hashable_bytes <= 4) {
+      std::memcpy(hash_reserve.data() + previous_hashable_bytes, ptr, return_value);
+    } else {
+      if(return_value >= 4) {
+        xenv.update(hash_reserve.data(), previous_hashable_bytes);
+        xenv.update(ptr, return_value - 4);
+        std::memcpy(hash_reserve.data(), ptr+return_value-4, 4);
+      } else {
+        // bytes_to_hash_from_ptr = 0 -- don't hash any bytes from pointer, since they will all be going towards the reserve
+        // worst case: hashable_bytes = 7, previous_hashable = 4, return_value = 3
+        uint32_t bytes_to_hash_from_reserve = hashable_bytes - 4; // worst case: 3
+        uint32_t bytes_remaining_in_reserve = previous_hashable_bytes - bytes_to_hash_from_reserve; // worst case: 4 - 3 = 1
+        xenv.update(hash_reserve.data(), bytes_to_hash_from_reserve);
+        std::memmove(hash_reserve.data(), hash_reserve.data() + bytes_to_hash_from_reserve, bytes_remaining_in_reserve);
+        std::memcpy(hash_reserve.data() + bytes_remaining_in_reserve, ptr, return_value);
+      }
+      hashable_bytes = 4;
+    }
+    return return_value;
+  }
+  
+  // current does not check end of stream -- should this be checked?
+  uint32_t validate_hash(bool strict) {
+    if(qm.check_hash) {
+      std::array<char,4> a = {0,0,0,0};
+      uint64_t bytes_read = fread_check(a.data(), 4, con, false);
+      // std::cout << "remaining bytes " << bytes_read << std::endl;
+      
+      uint32_t recorded_hash;
+      // shift hash bytes if part of hash is in the reserve
+      if(bytes_read == 0) {
+        recorded_hash = *reinterpret_cast<uint32_t*>(hash_reserve.data());
+      } else if(bytes_read == 4) {
+        xenv.update(hash_reserve.data(), bytes_read);
+        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
+      } else {
+        std::memmove(a.data() + 4 - bytes_read, a.data(), bytes_read);
+        std::memcpy(a.data(), hash_reserve.data() + bytes_read, 4-bytes_read);
+        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
+        xenv.update(hash_reserve.data(), 4-bytes_read);
+      }
+      
+      uint32_t computed_hash = xenv.digest();
+      if(computed_hash != recorded_hash) {
+        if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
+           std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
+        Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
+      }
+      return recorded_hash;
+    } else {
+      return 0;
+    }
+  }
+  
+  void getBlock() {
     char * ptr = outblock.data();
     uint64_t block_offset;
-    if(blocksize > bytesused) {
-      std::memmove(ptr, ptr + bytesused, blocksize - bytesused);
-      block_offset = blocksize - bytesused;
+    if(blocksize > blockoffset) {
+      std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset);
+      block_offset = blocksize - blockoffset;
     } else {
       block_offset = 0;
     }
-    uint64_t bytes_read = fread_check(ptr + block_offset, outblock.size() - block_offset, myPipe, false);
+    uint64_t bytes_read = fread_update(ptr + block_offset, BLOCKSIZE - block_offset, false);
     blocksize = block_offset + bytes_read;
-    bytesused = 0;
+    blockoffset = 0;
   }
-  void copyData(uint64_t & blocksize, uint64_t & bytesused,
-                char* dst,uint64_t dst_size) {
+  void copyData(char* dst,uint64_t dst_size) {
     char * ptr = outblock.data();
-    if(dst_size > blocksize - bytesused) {
-      std::memcpy(dst, ptr + bytesused, blocksize - bytesused);
-      uint64_t block_offset = blocksize - bytesused;
-      fread_check(dst + block_offset, dst_size - block_offset, myPipe, true);
-      bytesused = 0;
+    if(dst_size > blocksize - blockoffset) {
+      std::memcpy(dst, ptr + blockoffset, blocksize - blockoffset);
+      uint64_t block_offset = blocksize - blockoffset;
+      fread_update(dst + block_offset, dst_size - block_offset, true);
+      blockoffset = 0;
       blocksize = 0;
     } else {
-      std::memcpy(dst, ptr + bytesused, dst_size);
-      bytesused += dst_size;
+      std::memcpy(dst, ptr + blockoffset, dst_size);
+      blockoffset += dst_size;
     }
-    if(blocksize - bytesused < BLOCKRESERVE) {
-      getBlock(blocksize, bytesused);
+    if(blocksize - blockoffset < BLOCKRESERVE) {
+      getBlock();
     }
   }
 };
+#endif
+
+// FILE pointer
+struct fd_streamRead {
+  FILE * con;
+  QsMetadata qm;
+  std::vector<char> outblock;
+  uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
+  uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
+  xxhash_env xenv;
+  uint32_t hashable_bytes;
+  std::array<char, 4> hash_reserve;
+  fd_streamRead(FILE * _con, QsMetadata qm) : 
+    con(_con), qm(qm),
+    outblock(std::vector<char>(BLOCKSIZE+BLOCKRESERVE)), blocksize(0), blockoffset(0),
+    xenv(xxhash_env()), hashable_bytes(0), hash_reserve{{0,0,0,0}} {}
+  
+  // fread with updating hash as necessary
+  size_t fread_update(char * ptr, size_t count, bool check_size=true) {
+    size_t return_value = fread(ptr, 1, count, con);
+    if (ferror(con)) {
+      throw std::runtime_error("error writing to connection (ferror)");
+    }
+    if(check_size) {
+      if(return_value != count) {
+        throw std::runtime_error("error reading from stream (wrong size)");
+      }
+    }
+    // std::cout << "rv: " << return_value << "\n";
+    if(!qm.check_hash) return return_value;
+    if(return_value == 0) return return_value;
+    
+    // compute hash, reserve at least 4 bytes from hashing
+    uint32_t previous_hashable_bytes = hashable_bytes;
+    hashable_bytes = hashable_bytes + return_value;
+    if(hashable_bytes <= 4) {
+      std::memcpy(hash_reserve.data() + previous_hashable_bytes, ptr, return_value);
+    } else {
+      if(return_value >= 4) {
+        xenv.update(hash_reserve.data(), previous_hashable_bytes);
+        xenv.update(ptr, return_value - 4);
+        std::memcpy(hash_reserve.data(), ptr+return_value-4, 4);
+      } else {
+        // bytes_to_hash_from_ptr = 0 -- don't hash any bytes from pointer, since they will all be going towards the reserve
+        // worst case: hashable_bytes = 7, previous_hashable = 4, return_value = 3
+        uint32_t bytes_to_hash_from_reserve = hashable_bytes - 4; // worst case: 3
+        uint32_t bytes_remaining_in_reserve = previous_hashable_bytes - bytes_to_hash_from_reserve; // worst case: 4 - 3 = 1
+        xenv.update(hash_reserve.data(), bytes_to_hash_from_reserve);
+        std::memmove(hash_reserve.data(), hash_reserve.data() + bytes_to_hash_from_reserve, bytes_remaining_in_reserve);
+        std::memcpy(hash_reserve.data() + bytes_remaining_in_reserve, ptr, return_value);
+      }
+      hashable_bytes = 4;
+    }
+    return return_value;
+  }
+  
+  // current does not check end of stream -- should this be checked?
+  uint32_t validate_hash(bool strict) {
+    if(qm.check_hash) {
+      std::array<char,4> a = {0,0,0,0};
+      uint64_t bytes_read = fread_check(a.data(), 4, con, false);
+      // std::cout << "remaining bytes " << bytes_read << std::endl;
+      
+      uint32_t recorded_hash;
+      // shift hash bytes if part of hash is in the reserve
+      if(bytes_read == 0) {
+        recorded_hash = *reinterpret_cast<uint32_t*>(hash_reserve.data());
+      } else if(bytes_read == 4) {
+        xenv.update(hash_reserve.data(), bytes_read);
+        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
+      } else {
+        std::memmove(a.data() + 4 - bytes_read, a.data(), bytes_read);
+        std::memcpy(a.data(), hash_reserve.data() + bytes_read, 4-bytes_read);
+        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
+        xenv.update(hash_reserve.data(), 4-bytes_read);
+      }
+      
+      uint32_t computed_hash = xenv.digest();
+      if(computed_hash != recorded_hash) {
+        if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
+           std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
+        Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
+      }
+      return recorded_hash;
+    } else {
+      return 0;
+    }
+  }
+  
+  void getBlock() {
+    char * ptr = outblock.data();
+    uint64_t block_offset;
+    if(blocksize > blockoffset) {
+      std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset);
+      block_offset = blocksize - blockoffset;
+    } else {
+      block_offset = 0;
+    }
+    uint64_t bytes_read = fread_update(ptr + block_offset, BLOCKSIZE - block_offset, false);
+    blocksize = block_offset + bytes_read;
+    blockoffset = 0;
+  }
+  void copyData(char* dst,uint64_t dst_size) {
+    char * ptr = outblock.data();
+    if(dst_size > blocksize - blockoffset) {
+      std::memcpy(dst, ptr + blockoffset, blocksize - blockoffset);
+      uint64_t block_offset = blocksize - blockoffset;
+      fread_update(dst + block_offset, dst_size - block_offset, true);
+      blockoffset = 0;
+      blocksize = 0;
+    } else {
+      std::memcpy(dst, ptr + blockoffset, dst_size);
+      blockoffset += dst_size;
+    }
+    if(blocksize - blockoffset < BLOCKRESERVE) {
+      getBlock();
+    }
+  }
+};
+
 
 template <class DestreamClass> 
 struct Data_Context_Stream {
   DestreamClass & dsc;
   QsMetadata qm;
   bool use_alt_rep_bool;
-  std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
-  uint64_t data_offset;
-  uint64_t block_size;
+  std::vector<uint8_t> shuffleblock;
+  uint64_t & data_offset; // dsc.blockoffset
+  uint64_t & block_size; // dsc.blocksize
   char * data_ptr;
   std::string temp_string;
   
-  Data_Context_Stream(DestreamClass & d, QsMetadata q, bool use_alt_rep) : dsc(d), qm(q), use_alt_rep_bool(use_alt_rep) {
-    data_offset = 0;
-    block_size = 0;
-    data_ptr = dsc.outblock.data();
-    temp_string = std::string(256, '\0');
-  }
-  void getBlock(uint64_t & block_size, uint64_t & data_offset) {
-    dsc.getBlock(block_size, data_offset);
+  Data_Context_Stream(DestreamClass & d, QsMetadata q, bool use_alt_rep) : dsc(d), qm(q), use_alt_rep_bool(use_alt_rep),
+    shuffleblock(std::vector<uint8_t>(256)), data_offset(d.blockoffset), block_size(d.blocksize), data_ptr(d.outblock.data()), 
+    temp_string(std::string(256, '\0')) {}
+  
+  void getBlock() {
+    dsc.getBlock();
   }
   void getBlockData(char* outp, uint64_t data_size) {
-    dsc.copyData(block_size, data_offset, outp, data_size);
+    dsc.copyData(outp, data_size);
   }
   void readHeader(SEXPTYPE & object_type, uint64_t & r_array_len) {
-    if(data_offset + BLOCKRESERVE >= block_size) getBlock(block_size, data_offset);
+    if(data_offset + BLOCKRESERVE >= block_size) getBlock();
     readHeader_common(object_type, r_array_len, data_offset, data_ptr);
   }
   void readStringHeader(uint32_t & r_string_len, cetype_t & ce_enc) {
-    if(data_offset + BLOCKRESERVE >= block_size) getBlock(block_size, data_offset);
+    if(data_offset + BLOCKRESERVE >= block_size) getBlock();
     readStringHeader_common(r_string_len, ce_enc, data_offset, data_ptr);
   }
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {

@@ -1,3 +1,7 @@
+Version 0.18.2 (2019-7-19)
+   * Changed license to GPL-3 (https://github.com/traversc/qs/issues/13)
+   * Implemented two new functions: `qsave_pipe` and `qread_pipe`.  These functions allow for reading and writing using pipes, file descriptors, etc.  
+
 Version 0.18.1 (2019-7-14)
    * Revised header format in order to include more information -- files created by 0/18.1 cannot by read by earlier versions
    * Remove R version restriction.  Previously, `qs` required R >= 3.5.0.  R alt-rep functionality will not be used in earlier versions.  

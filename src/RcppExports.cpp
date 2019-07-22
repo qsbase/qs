@@ -46,6 +46,60 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// c_qsave_fd
+void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode);
+RcppExport SEXP _qs_c_qsave_fd(SEXP xSEXP, SEXP sconSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP popen_modeSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::string >::type scon(sconSEXP);
+    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
+    Rcpp::traits::input_parameter< std::string >::type popen_mode(popen_modeSEXP);
+    c_qsave_fd(x, scon, shuffle_control, check_hash, popen_mode);
+    return R_NilValue;
+END_RCPP
+}
+// c_qsave_rconn
+void c_qsave_rconn(SEXP x, SEXP scon, int shuffle_control, bool check_hash);
+RcppExport SEXP _qs_c_qsave_rconn(SEXP xSEXP, SEXP sconSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type scon(sconSEXP);
+    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
+    c_qsave_rconn(x, scon, shuffle_control, check_hash);
+    return R_NilValue;
+END_RCPP
+}
+// c_qread_fd
+SEXP c_qread_fd(std::string scon, bool use_alt_rep, bool strict, std::string popen_mode);
+RcppExport SEXP _qs_c_qread_fd(SEXP sconSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP popen_modeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type scon(sconSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
+    Rcpp::traits::input_parameter< std::string >::type popen_mode(popen_modeSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qread_fd(scon, use_alt_rep, strict, popen_mode));
+    return rcpp_result_gen;
+END_RCPP
+}
+// c_qread_rconn
+SEXP c_qread_rconn(SEXP scon, bool use_alt_rep, bool strict);
+RcppExport SEXP _qs_c_qread_rconn(SEXP sconSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type scon(sconSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qread_rconn(scon, use_alt_rep, strict));
+    return rcpp_result_gen;
+END_RCPP
+}
 // c_qdump
 RObject c_qdump(std::string file);
 RcppExport SEXP _qs_c_qdump(SEXP fileSEXP) {
@@ -177,6 +231,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
     {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
+    {"_qs_c_qsave_fd", (DL_FUNC) &_qs_c_qsave_fd, 5},
+    {"_qs_c_qsave_rconn", (DL_FUNC) &_qs_c_qsave_rconn, 4},
+    {"_qs_c_qread_fd", (DL_FUNC) &_qs_c_qread_fd, 4},
+    {"_qs_c_qread_rconn", (DL_FUNC) &_qs_c_qread_rconn, 3},
     {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},

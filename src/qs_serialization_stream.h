@@ -1,3 +1,23 @@
+/* qs - Quick Serialization of R Objects
+ Copyright (C) 2019-present Travers Ching
+ 
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+ You can contact the author at:
+ https://github.com/traversc/qs
+ */
+
 #include "qs_common.h"
 
 // built in zstd streaming context
@@ -51,17 +71,34 @@ struct ZSTD_streamWrite {
   }
 };
 
-// posix pipe context
-struct pipe_streamWrite {
-  FILE * myPipe;
+#ifdef USE_R_CONNECTION
+// Rconnection context
+struct rconn_streamWrite {
+  Rconnection con;
+  xxhash_env xenv;
+  QsMetadata qm;
+  rconn_streamWrite(Rconnection _con, QsMetadata qm) : con(_con), xenv(xxhash_env()), qm(qm) {}
+  void push(char * data, uint64_t length) {
+    if(qm.check_hash) xenv.update(data, length);
+    fwrite_check(data, length, con);
+  }
+  template<typename POD>
+  void push_pod(POD pod) {
+    push(reinterpret_cast<char*>(&pod), sizeof(pod));
+  }
+};
+#endif
+
+// FILE pointer / pipe
+struct fd_streamWrite {
+  FILE * con;
   xxhash_env xenv;
   QsMetadata qm;
   uint64_t bytes_written;
-  // std::vector<char> outblock;
-  pipe_streamWrite(FILE * mf, QsMetadata qm) : myPipe(mf), xenv(xxhash_env()), qm(qm), bytes_written(0) {}
+  fd_streamWrite(FILE * _con, QsMetadata qm) : con(_con), xenv(xxhash_env()), qm(qm) {}
   void push(char * data, uint64_t length) {
     if(qm.check_hash) xenv.update(data, length);
-    fwrite_check(data, length, myPipe);
+    fwrite_check(data, length, con);
   }
   template<typename POD>
   void push_pod(POD pod) {

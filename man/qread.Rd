@@ -19,7 +19,7 @@ qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
 The de-serialized object
 }
 \description{
-Reads a object in a file serialized to disk
+Reads an object in a file serialized to disk
 }
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE), 

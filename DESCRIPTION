@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.18.1
-Date: 2019-7-14
+Version: 0.18.2
+Date: 2019-7-19
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd and lz4 code"),
@@ -14,8 +14,10 @@ Authors@R: c(
     person("Francesc", "Alted", role = c("ctb", "cph"), comment = "Shuffling routines derived from Blosc library"))
 Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for quickly writing and reading any R object to and from disk.  
-License: AGPL-3 | file LICENSE
+License: GPL-3 | file LICENSE
 LazyData: true
+Biarch: true
+SystemRequirements: C++11
 Imports: 
     Rcpp, RApiSerialize
 LinkingTo: Rcpp, RApiSerialize

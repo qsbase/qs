@@ -41,6 +41,11 @@ clean:
 ########################################################
 ### Configure args
 
+AC_ARG_WITH([allow-rconn],
+            AC_HELP_STRING([--with-allow-rconn],
+                           [Allows use of R connections]),
+            [allow_r_connection="true"])
+
 AC_ARG_WITH([zstd-force-compile],
             AC_HELP_STRING([--with-zstd-force-compile],
                            [Force compilation of bundled zstd source files]),
@@ -184,15 +189,13 @@ elif test xx$with_simd = "xxSSE2"; then
   INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
 fi
 
-# else
-#  if test xx$AVX2_SUPPORTED = "xx1"; then
-#    echo "AVX2 support detected"
-#    INCLUDE_PATHS="$INCLUDE_PATHS -mavx2"
-#  elif test xx$SSE2_SUPPORTED = "xx1"; then
-#    echo "SSE2 supported detected"
-#    INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
-#  fi
-# fi
+if test xx$allow_r_connection = "xxtrue"; then
+  echo "Allowing R connections"
+  R_CONNECTION_STRING="#define USE_R_CONNECTION"
+else
+  echo "Excluding R connections"
+  R_CONNECTION_STRING=""
+fi
 
 echo $LIBS
 echo $INCLUDE_PATHS
@@ -200,6 +203,8 @@ echo $COMPILE_STRING
 
 AC_SUBST([COMPILE_STRING], $COMPILE_STRING)
 AC_SUBST([INCLUDE_PATHS], $INCLUDE_PATHS)
+AC_SUBST([DEFINE_USE_R_CONNECTION], $R_CONNECTION_STRING)
 
 AC_CONFIG_FILES([src/Makevars])
+AC_CONFIG_FILES([src/qs_common.h])
 AC_OUTPUT

@@ -1,18 +1,18 @@
 /* qs - Quick Serialization of R Objects
  Copyright (C) 2019-present Travers Ching
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 You can contact the author at:
 https://github.com/traversc/qs
@@ -54,12 +54,35 @@ https://github.com/traversc/qs
 #include "BLOSC/unshuffle_routines.h"
 
 #include "xxhash/xxhash.c" // static linking
-
 #include <R_ext/Rdynload.h>
 
+// do not include by default due to CRAN policies
+// import based on configure script
+// to do: put this into it's own header -.-
+
+#ifdef USE_R_CONNECTION
+
+#define class aclass
+#define private aprivate
+#include <R_ext/Connections.h>
+#undef class
+#undef private
+
+#if defined(R_VERSION) && R_VERSION >= R_Version(3, 3, 0)
+Rconnection r_get_connection(SEXP con) {
+  return R_GetConnection(con);
+}
+#else
+Rconnection r_get_connection(SEXP con) {
+  if (!Rf_inherits(con, "connection"))
+    Rcpp::stop("invalid connection");
+  return getConnection(Rf_asInteger(con));
+}
+#endif
+
+#endif
+
 using namespace Rcpp;
-
-
 
 
 
@@ -323,18 +346,123 @@ static const unsigned char nstype_header_64 = 0x1A;
 
 static const std::set<SEXPTYPE> stypes = {REALSXP, INTSXP, LGLSXP, STRSXP, CHARSXP, NILSXP, VECSXP, CPLXSXP, RAWSXP};
 
-inline void writeSizeToFile8(std::ofstream & myFile, uint64_t x) {uint64_t x_temp = static_cast<uint64_t>(x); myFile.write(reinterpret_cast<char*>(&x_temp),8);}
-inline void writeSizeToFile4(std::ofstream & myFile, uint64_t x) {uint32_t x_temp = static_cast<uint32_t>(x); myFile.write(reinterpret_cast<char*>(&x_temp),4);}
-uint32_t readSizeFromFile4(std::ifstream & myFile) {
+///////////////////////////////////////////////////////
+// There are three types of output input streams-- std::ifstream/ofstream, Rconnectionand FILE pointer
+
+// helper functions for std::*stream
+
+inline void writeSizeToFile8(std::ofstream & myFile, uint64_t x) {
+  uint64_t x_temp = static_cast<uint64_t>(x); 
+  myFile.write(reinterpret_cast<char*>(&x_temp),8);
+}
+inline void writeSizeToFile4(std::ofstream & myFile, uint64_t x) {
+  uint32_t x_temp = static_cast<uint32_t>(x); 
+  myFile.write(reinterpret_cast<char*>(&x_temp),4);
+}
+inline uint32_t readSizeFromFile4(std::ifstream & myFile) {
   std::array<char,4> a = {0,0,0,0};
   myFile.read(a.data(),4);
   return *reinterpret_cast<uint32_t*>(a.data());
 }
-uint64_t readSizeFromFile8(std::ifstream & myFile) {
+inline uint64_t readSizeFromFile8(std::ifstream & myFile) {
   std::array<char,8> a = {0,0,0,0,0,0,0,0};
   myFile.read(a.data(),8);
   return *reinterpret_cast<uint64_t*>(a.data());
 }
+
+///////////////////////////////////////////////////////
+// helper functions for Rconnection
+
+#ifdef USE_R_CONNECTION
+// rconnection read and write with error checking
+inline size_t fread_check(void * ptr, size_t count, Rconnection con, bool check_size=true) {
+  size_t return_value = R_ReadConnection(con, ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error reading from connection (wrong size)");
+    }
+  }
+  return return_value;
+}
+// rconnection read and write with error checking
+inline size_t fwrite_check(void * ptr, size_t count, Rconnection con, bool check_size=true) {
+  size_t return_value = R_WriteConnection(con, ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to connection (wrong size)");
+    }
+  }
+  return return_value;
+}
+inline void writeSizeToCon8(Rconnection con, uint64_t x) {
+  uint64_t x_temp = static_cast<uint64_t>(x); 
+  fwrite_check(reinterpret_cast<char*>(&x_temp),8, con);
+}
+inline void writeSizeToCon4(Rconnection con, uint64_t x) {
+  uint32_t x_temp = static_cast<uint32_t>(x); 
+  fwrite_check(reinterpret_cast<char*>(&x_temp),4, con);
+  }
+inline uint32_t readSizeFromCon4(Rconnection con) {
+  std::array<char,4> a = {0,0,0,0};
+  fread_check(a.data(),4, con);
+  return *reinterpret_cast<uint32_t*>(a.data());
+}
+inline uint64_t readSizeFromCon8(Rconnection con) {
+  std::array<char,8> a = {0,0,0,0,0,0,0,0};
+  fread_check(a.data(),8, con);
+  return *reinterpret_cast<uint64_t*>(a.data());
+}
+
+#endif
+///////////////////////////////////////////////////////
+// helper functions for FILE pointers
+
+// FILE read and write with error checking
+inline size_t fread_check(void * ptr, size_t count, FILE * con, bool check_size=true) {
+  size_t return_value = fread(ptr, 1, count, con);
+  if (ferror(con)) {
+    throw std::runtime_error("error writing to connection (ferror)");
+  }
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error reading from connection (not enough bytes read)");
+    }
+  }
+  return return_value;
+}
+// FILE read and write with error checking
+inline size_t fwrite_check(void * ptr, size_t count, FILE * con, bool check_size=true) {
+  size_t return_value = fwrite(ptr, 1, count, con);
+  if (ferror(con)) {
+    throw std::runtime_error("error writing to connection (ferror)");
+  }
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to connection (not enough bytes read)");
+    }
+  }
+  return return_value;
+}
+inline void writeSizeToCon8(FILE * con, uint64_t x) {
+  uint64_t x_temp = static_cast<uint64_t>(x); 
+  fwrite_check(reinterpret_cast<char*>(&x_temp),8, con);
+}
+inline void writeSizeToCon4(FILE * con, uint64_t x) {
+  uint32_t x_temp = static_cast<uint32_t>(x); 
+  fwrite_check(reinterpret_cast<char*>(&x_temp),4, con);
+}
+inline uint32_t readSizeFromCon4(FILE * con) {
+  std::array<char,4> a = {0,0,0,0};
+  fread_check(a.data(),4, con);
+  return *reinterpret_cast<uint32_t*>(a.data());
+}
+inline uint64_t readSizeFromCon8(FILE * con) {
+  std::array<char,8> a = {0,0,0,0,0,0,0,0};
+  fread_check(a.data(),8, con);
+  return *reinterpret_cast<uint64_t*>(a.data());
+}
+
+///////////////////////////////////////////////////////
 
 // unaligned cast to <POD>
 template<typename POD>
@@ -344,34 +472,10 @@ inline POD unaligned_cast(char* data, uint64_t offset) {
   return y;
 }
 
-// file descriptor read and write with error checking
-size_t fread_check(void * ptr, size_t count, FILE * stream, bool check_size=true) {
-  size_t return_value = fread(ptr, 1, count, stream);
-  if(ferror(stream)) throw std::runtime_error("error reading from stream");
-  if(check_size) {
-    if(return_value != count) {
-      throw std::runtime_error("error reading from stream");
-    }
-  }
-  return return_value;
-}
-
-// file descriptor read and write with error checking
-size_t fwrite_check(void * ptr, size_t count, FILE * stream, bool check_size=true) {
-  size_t return_value = fwrite(ptr, 1, count, stream);
-  if(ferror(stream)) throw std::runtime_error("error writing to stream");
-  if(check_size) {
-    if(return_value != count) {
-      throw std::runtime_error("error writing to stream");
-    }
-  }
-  return return_value;
-}
-
 // maximum value is 7, reserve bit shared with shuffle bit
 // if we need more slots we will have to use other reserve bits
 enum class compalg : unsigned char {
-  zstd = 0, lz4 = 1, lz4hc = 2, zstd_stream = 3, pipe = 4
+  zstd = 0, lz4 = 1, lz4hc = 2, zstd_stream = 3, uncompressed = 4
 };
 // qs reserve header details
 // reserve[0] unused
@@ -426,8 +530,8 @@ struct QsMetadata {
         compress_algorithm = static_cast<unsigned char>(compalg::lz4hc);
         this->compress_level = compress_level;
         if(compress_level < 1 || compress_level > 12) throw std::runtime_error("lz4hc compress_level must be an integer between 1 and 12");
-      } else if(algorithm == "pipe") {
-        compress_algorithm = static_cast<unsigned char>(compalg::pipe);
+      } else if(algorithm == "uncompressed") {
+        compress_algorithm = static_cast<unsigned char>(compalg::uncompressed);
         this->compress_level = 0;
       } else {
         throw std::runtime_error("algorithm must be one of zstd, lz4, lz4hc or zstd_stream");
@@ -475,14 +579,40 @@ struct QsMetadata {
     endian = reserve_bits[3];
   }
   
+#ifdef USE_R_CONNECTION
   // constructor from q_read_pipe
   // must have magic number bits; version 1 is not applicable for pipes
-  QsMetadata(FILE * myPipe) {
+  QsMetadata(Rconnection con) {
     std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, myPipe);
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
     if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, myPipe); // empty reserve bits
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, myPipe);
+    // std::cout << "checking magic bits" << std::endl;
+    // std::cout << checkMagicNumber(reserve_bits) << std::endl;
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con); // empty reserve bits
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
+    unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
+    if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
+    compress_algorithm = reserve_bits[2] >> 4;
+    compress_level = 1;
+    lgl_shuffle = reserve_bits[2] & 0x01;
+    int_shuffle = reserve_bits[2] & 0x02;
+    real_shuffle = reserve_bits[2] & 0x04;
+    cplx_shuffle = reserve_bits[2] & 0x08;
+    check_hash = reserve_bits[1];
+    endian = reserve_bits[3];
+  }
+#endif
+  
+  // constructor from q_read_pipe
+  // must have magic number bits; version 1 is not applicable for pipes
+  QsMetadata(FILE * con) {
+    std::array<unsigned char,4> reserve_bits = {0,0,0,0};
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
+    if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
+    // std::cout << "checking magic bits" << std::endl;
+    // std::cout << checkMagicNumber(reserve_bits) << std::endl;
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con); // empty reserve bits
+    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
     unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
     if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
     compress_algorithm = reserve_bits[2] >> 4;
@@ -508,16 +638,30 @@ struct QsMetadata {
     myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
   }
   
-  void writeToPipe(FILE * myPipe) {
+#ifdef USE_R_CONNECTION
+  void writeToCon(Rconnection con) {
     std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, myPipe);
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
     reserve_bits = {0,0,0,0};
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, myPipe);
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
     reserve_bits[1] = check_hash;
     reserve_bits[2] += compress_algorithm << 4;
     reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
     reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, myPipe);
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
+  }
+#endif
+  
+  void writeToCon(FILE * con) {
+    std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
+    reserve_bits = {0,0,0,0};
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
+    reserve_bits[1] = check_hash;
+    reserve_bits[2] += compress_algorithm << 4;
+    reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
+    reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
+    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
   }
 };
 
@@ -891,7 +1035,7 @@ void writeStringHeader_common(uint64_t length, cetype_t ce_enc, T * sobj) {
 // common utility functions for deserialization
 ////////////////////////////////////////////////////////////////
 
-uint32_t validate_hash(QsMetadata qm, std::ifstream & myFile, uint32_t computed_hash, bool strict) {
+uint32_t validate_hash(QsMetadata & qm, std::ifstream & myFile, uint32_t computed_hash, bool strict) {
   if(qm.check_hash) {
     if(myFile.peek() == EOF) {
       if(strict) throw std::runtime_error("Warning: end of file reached, but hash checksum expected, data may be corrupted");
@@ -919,23 +1063,6 @@ uint32_t validate_hash(QsMetadata qm, std::ifstream & myFile, uint32_t computed_
     }
   }
   return 0;
-}
-
-// current does not check end of stream -- should this be checked?
-uint32_t validate_hash(QsMetadata qm, FILE * myPipe, uint32_t computed_hash, bool strict) {
-  if(qm.check_hash) {
-    std::array<char,4> a = {0,0,0,0};
-    fread_check(a.data(),4, myPipe);
-    uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-    if(computed_hash != recorded_hash) {
-      if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
-         std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
-      Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
-    }
-    return recorded_hash;
-  } else {
-    return 0;
-  }
 }
 
 // R stack tracker using RAII

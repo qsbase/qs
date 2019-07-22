@@ -13,6 +13,22 @@ c_qread <- function(file, use_alt_rep, strict, nthreads) {
     .Call(`_qs_c_qread`, file, use_alt_rep, strict, nthreads)
 }
 
+c_qsave_fd <- function(x, scon, shuffle_control, check_hash, popen_mode) {
+    invisible(.Call(`_qs_c_qsave_fd`, x, scon, shuffle_control, check_hash, popen_mode))
+}
+
+c_qsave_rconn <- function(x, scon, shuffle_control, check_hash) {
+    invisible(.Call(`_qs_c_qsave_rconn`, x, scon, shuffle_control, check_hash))
+}
+
+c_qread_fd <- function(scon, use_alt_rep, strict, popen_mode) {
+    .Call(`_qs_c_qread_fd`, scon, use_alt_rep, strict, popen_mode)
+}
+
+c_qread_rconn <- function(scon, use_alt_rep, strict) {
+    .Call(`_qs_c_qread_rconn`, scon, use_alt_rep, strict)
+}
+
 c_qdump <- function(file) {
     .Call(`_qs_c_qdump`, file)
 }

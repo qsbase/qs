@@ -1,4 +1,5 @@
 #!/bin/sh
 
 rm -f config.* src/Makevars src/config.h
+rm src/qs_common.h
 rm -rf autom4te.cache

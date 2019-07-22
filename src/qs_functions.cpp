@@ -1,18 +1,18 @@
 /* qs - Quick Serialization of R Objects
   Copyright (C) 2019-present Travers Ching
   
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-  
-  You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  
  You can contact the author at:
  https://github.com/traversc/qs
@@ -133,23 +133,6 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
   }
 }
 
-// deprecated 0.16.3 -- checks performed within qread directly
-// bool c_qinspect(std::string file, bool verbose) {
-//   std::ifstream myFile(file, std::ios::in | std::ios::binary);
-//   if(!myFile) {
-//     throw std::runtime_error("Failed to open file");
-//   }
-//   QsMetadata qm(myFile);
-//   if(qm.compress_algorithm == 3) {
-//     uint64_t totalsize = readSizeFromFile8(myFile);
-//     return inspect_stream_zstd(myFile, totalsize);
-//   } else {
-//     Data_Inspect_Context dc(myFile, qm);
-//     return dc.inspectData();
-//     validate_hash(qm, myFile, dc.xenv.digest());
-//   }
-// }
-
 // [[Rcpp::export]]
 SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
@@ -200,6 +183,73 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
       }
     }
   }
+}
+
+// [[Rcpp::export]]
+void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode) {
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(scon.c_str(), popen_mode.c_str()), pclose);
+  if (!pipe) {
+    throw std::runtime_error("popen() failed!");
+  }
+  FILE * con = pipe.get();
+  QsMetadata qm("custom", "uncompressed", 0, shuffle_control, check_hash);
+  qm.writeToCon(con);
+  writeSizeToCon8(con, 0); // this is just zero, we can't seek back to beginning of stream
+  fd_streamWrite sw(con, qm);
+  CompressBufferStream<fd_streamWrite> vbuf(sw, qm);
+  vbuf.pushObj(x);
+  if(qm.check_hash) writeSizeToCon4(con, vbuf.sobj.xenv.digest());
+}
+
+// [[Rcpp::export]]
+void c_qsave_rconn(SEXP x, SEXP scon, int shuffle_control, bool check_hash) {
+#ifdef USE_R_CONNECTION
+  Rconnection con = r_get_connection(scon);
+  QsMetadata qm("custom", "uncompressed", 0, shuffle_control, check_hash);
+  qm.writeToCon(con);
+  writeSizeToCon8(con, 0);
+  rconn_streamWrite sw(con, qm);
+  CompressBufferStream<rconn_streamWrite> vbuf(sw, qm);
+  vbuf.pushObj(x);
+  if(qm.check_hash) writeSizeToCon4(con, vbuf.sobj.xenv.digest());
+#else
+  Rcerr << "R connections not supported" << std::endl;
+#endif
+}
+
+// [[Rcpp::export]]
+SEXP c_qread_fd(std::string scon, bool use_alt_rep, bool strict, std::string popen_mode) {
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(scon.c_str(), popen_mode.c_str()), pclose);
+  if (!pipe) {
+    throw std::runtime_error("popen() failed!");
+  }
+  FILE * con = pipe.get();
+  Protect_Tracker pt = Protect_Tracker();
+  QsMetadata qm(con);
+  readSizeFromCon8(con); // zero since it's a stream
+  fd_streamRead sr(con, qm);
+  Data_Context_Stream<fd_streamRead> dc(sr, qm, use_alt_rep);
+  SEXP ret = PROTECT(dc.processBlock()); pt++;
+  sr.validate_hash(strict);
+  return ret;
+}
+
+// [[Rcpp::export]]
+SEXP c_qread_rconn(SEXP scon, bool use_alt_rep, bool strict) {
+#ifdef USE_R_CONNECTION
+  Rconnection con = r_get_connection(scon);
+  Protect_Tracker pt = Protect_Tracker();
+  QsMetadata qm(con);
+  readSizeFromCon8(con);
+  rconn_streamRead sr(con, qm);
+  Data_Context_Stream<rconn_streamRead> dc(sr, qm, use_alt_rep);
+  SEXP ret = PROTECT(dc.processBlock()); pt++;
+  sr.validate_hash(strict);
+  return ret;
+#else
+  Rcerr << "R connections not supported" << std::endl;
+  return R_NilValue;
+#endif
 }
 
 // [[Rcpp::export]]
