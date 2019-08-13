@@ -26,6 +26,8 @@ https://github.com/traversc/qs
 #include <fstream>
 #include <cstdio>
 #include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
 #include <iostream>
 #include <algorithm>
 #include <memory>
@@ -38,6 +40,17 @@ https://github.com/traversc/qs
 #include <climits>
 #include <limits>
 #include <stdint.h>
+
+// platform specific headers
+#ifdef _WIN32
+#include <sys/stat.h> // _S_IWRITE
+#include <Fileapi.h>
+#include <WinDef.h>
+#include <Winbase.h>
+#include <Handleapi.h>
+#else
+#include <sys/mman.h> // mmap
+#endif
 
 #include <atomic>
 #include <thread>
@@ -58,29 +71,25 @@ https://github.com/traversc/qs
 
 // do not include by default due to CRAN policies
 // import based on configure script
-// to do: put this into it's own header -.-
-
-#ifdef USE_R_CONNECTION
-
-#define class aclass
-#define private aprivate
-#include <R_ext/Connections.h>
-#undef class
-#undef private
-
-#if defined(R_VERSION) && R_VERSION >= R_Version(3, 3, 0)
-Rconnection r_get_connection(SEXP con) {
-  return R_GetConnection(con);
-}
-#else
-Rconnection r_get_connection(SEXP con) {
-  if (!Rf_inherits(con, "connection"))
-    Rcpp::stop("invalid connection");
-  return getConnection(Rf_asInteger(con));
-}
-#endif
-
-#endif
+// #ifdef USE_R_CONNECTION
+// #define class aclass
+// #define private aprivate
+// #include <R_ext/Connections.h>
+// #undef class
+// #undef private
+// 
+// #if defined(R_VERSION) && R_VERSION >= R_Version(3, 3, 0)
+// Rconnection r_get_connection(SEXP con) {
+//   return R_GetConnection(con);
+// }
+// #else
+// Rconnection r_get_connection(SEXP con) {
+//   if (!Rf_inherits(con, "connection"))
+//     Rcpp::stop("invalid connection");
+//   return getConnection(Rf_asInteger(con));
+// }
+// #endif
+// #endif
 
 using namespace Rcpp;
 
@@ -278,15 +287,14 @@ void init_stdvec_double(DllInfo* dll){
 // common utility functions and constants
 ////////////////////////////////////////////////////////////////
 
-bool is_big_endian();
 
 #define BLOCKRESERVE 64
 #define NA_STRING_LENGTH 4294967295 // 2^32-1 -- length used to signify NA value
 #define MIN_SHUFFLE_ELEMENTS 4
 #define BLOCKSIZE 524288
+#define MAX_SAFE_INTEGER 9007199254740991ULL // 2^53-1 -- the largest integer that can be "safely" represented as a double ~ (about 9000 terabytes)
 
-// static const uint64_t SHUFFLE_DONE_VAL = std::numeric_limits<uint64_t>::max();
-// static const uint64_t BLOCKSIZE = 524288;
+bool is_big_endian();
 
 static const unsigned char list_header_5 = 0x20; 
 static const unsigned char list_header_8 = 0x01;
@@ -346,82 +354,171 @@ static const unsigned char nstype_header_64 = 0x1A;
 
 static const std::set<SEXPTYPE> stypes = {REALSXP, INTSXP, LGLSXP, STRSXP, CHARSXP, NILSXP, VECSXP, CPLXSXP, RAWSXP};
 
+
 ///////////////////////////////////////////////////////
-// There are three types of output input streams-- std::ifstream/ofstream, Rconnectionand FILE pointer
+// There are three types of output input streams -- std::ifstream/ofstream, file descriptor, windows handle
+// these methods are overloaded and normalized so we can use a common template interface
 
-// helper functions for std::*stream
+inline size_t read_check(std::ifstream & con, char * ptr, size_t count, bool check_size=true) {
+  con.read(ptr, count);
+  size_t return_value = con.gcount();
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error reading from connection (not enough bytes read)");
+    }
+  }
+  return return_value;
+}
+inline size_t write_check(std::ofstream & con, char * ptr, size_t count, bool check_size=true) {
+  (void)check_size; // avoid unused variable warning
+  con.write(ptr, count);
+  return count;
+}
 
-inline void writeSizeToFile8(std::ofstream & myFile, uint64_t x) {
-  uint64_t x_temp = static_cast<uint64_t>(x); 
-  myFile.write(reinterpret_cast<char*>(&x_temp),8);
-}
-inline void writeSizeToFile4(std::ofstream & myFile, uint64_t x) {
-  uint32_t x_temp = static_cast<uint32_t>(x); 
-  myFile.write(reinterpret_cast<char*>(&x_temp),4);
-}
-inline uint32_t readSizeFromFile4(std::ifstream & myFile) {
-  std::array<char,4> a = {0,0,0,0};
-  myFile.read(a.data(),4);
-  return *reinterpret_cast<uint32_t*>(a.data());
-}
-inline uint64_t readSizeFromFile8(std::ifstream & myFile) {
-  std::array<char,8> a = {0,0,0,0,0,0,0,0};
-  myFile.read(a.data(),8);
-  return *reinterpret_cast<uint64_t*>(a.data());
+inline bool isSeekable(std::ifstream & myFile) {
+  return true;
 }
 
 ///////////////////////////////////////////////////////
 // helper functions for Rconnection
 
-#ifdef USE_R_CONNECTION
-// rconnection read and write with error checking
-inline size_t fread_check(void * ptr, size_t count, Rconnection con, bool check_size=true) {
-  size_t return_value = R_ReadConnection(con, ptr, count);
-  if(check_size) {
-    if(return_value != count) {
-      throw std::runtime_error("error reading from connection (wrong size)");
-    }
-  }
-  return return_value;
-}
-// rconnection read and write with error checking
-inline size_t fwrite_check(void * ptr, size_t count, Rconnection con, bool check_size=true) {
-  size_t return_value = R_WriteConnection(con, ptr, count);
-  if(check_size) {
-    if(return_value != count) {
-      throw std::runtime_error("error writing to connection (wrong size)");
-    }
-  }
-  return return_value;
-}
-inline void writeSizeToCon8(Rconnection con, uint64_t x) {
-  uint64_t x_temp = static_cast<uint64_t>(x); 
-  fwrite_check(reinterpret_cast<char*>(&x_temp),8, con);
-}
-inline void writeSizeToCon4(Rconnection con, uint64_t x) {
-  uint32_t x_temp = static_cast<uint32_t>(x); 
-  fwrite_check(reinterpret_cast<char*>(&x_temp),4, con);
-  }
-inline uint32_t readSizeFromCon4(Rconnection con) {
-  std::array<char,4> a = {0,0,0,0};
-  fread_check(a.data(),4, con);
-  return *reinterpret_cast<uint32_t*>(a.data());
-}
-inline uint64_t readSizeFromCon8(Rconnection con) {
-  std::array<char,8> a = {0,0,0,0,0,0,0,0};
-  fread_check(a.data(),8, con);
-  return *reinterpret_cast<uint64_t*>(a.data());
-}
+// #ifdef USE_R_CONNECTION
+// // rconnection read and write with error checking
+// inline size_t read_check(char * ptr, size_t count, Rconnection con, bool check_size=true) {
+//   size_t return_value = R_ReadConnection(con, ptr, count);
+//   if(check_size) {
+//     if(return_value != count) {
+//       throw std::runtime_error("error reading from connection (wrong size)");
+//     }
+//   }
+//   return return_value;
+// }
+// // rconnection read and write with error checking
+// inline size_t write_check(char * ptr, size_t count, Rconnection con, bool check_size=true) {
+//   size_t return_value = R_WriteConnection(con, ptr, count);
+//   if(check_size) {
+//     if(return_value != count) {
+//       throw std::runtime_error("error writing to connection (wrong size)");
+//     }
+//   }
+//   return return_value;
+// }
+// inline void writeSizeToCon8(Rconnection con, uint64_t x) {
+//   uint64_t x_temp = static_cast<uint64_t>(x); 
+//   write_check(reinterpret_cast<char*>(&x_temp),8, con);
+// }
+// inline void writeSizeToCon4(Rconnection con, uint64_t x) {
+//   uint32_t x_temp = static_cast<uint32_t>(x); 
+//   write_check(reinterpret_cast<char*>(&x_temp),4, con);
+//   }
+// inline uint32_t readSize4(Rconnection con) {
+//   std::array<char,4> a = {0,0,0,0};
+//   read_check(a.data(),4, con);
+//   return *reinterpret_cast<uint32_t*>(a.data());
+// }
+// inline uint64_t readSize8(Rconnection con) {
+//   std::array<char,8> a = {0,0,0,0,0,0,0,0};
+//   read_check(a.data(),8, con);
+//   return *reinterpret_cast<uint64_t*>(a.data());
+// }
+// #endif
 
-#endif
 ///////////////////////////////////////////////////////
-// helper functions for FILE pointers
+// helper functions for file descriptors
 
-// FILE read and write with error checking
-inline size_t fread_check(void * ptr, size_t count, FILE * con, bool check_size=true) {
-  size_t return_value = fread(ptr, 1, count, con);
-  if (ferror(con)) {
-    throw std::runtime_error("error writing to connection (ferror)");
+// low level interface
+// no destructor -- left up to user
+// whether fd is read or write is left up to user -- dont use both
+#define FD_BUFFER_SIZE 524288 // 2^17
+struct fd_wrapper {
+  int fd;
+  uint64_t bytes_processed;
+  uint64_t buffered_bytes;
+  uint64_t buffer_offset;
+  std::vector<char> buffer;
+  fd_wrapper(int fd) : fd(fd), bytes_processed(0), buffered_bytes(0), buffer_offset(0), 
+  buffer(std::vector<char>(FD_BUFFER_SIZE, '\0')) {
+    if(ferror()) throw std::runtime_error("file descriptor is not valid");
+  }
+  int ferror() {
+#ifdef _WIN32
+    return errno == EBADF;
+#else
+    return fcntl(fd, F_GETFD) == -1 || errno == EBADF;
+#endif
+  }
+  inline ssize_t read(char * ptr, size_t count) {
+    size_t remaining_bytes = count;
+    while(remaining_bytes > buffered_bytes - buffer_offset) {
+      std::memcpy(ptr + count - remaining_bytes, buffer.data() + buffer_offset, buffered_bytes - buffer_offset);
+      remaining_bytes -= buffered_bytes - buffer_offset;
+      ssize_t temp = ::read(fd, buffer.data(), FD_BUFFER_SIZE);
+      if(temp < 0) throw std::runtime_error("error reading fd");
+      bytes_processed += temp;
+      buffered_bytes = temp;
+      buffer_offset = 0;
+      if(buffered_bytes == 0) {
+        return count - remaining_bytes; // if we reached this point, there wasn't enough data left in file
+      }
+    }
+    // remaining_bytes <= buffered_bytes - buffer_offset
+    std::memcpy(ptr + count - remaining_bytes, buffer.data() + buffer_offset, remaining_bytes);
+    buffer_offset += remaining_bytes;
+    // remaining_bytes = 0; -- no longer necessary to track
+    return count;
+  }
+  // buffer_offset is not uesd
+  inline ssize_t write(char * ptr, size_t count) {
+    size_t remaining_bytes = count;
+    size_t ptr_offset = 0;
+    // std::cout << "ptr: " << static_cast<void*>(ptr) << ", count: " << count << std::endl;
+    while(remaining_bytes > 0) {
+      if(remaining_bytes >= FD_BUFFER_SIZE - buffered_bytes) {
+        // std::cout << "A: rb " << remaining_bytes << ", bb " << buffered_bytes << ", po " << ptr_offset << std::endl;
+        size_t bytes_to_write = FD_BUFFER_SIZE - buffered_bytes;
+        if(buffered_bytes == 0) {
+          // skip memcpy since nothing in buffer
+          ssize_t temp = ::write(fd, ptr + ptr_offset, FD_BUFFER_SIZE);
+          if(temp < 0) throw std::runtime_error("error writing to fd");
+        } else {
+          std::memcpy(buffer.data() + buffered_bytes, ptr + ptr_offset, bytes_to_write);
+          ssize_t temp = ::write(fd, buffer.data(), FD_BUFFER_SIZE);
+          if(temp < 0) throw std::runtime_error("error writing to fd");
+        }
+        remaining_bytes -= bytes_to_write;
+        buffered_bytes = 0;
+        ptr_offset += bytes_to_write;
+      } else { // remaining_bytes < FD_BUFFER_SIZE - buffered_bytes
+        // std::cout << "B: rb " << remaining_bytes << ", bb " << buffered_bytes << ", po " << ptr_offset << std::endl;
+        std::memcpy(buffer.data() + buffered_bytes, ptr + ptr_offset, remaining_bytes);
+        buffered_bytes += remaining_bytes;
+        remaining_bytes = 0;
+        // ptr_offset += remaining_bytes
+      }
+    }
+    bytes_processed += count;
+    return count;
+  }
+  inline void flush() {
+    ssize_t temp = ::write(fd, buffer.data(), buffered_bytes);
+    if(temp < 0) throw std::runtime_error("error writing to fd");
+    buffered_bytes = 0;
+  }
+  fd_wrapper * seekp(uint64_t pos) {
+    throw std::runtime_error("file descriptor is not seekable");
+    return nullptr;
+  }
+  fd_wrapper * seekg(uint64_t pos) {
+    throw std::runtime_error("file descriptor is not seekable");
+    return nullptr;
+  }
+};
+#undef FD_BUFFER_SIZE
+
+inline size_t read_check(fd_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.read(ptr, count);
+  if (con.ferror()) {
+    throw std::runtime_error("error writing to connection");
   }
   if(check_size) {
     if(return_value != count) {
@@ -430,37 +527,220 @@ inline size_t fread_check(void * ptr, size_t count, FILE * con, bool check_size=
   }
   return return_value;
 }
-// FILE read and write with error checking
-inline size_t fwrite_check(void * ptr, size_t count, FILE * con, bool check_size=true) {
-  size_t return_value = fwrite(ptr, 1, count, con);
-  if (ferror(con)) {
-    throw std::runtime_error("error writing to connection (ferror)");
+inline size_t write_check(fd_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.write(ptr, count);
+  if (con.ferror()) {
+    throw std::runtime_error("error writing to connection");
   }
   if(check_size) {
     if(return_value != count) {
-      throw std::runtime_error("error writing to connection (not enough bytes read)");
+      throw std::runtime_error("error writing to connection (not enough bytes written)");
     }
   }
   return return_value;
 }
-inline void writeSizeToCon8(FILE * con, uint64_t x) {
+inline bool isSeekable(fd_wrapper & myFile) {
+  return false;
+}
+
+///////////////////////////////////////////////////////
+// helper functions for reading/writing to memory
+
+// Instance should only be used for reading or writing, not both
+struct mem_wrapper {
+  char * start;
+  uint64_t available_bytes;
+  uint64_t bytes_processed;
+  mem_wrapper(void * s, uint64_t ab) : start(static_cast<char*>(s)), available_bytes(ab), bytes_processed(0) {}
+  inline size_t read(char * ptr, size_t count) {
+    if(count + bytes_processed > available_bytes) {
+      count = available_bytes - bytes_processed;
+    }
+    std::memcpy(ptr, start + bytes_processed, count);
+    bytes_processed += count;
+    return count;
+  }
+  inline size_t write(char * ptr, size_t count) {
+    if(count + bytes_processed > available_bytes) {
+      count = available_bytes - bytes_processed;
+    }
+    std::memcpy(start + bytes_processed, ptr, count);
+    bytes_processed += count;
+    return count;
+  }
+  inline void writeDirect(char * ptr, size_t count, size_t offset) {
+    std::memcpy(start + offset, ptr, count);
+  }
+  mem_wrapper * seekp(std::streampos pos) {
+    throw std::runtime_error("not seekable");
+    return nullptr;
+  }
+  mem_wrapper * seekg(std::streampos pos) {
+    throw std::runtime_error("not seekable");
+    return nullptr;
+  }
+};
+
+inline size_t read_check(mem_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.read(ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error reading from connection (not enough bytes read)");
+    }
+  }
+  return return_value;
+}
+inline size_t write_check(mem_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.write(ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to connection (not enough bytes written)");
+    }
+  }
+  return return_value;
+}
+
+inline bool isSeekable(mem_wrapper & myFile) {
+  return false;
+}
+
+///////////////////////////////////////////////////////
+// helper functions for writing to std::vector
+// This is only used for writing
+// since we don't know the serialized size ahead of time, we need a resizable memory buffer
+// reading -- use mem_wrapper
+
+struct vec_wrapper {
+  std::vector<char> buffer;
+  uint64_t bytes_processed;
+  vec_wrapper() : buffer(std::vector<char>(BLOCKSIZE)), bytes_processed(0) {}
+  inline size_t write(char * ptr, size_t count) {
+    if(count + bytes_processed > buffer.size()) {
+      uint64_t new_buffer_size = buffer.size() * 3/2;
+      while(new_buffer_size < count*3/2 + bytes_processed) {
+        new_buffer_size = new_buffer_size * 3/2;
+      }
+      buffer.resize(new_buffer_size);
+    }
+    std::memcpy(buffer.data() + bytes_processed, ptr, count);
+    bytes_processed += count;
+    // std::cout << static_cast<void*>(buffer.data()) << " " << count << std::endl;
+    return count;
+  }
+  inline void writeDirect(char * ptr, size_t count, size_t offset) {
+    std::memcpy(buffer.data() + offset, ptr, count);
+  }
+  vec_wrapper * seekp(std::streampos pos) {
+    throw std::runtime_error("not seekable");
+    return nullptr;
+  }
+  vec_wrapper * seekg(std::streampos pos) {
+    throw std::runtime_error("not seekable");
+    return nullptr;
+  }
+  void shrink() {
+    buffer.resize(bytes_processed);
+  }
+};
+
+inline size_t write_check(vec_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.write(ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to connection (not enough bytes written)");
+    }
+  }
+  return return_value;
+}
+
+inline bool isSeekable(vec_wrapper & myFile) {
+  return false;
+}
+
+
+///////////////////////////////////////////////////////
+// windows handle wrapper
+
+#ifdef _WIN32
+struct handle_wrapper {
+  HANDLE h;
+  uint64_t bytes_processed;
+  handle_wrapper(HANDLE h) : h(h), bytes_processed(0) {}
+  inline DWORD read(char * ptr, size_t count) {
+    DWORD bytes_read;
+    bool ret = ReadFile(h, ptr, count, &bytes_read, NULL);
+    if(!ret) throw std::runtime_error("error reading from handle");
+    return bytes_read;
+  }
+  inline DWORD write(char * ptr, size_t count) {
+    DWORD bytes_written;
+    bool ret = WriteFile(h, ptr, count, &bytes_written, NULL);
+    if(!ret) throw std::runtime_error("error writing to handle");
+    bytes_processed += bytes_written;
+    return bytes_written;
+  }
+  handle_wrapper * seekp(std::streampos pos) {
+    throw std::runtime_error("file descriptor is not seekable");
+    return nullptr;
+  }
+  handle_wrapper * seekg(std::streampos pos) {
+    throw std::runtime_error("file descriptor is not seekable");
+    return nullptr;
+  }
+};
+inline size_t write_check(handle_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.write(ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to handle (not enough bytes written)");
+    }
+  }
+  return return_value;
+}
+
+inline size_t read_check(handle_wrapper & con, char * ptr, size_t count, bool check_size=true) {
+  size_t return_value = con.read(ptr, count);
+  if(check_size) {
+    if(return_value != count) {
+      throw std::runtime_error("error writing to handle (not enough bytes read)");
+    }
+  }
+  return return_value;
+}
+
+inline bool isSeekable(handle_wrapper & myFile) {
+  return false;
+}
+#endif
+
+///////////////////////////////////////////////////////
+// templated classes for reading and writing integer sizes
+
+template <class stream_writer>
+inline void writeSize8(stream_writer & myFile, uint64_t x) {
   uint64_t x_temp = static_cast<uint64_t>(x); 
-  fwrite_check(reinterpret_cast<char*>(&x_temp),8, con);
+  write_check(myFile, reinterpret_cast<char*>(&x_temp),8);
 }
-inline void writeSizeToCon4(FILE * con, uint64_t x) {
+template <class stream_writer>
+inline void writeSize4(stream_writer & myFile, uint64_t x) {
   uint32_t x_temp = static_cast<uint32_t>(x); 
-  fwrite_check(reinterpret_cast<char*>(&x_temp),4, con);
+  write_check(myFile, reinterpret_cast<char*>(&x_temp),4);
 }
-inline uint32_t readSizeFromCon4(FILE * con) {
+
+template <class stream_writer>
+inline uint32_t readSize4(stream_writer & myFile) {
   std::array<char,4> a = {0,0,0,0};
-  fread_check(a.data(),4, con);
+  read_check(myFile, a.data(),4);
   return *reinterpret_cast<uint32_t*>(a.data());
 }
-inline uint64_t readSizeFromCon8(FILE * con) {
+
+template <class stream_writer>
+inline uint64_t readSize8(stream_writer & myFile) {
   std::array<char,8> a = {0,0,0,0,0,0,0,0};
-  fread_check(a.data(),8, con);
+  read_check(myFile, a.data(),8);
   return *reinterpret_cast<uint64_t*>(a.data());
 }
+
 
 ///////////////////////////////////////////////////////
 
@@ -485,25 +765,27 @@ enum class compalg : unsigned char {
 // reserve[2] (high byte) algorithm: 0x01 = lz4, 0x00 = zstd, 0x02 = "lz4hc", 0x03 = zstd_stream
 // reserve[3] endian: 1 = big endian, 0 = little endian
 struct QsMetadata {
+  uint64_t clength; // compressed length -- for comparing bytes_read / blocks_read with recorded # ..
+  bool check_hash;
+  unsigned char endian;
   unsigned char compress_algorithm;
   int compress_level;
   bool lgl_shuffle;
   bool int_shuffle;
   bool real_shuffle;
   bool cplx_shuffle;
-  unsigned char endian;
-  bool check_hash;
-  
+
   //constructor from qsave
-  QsMetadata(std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+  QsMetadata(std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) : 
+    clength(0), check_hash(check_hash), endian(is_big_endian()) {
     if(preset == "fast") {
+      compress_algorithm = static_cast<unsigned char>(compalg::lz4);
       this->compress_level = 100;
       shuffle_control = 0;
-      compress_algorithm = static_cast<unsigned char>(compalg::lz4);
     } else if(preset == "balanced") {
+      compress_algorithm = static_cast<unsigned char>(compalg::lz4);
       this->compress_level = 1;
       shuffle_control = 15;
-      compress_algorithm = static_cast<unsigned char>(compalg::lz4);
     } else if(preset == "high") {
       compress_algorithm = static_cast<unsigned char>(compalg::zstd);
       this->compress_level = 4;
@@ -512,7 +794,10 @@ struct QsMetadata {
       compress_algorithm = static_cast<unsigned char>(compalg::zstd_stream);
       this->compress_level = 14;
       shuffle_control = 15;
-      compress_algorithm = static_cast<unsigned char>(compalg::zstd_stream);
+    } else if(preset == "uncompressed") {
+      compress_algorithm = static_cast<unsigned char>(compalg::uncompressed);
+      this->compress_level = 0;
+      shuffle_control = 0;
     } else if(preset == "custom") {
       if(algorithm == "zstd") {
         compress_algorithm = static_cast<unsigned char>(compalg::zstd);
@@ -544,12 +829,10 @@ struct QsMetadata {
     int_shuffle = shuffle_control & 0x02;
     real_shuffle = shuffle_control & 0x04;
     cplx_shuffle = shuffle_control & 0x08;
-    endian = is_big_endian() ? 0x01 : 0x00;
-    this->check_hash = check_hash;
   }
   
   // 0x0B0E0A0C
-  bool checkMagicNumber(std::array<unsigned char, 4> & reserve_bits) {
+  static bool checkMagicNumber(std::array<unsigned char, 4> & reserve_bits) {
     if(reserve_bits[0] != 0x0B) return false;
     if(reserve_bits[1] != 0x0E) return false;
     if(reserve_bits[2] != 0x0A) return false;
@@ -557,111 +840,65 @@ struct QsMetadata {
     return true;
   }
   
+  QsMetadata(uint64_t clength,
+             bool check_hash,
+             unsigned char endian,
+             unsigned char compress_algorithm,
+             int compress_level,
+             bool lgl_shuffle,
+             bool int_shuffle,
+             bool real_shuffle,
+             bool cplx_shuffle) : 
+    clength(clength), check_hash(check_hash), endian(endian), compress_algorithm(compress_algorithm), 
+    compress_level(compress_level), lgl_shuffle(lgl_shuffle), int_shuffle(int_shuffle), 
+    real_shuffle(real_shuffle), cplx_shuffle(cplx_shuffle) {}
+  
   // constructor from q_read
-  QsMetadata(std::ifstream & myFile) {
+  template <class stream_reader>
+  static QsMetadata create(stream_reader & myFile) {
     std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-    myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
+    read_check(myFile, reinterpret_cast<char*>(reserve_bits.data()),4);
     // version 2
     if(reserve_bits[0] != 0) {
+      std::array<unsigned char,4> reserve_bits2 = {0,0,0,0};
       if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
-      myFile.ignore(4); // empty reserve bits
-      myFile.read(reinterpret_cast<char*>(reserve_bits.data()),4);
+      read_check(myFile, reinterpret_cast<char*>(reserve_bits2.data()),4); // empty reserve bits
+      read_check(myFile, reinterpret_cast<char*>(reserve_bits.data()),4);
     }
     unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
     if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
-    compress_algorithm = reserve_bits[2] >> 4;
-    compress_level = 1;
-    lgl_shuffle = reserve_bits[2] & 0x01;
-    int_shuffle = reserve_bits[2] & 0x02;
-    real_shuffle = reserve_bits[2] & 0x04;
-    cplx_shuffle = reserve_bits[2] & 0x08;
-    check_hash = reserve_bits[1];
-    endian = reserve_bits[3];
-  }
-  
-#ifdef USE_R_CONNECTION
-  // constructor from q_read_pipe
-  // must have magic number bits; version 1 is not applicable for pipes
-  QsMetadata(Rconnection con) {
-    std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
-    if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
-    // std::cout << "checking magic bits" << std::endl;
-    // std::cout << checkMagicNumber(reserve_bits) << std::endl;
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con); // empty reserve bits
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
-    unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
-    if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
-    compress_algorithm = reserve_bits[2] >> 4;
-    compress_level = 1;
-    lgl_shuffle = reserve_bits[2] & 0x01;
-    int_shuffle = reserve_bits[2] & 0x02;
-    real_shuffle = reserve_bits[2] & 0x04;
-    cplx_shuffle = reserve_bits[2] & 0x08;
-    check_hash = reserve_bits[1];
-    endian = reserve_bits[3];
-  }
-#endif
-  
-  // constructor from q_read_pipe
-  // must have magic number bits; version 1 is not applicable for pipes
-  QsMetadata(FILE * con) {
-    std::array<unsigned char,4> reserve_bits = {0,0,0,0};
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
-    if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
-    // std::cout << "checking magic bits" << std::endl;
-    // std::cout << checkMagicNumber(reserve_bits) << std::endl;
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con); // empty reserve bits
-    fread_check(reinterpret_cast<char*>(reserve_bits.data()), 4, con);
-    unsigned char sys_endian = is_big_endian() ? 0x01 : 0x00;
-    if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
-    compress_algorithm = reserve_bits[2] >> 4;
-    compress_level = 1;
-    lgl_shuffle = reserve_bits[2] & 0x01;
-    int_shuffle = reserve_bits[2] & 0x02;
-    real_shuffle = reserve_bits[2] & 0x04;
-    cplx_shuffle = reserve_bits[2] & 0x08;
-    check_hash = reserve_bits[1];
-    endian = reserve_bits[3];
+    unsigned char compress_algorithm = reserve_bits[2] >> 4;
+    int compress_level = 1;
+    bool lgl_shuffle = reserve_bits[2] & 0x01;
+    bool int_shuffle = reserve_bits[2] & 0x02;
+    bool real_shuffle = reserve_bits[2] & 0x04;
+    bool cplx_shuffle = reserve_bits[2] & 0x08;
+    bool check_hash = reserve_bits[1];
+    unsigned char endian = reserve_bits[3];
+    uint64_t clength = readSize8(myFile);
+    return QsMetadata(clength,
+                      check_hash,
+                      endian,
+                      compress_algorithm,
+                      compress_level,
+                      lgl_shuffle,
+                      int_shuffle,
+                      real_shuffle,
+                      cplx_shuffle);
   }
   
   // version 2
-  void writeToFile(std::ofstream & myFile) {
+  template <class stream_writer>
+  void writeToFile(stream_writer & myFile) {
     std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
-    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
+    write_check(myFile, reinterpret_cast<char*>(reserve_bits.data()), 4);
     reserve_bits = {0,0,0,0};
-    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
+    write_check(myFile, reinterpret_cast<char*>(reserve_bits.data()),4);
     reserve_bits[1] = check_hash;
     reserve_bits[2] += compress_algorithm << 4;
     reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
     reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
-    myFile.write(reinterpret_cast<char*>(reserve_bits.data()),4);
-  }
-  
-#ifdef USE_R_CONNECTION
-  void writeToCon(Rconnection con) {
-    std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
-    reserve_bits = {0,0,0,0};
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
-    reserve_bits[1] = check_hash;
-    reserve_bits[2] += compress_algorithm << 4;
-    reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
-    reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
-  }
-#endif
-  
-  void writeToCon(FILE * con) {
-    std::array<unsigned char,4> reserve_bits = {0x0B,0x0E,0x0A,0x0C};
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
-    reserve_bits = {0,0,0,0};
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
-    reserve_bits[1] = check_hash;
-    reserve_bits[2] += compress_algorithm << 4;
-    reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
-    reserve_bits[2] += (lgl_shuffle) + (int_shuffle << 1) + (real_shuffle << 2) + (cplx_shuffle << 3);
-    fwrite_check(reinterpret_cast<char*>(reserve_bits.data()),4, con);
+    write_check(myFile, reinterpret_cast<char*>(reserve_bits.data()),4);
   }
 };
 
@@ -1034,33 +1271,35 @@ void writeStringHeader_common(uint64_t length, cetype_t ce_enc, T * sobj) {
 ////////////////////////////////////////////////////////////////
 // common utility functions for deserialization
 ////////////////////////////////////////////////////////////////
-
-uint32_t validate_hash(QsMetadata & qm, std::ifstream & myFile, uint32_t computed_hash, bool strict) {
-  if(qm.check_hash) {
-    if(myFile.peek() == EOF) {
-      if(strict) throw std::runtime_error("Warning: end of file reached, but hash checksum expected, data may be corrupted");
-      Rcerr << "Warning: end of file reached, but hash checksum expected, data may be corrupted" << std::endl;
+template <class stream_reader>
+uint32_t validate_data(QsMetadata & qm, stream_reader & myFile, uint32_t recorded_hash, uint32_t computed_hash, uint64_t computed_length, bool strict) {
+  // destructively check EOF -- cannot putback data
+  std::array<char,4> temp = {0,0,0,0};
+  uint64_t remaining_bytes = read_check(myFile, temp.data(), 4, false);
+  if(remaining_bytes != 0) {
+    if(strict) {
+      throw std::runtime_error("end of file reached not reached");
     } else {
-      std::array<char,4> a = {0,0,0,0};
-      myFile.read(a.data(),4);
-      if(myFile.gcount() != 4) {
-        if(strict) throw std::runtime_error("Warning: hash checksum expected, but not found, data may be corrupted");
-        Rcerr << "Warning: hash checksum expected, but not found, data may be corrupted" << std::endl;
-      }
-      uint32_t recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-      if(computed_hash != recorded_hash) {
-        if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
-           std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
-        Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
-      }
-      return recorded_hash;
-      // std::cout << "hashes: computed, recorded: " << computed_hash << ", " << recorded_hash << std::endl;
+      Rcerr << "Warning: end of file reached not reached, data may be corrupted";
     }
-  } else {
-    if(myFile.peek() != EOF) {
-      if(strict) throw std::runtime_error("Warning: end of file expected but not reached, data may be corrupted");
-      Rcerr << "Warning: end of file expected but not reached, data may be corrupted" << std::endl;
+  }
+  if((qm.clength != 0) && (computed_length != 0) && (computed_length != qm.clength)) {
+    if(strict) {
+      throw std::runtime_error("computed object length does not match recorded object length");
+    } else {
+      Rcerr << "Warning: computed object length does not match recorded object length, data may be corrupted";
     }
+  }
+  if(qm.check_hash) {
+    if(computed_hash != recorded_hash) {
+      if(strict) {
+        throw std::runtime_error("Warning: hash checksum does not match (Recorded, Computed) (" + 
+                                 std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
+      } else {
+        Rcerr << "Warning: hash checksum does not match (Recorded, Computed) (" << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
+      }
+    }
+    return recorded_hash;
   }
   return 0;
 }
@@ -1265,7 +1504,7 @@ inline void readHeader_common(SEXPTYPE & object_type, uint64_t & r_array_len, ui
     object_type = S4SXP;
     return;
   case nstype_header_64:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
+    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
     data_offset += 9;
     object_type = S4SXP;
     return;
@@ -1480,6 +1719,9 @@ void dumpMetadata(List& output, QsMetadata& qm) {
     break;
   case 3:
     output["compress_algorithm"] = "zstd_stream";
+    break;
+  case 4:
+    output["compress_algorithm"] = "uncompressed";
     break;
   default:
     output["compress_algorithm"] = "unknown";

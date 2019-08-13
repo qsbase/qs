@@ -50,51 +50,53 @@ bool is_big_endian()
 }
 
 // [[Rcpp::export]]
-void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads) {
+double c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads) {
   std::ofstream myFile(file.c_str(), std::ios::out | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }
+  std::streampos origin = myFile.tellp();
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
-  auto header_end_pos = myFile.tellp();
-  writeSizeToFile8(myFile, 0); // number of compressed blocks
+  std::streampos header_end_pos = myFile.tellp();
+  writeSize8(myFile, 0); // number of compressed blocks
+  uint64_t clength;
   if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
-    // if(nthreads > 1) Rcpp::Rcerr << "zstd_stream currently supports only 1 thread" << std::endl;
-    ZSTD_streamWrite sw(myFile, qm);
-    CompressBufferStream<ZSTD_streamWrite> vbuf(sw, qm);
+    ZSTD_streamWrite<std::ofstream> sw(myFile, qm);
+    CompressBufferStream<ZSTD_streamWrite<std::ofstream>> vbuf(sw, qm);
     vbuf.pushObj(x);
     sw.flush();
-    // std::cout << vbuf.sobj.xenv.digest() << std::endl;
-    if(qm.check_hash) writeSizeToFile4(myFile, vbuf.sobj.xenv.digest());
-    myFile.seekp(header_end_pos);
-    writeSizeToFile8(myFile, sw.bytes_written);
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+    clength = sw.bytes_written;
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
+    uncompressed_streamWrite<std::ofstream> sw(myFile, qm);
+    CompressBufferStream<uncompressed_streamWrite<std::ofstream>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+    clength = sw.bytes_written;
   } else {
     if(nthreads <= 1) {
       if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
-        CompressBuffer<zstd_compress_env> vbuf(myFile, qm);
+        CompressBuffer<std::ofstream, zstd_compress_env> vbuf(myFile, qm);
         vbuf.pushObj(x);
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
-        if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(header_end_pos);
-        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+        if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+        clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
-        CompressBuffer<lz4_compress_env> vbuf(myFile, qm);
+        CompressBuffer<std::ofstream, lz4_compress_env> vbuf(myFile, qm);
         vbuf.pushObj(x);
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
-        if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(header_end_pos);
-        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+        if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+        clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
-        CompressBuffer<lz4hc_compress_env> vbuf(myFile, qm);
+        CompressBuffer<std::ofstream, lz4hc_compress_env> vbuf(myFile, qm);
         vbuf.pushObj(x);
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
-        if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(header_end_pos);
-        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+        if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+        clength = vbuf.number_of_blocks;
       } else {
         throw std::runtime_error("invalid compression algorithm selected");
       }
@@ -104,33 +106,160 @@ void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm
         vbuf.pushObj(x);
         vbuf.flush();
         vbuf.ctc.finish();
-        // std::cout << vbuf.xenv.digest() << std::endl;
-        if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(header_end_pos);
-        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+        if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+        clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
         CompressBuffer_MT<lz4_compress_env> vbuf(&myFile, qm, nthreads);
         vbuf.pushObj(x);
         vbuf.flush();
         vbuf.ctc.finish();
-        // std::cout << vbuf.xenv.digest() << std::endl;
-        if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(header_end_pos);
-        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+        if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+        clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
         CompressBuffer_MT<lz4hc_compress_env> vbuf(&myFile, qm, nthreads);
         vbuf.pushObj(x);
         vbuf.flush();
         vbuf.ctc.finish();
-        // std::cout << vbuf.xenv.digest() << std::endl;
-        if(qm.check_hash) writeSizeToFile4(myFile, vbuf.xenv.digest());
-        myFile.seekp(header_end_pos);
-        writeSizeToFile8(myFile, vbuf.number_of_blocks);
+        if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+        clength = vbuf.number_of_blocks;
       } else {
         throw std::runtime_error("invalid compression algorithm selected");
       }
     }
   }
+  uint64_t total_file_size = myFile.tellp() - origin;
+  myFile.seekp(header_end_pos);
+  writeSize8(myFile, clength);
+  return static_cast<double>(total_file_size);
+}
+
+// [[Rcpp::export]]
+double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+  fd_wrapper myFile(fd);
+  QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
+  qm.writeToFile(myFile);
+  writeSize8(myFile, 0); // number of compressed blocks
+  if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
+    ZSTD_streamWrite<fd_wrapper> sw(myFile, qm);
+    CompressBufferStream<ZSTD_streamWrite<fd_wrapper>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    sw.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
+    uncompressed_streamWrite<fd_wrapper> sw(myFile, qm);
+    CompressBufferStream<uncompressed_streamWrite<fd_wrapper>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
+    CompressBuffer<fd_wrapper, zstd_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
+    CompressBuffer<fd_wrapper, lz4_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
+    CompressBuffer<fd_wrapper, lz4hc_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+  } else {
+    throw std::runtime_error("invalid compression algorithm selected");
+  }
+  myFile.flush();
+  return static_cast<double>(myFile.bytes_processed);
+}
+
+// [[Rcpp::export]]
+double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+#ifdef _WIN32
+  HANDLE h = R_ExternalPtrAddr(handle);
+  handle_wrapper myFile(h);
+  QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
+  qm.writeToFile(myFile);
+  writeSize8(myFile, 0); // number of compressed blocks
+  if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
+    ZSTD_streamWrite<handle_wrapper> sw(myFile, qm);
+    CompressBufferStream<ZSTD_streamWrite<handle_wrapper>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    sw.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
+    uncompressed_streamWrite<handle_wrapper> sw(myFile, qm);
+    CompressBufferStream<uncompressed_streamWrite<handle_wrapper>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
+    CompressBuffer<handle_wrapper, zstd_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
+    CompressBuffer<handle_wrapper, lz4_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
+    CompressBuffer<handle_wrapper, lz4hc_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+  } else {
+    throw std::runtime_error("invalid compression algorithm selected");
+  }
+  return static_cast<double>(myFile.bytes_processed);
+#else
+  throw std::runtime_error("Windows handle only available on windows");
+#endif
+}
+
+// [[Rcpp::export]]
+RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+  vec_wrapper myFile;
+  QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
+  qm.writeToFile(myFile);
+  uint64_t filesize_offset = myFile.bytes_processed;
+  writeSize8(myFile, 0); // number of compressed blocks
+  uint64_t clength;
+  if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
+    ZSTD_streamWrite<vec_wrapper> sw(myFile, qm);
+    CompressBufferStream<ZSTD_streamWrite<vec_wrapper>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    sw.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+    clength = sw.bytes_written;
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
+    uncompressed_streamWrite<vec_wrapper> sw(myFile, qm);
+    CompressBufferStream<uncompressed_streamWrite<vec_wrapper>> vbuf(sw, qm);
+    vbuf.pushObj(x);
+    if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
+    clength = sw.bytes_written;
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
+    CompressBuffer<vec_wrapper, zstd_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+    clength = vbuf.number_of_blocks;
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
+    CompressBuffer<vec_wrapper, lz4_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+    clength = vbuf.number_of_blocks;
+  } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
+    CompressBuffer<vec_wrapper, lz4hc_compress_env> vbuf(myFile, qm);
+    vbuf.pushObj(x);
+    vbuf.flush();
+    if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
+    clength = vbuf.number_of_blocks;
+  } else {
+    throw std::runtime_error("invalid compression algorithm selected");
+  }
+  myFile.writeDirect(reinterpret_cast<char*>(&clength), 8, filesize_offset);
+  myFile.shrink();
+  return RawVector(myFile.buffer.begin(), myFile.buffer.end());
 }
 
 // [[Rcpp::export]]
@@ -140,27 +269,30 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
     throw std::runtime_error("Failed to open file");
   }
   Protect_Tracker pt = Protect_Tracker();
-  QsMetadata qm(myFile);
+  QsMetadata qm = QsMetadata::create(myFile);
   if(qm.compress_algorithm == 3) { // zstd_stream
-    uint64_t totalsize = readSizeFromFile8(myFile);
-    ZSTD_streamRead sr(myFile, qm, totalsize);
-    Data_Context_Stream<ZSTD_streamRead> dc(sr, qm, use_alt_rep);
-    // std::cout << dc.xenv.digest() << std::endl;
+    ZSTD_streamRead<std::ifstream> sr(myFile, qm);
+    Data_Context_Stream<ZSTD_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_hash(qm, myFile, dc.dsc.xenv.digest(), strict);
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 4) { // uncompressed
+    uncompressed_streamRead<std::ifstream> sr(myFile, qm);
+    Data_Context_Stream<uncompressed_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else {
-    if(nthreads <= 1) {
+    if(nthreads <= 1 || qm.clength == 0) {
       if(qm.compress_algorithm == 0) {
-        Data_Context<zstd_decompress_env> dc(myFile, qm, use_alt_rep);
-        // std::cout << dc.xenv.digest() << std::endl;
+        Data_Context<std::ifstream, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
-        validate_hash(qm, myFile, dc.xenv.digest(), strict);
+        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
-        Data_Context<lz4_decompress_env> dc(myFile, qm, use_alt_rep);
+        Data_Context<std::ifstream, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
-        validate_hash(qm, myFile, dc.xenv.digest(), strict);
+        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
         return ret;
       } else {
         throw std::runtime_error("Invalid compression algorithm in file");
@@ -170,13 +302,13 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
         Data_Context_MT<zstd_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
-        validate_hash(qm, myFile, dc.xenv.digest(), strict);
+        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), 0, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
-        validate_hash(qm, myFile, dc.xenv.digest(), strict);
+        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), 0, strict);
         return ret;
       } else {
         throw std::runtime_error("Invalid compression algorithm in file");
@@ -186,71 +318,146 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
 }
 
 // [[Rcpp::export]]
-void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode) {
-  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(scon.c_str(), popen_mode.c_str()), pclose);
-  if (!pipe) {
-    throw std::runtime_error("popen() failed!");
+SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict) {
+  fd_wrapper myFile(fd);
+  Protect_Tracker pt = Protect_Tracker();
+  QsMetadata qm  = QsMetadata::create(myFile);
+  if(qm.compress_algorithm == 3) { // zstd_stream
+    ZSTD_streamRead<fd_wrapper> sr(myFile, qm);
+    Data_Context_Stream<ZSTD_streamRead<fd_wrapper>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 4) { // uncompressed
+    uncompressed_streamRead<fd_wrapper> sr(myFile, qm);
+    Data_Context_Stream<uncompressed_streamRead<fd_wrapper>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 0) {
+    Data_Context<fd_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+    Data_Context<fd_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    return ret;
+  } else {
+    throw std::runtime_error("Invalid compression algorithm in file");
   }
-  FILE * con = pipe.get();
-  QsMetadata qm("custom", "uncompressed", 0, shuffle_control, check_hash);
-  qm.writeToCon(con);
-  writeSizeToCon8(con, 0); // this is just zero, we can't seek back to beginning of stream
-  fd_streamWrite sw(con, qm);
-  CompressBufferStream<fd_streamWrite> vbuf(sw, qm);
-  vbuf.pushObj(x);
-  if(qm.check_hash) writeSizeToCon4(con, vbuf.sobj.xenv.digest());
 }
 
 // [[Rcpp::export]]
-void c_qsave_rconn(SEXP x, SEXP scon, int shuffle_control, bool check_hash) {
-#ifdef USE_R_CONNECTION
-  Rconnection con = r_get_connection(scon);
-  QsMetadata qm("custom", "uncompressed", 0, shuffle_control, check_hash);
-  qm.writeToCon(con);
-  writeSizeToCon8(con, 0);
-  rconn_streamWrite sw(con, qm);
-  CompressBufferStream<rconn_streamWrite> vbuf(sw, qm);
-  vbuf.pushObj(x);
-  if(qm.check_hash) writeSizeToCon4(con, vbuf.sobj.xenv.digest());
+SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict) {
+#ifdef _WIN32
+  HANDLE h = R_ExternalPtrAddr(handle);
+  handle_wrapper myFile(h);
+  Protect_Tracker pt = Protect_Tracker();
+  QsMetadata qm  = QsMetadata::create(myFile);
+  if(qm.compress_algorithm == 3) { // zstd_stream
+    ZSTD_streamRead<handle_wrapper> sr(myFile, qm);
+    Data_Context_Stream<ZSTD_streamRead<handle_wrapper>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 4) { // uncompressed
+    uncompressed_streamRead<handle_wrapper> sr(myFile, qm);
+    Data_Context_Stream<uncompressed_streamRead<handle_wrapper>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 0) {
+    Data_Context<handle_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+    Data_Context<handle_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    return ret;
+  } else {
+    throw std::runtime_error("Invalid compression algorithm in file");
+  }
 #else
-  Rcerr << "R connections not supported" << std::endl;
+  throw std::runtime_error("Windows handle only available on windows");
 #endif
 }
 
 // [[Rcpp::export]]
-SEXP c_qread_fd(std::string scon, bool use_alt_rep, bool strict, std::string popen_mode) {
-  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(scon.c_str(), popen_mode.c_str()), pclose);
-  if (!pipe) {
-    throw std::runtime_error("popen() failed!");
-  }
-  FILE * con = pipe.get();
+SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict) {
+  void * vp = R_ExternalPtrAddr(pointer);
+  mem_wrapper myFile(vp, static_cast<uint64_t>(length));
   Protect_Tracker pt = Protect_Tracker();
-  QsMetadata qm(con);
-  readSizeFromCon8(con); // zero since it's a stream
-  fd_streamRead sr(con, qm);
-  Data_Context_Stream<fd_streamRead> dc(sr, qm, use_alt_rep);
-  SEXP ret = PROTECT(dc.processBlock()); pt++;
-  sr.validate_hash(strict);
-  return ret;
+  QsMetadata qm = QsMetadata::create(myFile);
+  if(qm.compress_algorithm == 3) { // zstd_stream
+    ZSTD_streamRead<mem_wrapper> sr(myFile, qm);
+    Data_Context_Stream<ZSTD_streamRead<mem_wrapper>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 4) { // uncompressed
+    uncompressed_streamRead<mem_wrapper> sr(myFile, qm);
+    Data_Context_Stream<uncompressed_streamRead<mem_wrapper>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 0) {
+    Data_Context<mem_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    return ret;
+  } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+    Data_Context<mem_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
+    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    return ret;
+  } else {
+    throw std::runtime_error("Invalid compression algorithm in file");
+  }
 }
 
 // [[Rcpp::export]]
-SEXP c_qread_rconn(SEXP scon, bool use_alt_rep, bool strict) {
-#ifdef USE_R_CONNECTION
-  Rconnection con = r_get_connection(scon);
+SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict) {
+  void * p = reinterpret_cast<void*>(RAW(x));
+  double dlen = static_cast<double>(Rf_xlength(x));
   Protect_Tracker pt = Protect_Tracker();
-  QsMetadata qm(con);
-  readSizeFromCon8(con);
-  rconn_streamRead sr(con, qm);
-  Data_Context_Stream<rconn_streamRead> dc(sr, qm, use_alt_rep);
-  SEXP ret = PROTECT(dc.processBlock()); pt++;
-  sr.validate_hash(strict);
-  return ret;
-#else
-  Rcerr << "R connections not supported" << std::endl;
-  return R_NilValue;
-#endif
+  SEXP pointer = PROTECT(R_MakeExternalPtr(p, R_NilValue, R_NilValue)); pt++;
+  return c_qread_ptr(pointer, dlen, use_alt_rep, strict);
 }
+
+// void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode) {
+//   std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(scon.c_str(), popen_mode.c_str()), pclose);
+//   if (!pipe) {
+//     throw std::runtime_error("popen() failed!");
+//   }
+//   FILE * con = pipe.get();
+//   QsMetadata qm("custom", "uncompressed", 0, shuffle_control, check_hash);
+//   qm.writeToCon(con);
+//   writeSizeToCon8(con, 0); // this is just zero, we can't seek back to beginning of stream
+//   fd_streamWrite sw(con, qm);
+//   CompressBufferStream<fd_streamWrite> vbuf(sw, qm);
+//   vbuf.pushObj(x);
+//   if(qm.check_hash) writeSizeToCon4(con, vbuf.sobj.xenv.digest());
+// }
+
+// SEXP c_qread_fd(std::string scon, bool use_alt_rep, bool strict, std::string popen_mode) {
+//   std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(scon.c_str(), popen_mode.c_str()), pclose);
+//   if (!pipe) {
+//     throw std::runtime_error("popen() failed!");
+//   }
+//   FILE * con = pipe.get();
+//   Protect_Tracker pt = Protect_Tracker();
+//   QsMetadata qm(con);
+//   readSizeFromCon8(con); // zero since it's a stream
+//   fd_streamRead sr(con, qm);
+//   Data_Context_Stream<fd_streamRead> dc(sr, qm, use_alt_rep);
+//   SEXP ret = PROTECT(dc.processBlock()); pt++;
+//   sr.validate_hash(strict);
+//   return ret;
+// }
 
 // [[Rcpp::export]]
 RObject c_qdump(std::string file) {
@@ -258,10 +465,10 @@ RObject c_qdump(std::string file) {
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }
-  QsMetadata qm(myFile);
+  QsMetadata qm = QsMetadata::create(myFile);
   List outvec;
   dumpMetadata(outvec, qm);
-  uint64_t totalsize = readSizeFromFile8(myFile);
+  uint64_t totalsize = qm.clength;
   std::streampos current = myFile.tellg();
   myFile.ignore(std::numeric_limits<std::streamsize>::max());
   uint64_t readable_bytes = myFile.gcount();
@@ -282,7 +489,7 @@ RObject c_qdump(std::string file) {
     outvec["decompressed_size"] = std::to_string(totalsize);
     outvec["computed_hash"] = std::to_string(computed_hash);
     if(qm.check_hash) {
-      uint32_t recorded_hash = readSizeFromFile4(myFile);
+      uint32_t recorded_hash = readSize4(myFile);
       outvec["recorded_hash"] = std::to_string(recorded_hash);
     }
     outvec["compressed_data"] = input;
@@ -290,6 +497,21 @@ RObject c_qdump(std::string file) {
     if(is_error) {
       outvec["error"] = "decompression_error";
     }
+  } else if(qm.compress_algorithm == 4) { // uncompressed
+    if(qm.check_hash) readable_bytes -= 4;
+    RawVector input(readable_bytes);
+    char* inp = reinterpret_cast<char*>(RAW(input));
+    myFile.read(inp, readable_bytes);
+    uint32_t computed_hash = XXH32(inp, totalsize, XXH_SEED);
+    // append results
+    outvec["readable_bytes"] = std::to_string(readable_bytes);
+    outvec["decompressed_size"] = std::to_string(totalsize);
+    outvec["computed_hash"] = std::to_string(computed_hash);
+    if(qm.check_hash) {
+      uint32_t recorded_hash = readSize4(myFile);
+      outvec["recorded_hash"] = std::to_string(recorded_hash);
+    }
+    outvec["compressed_data"] = input;
   } else if(qm.compress_algorithm == 0 || qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     decompress_fun dfun;
     cbound_fun cbfun;
@@ -312,7 +534,7 @@ RObject c_qdump(std::string file) {
     IntegerVector zblock_sizes(totalsize);
     xxhash_env xenv = xxhash_env();
     for(uint64_t i=0; i<totalsize; i++) {
-      uint64_t zsize = readSizeFromFile4(myFile);
+      uint64_t zsize = readSize4(myFile);
       if(static_cast<uint64_t>(myFile.gcount()) != 4) break;
       myFile.read(zblock.data(), zsize);
       if(static_cast<uint64_t>(myFile.gcount()) != zsize) break;
@@ -332,7 +554,7 @@ RObject c_qdump(std::string file) {
     outvec["decompressed_block_sizes"] = block_sizes;
     outvec["computed_hash"] = std::to_string(xenv.digest());
     if(qm.check_hash) {
-      uint32_t recorded_hash = readSizeFromFile4(myFile);
+      uint32_t recorded_hash = readSize4(myFile);
       outvec["recorded_hash"] = std::to_string(recorded_hash);
     }
     outvec["compressed_data"] = input;
@@ -472,11 +694,12 @@ std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytes
   return xshuf;
 }
 
-
-////////////////////////////////////////////////////////////////
-// functions for users to investigate alt rep data
-////////////////////////////////////////////////////////////////
-
+// [[Rcpp::export]]
+std::string xxhash_raw(std::vector<uint8_t> x) {
+  xxhash_env xenv = xxhash_env();
+  xenv.update(x.data(), x.size());
+  return std::to_string(xenv.digest());
+}
 
 // [[Rcpp::export]]
 SEXP convertToAlt(CharacterVector x) {
@@ -517,6 +740,141 @@ SEXP convertToAlt(CharacterVector x) {
 #endif
 }
 
+// [[Rcpp::export]]
+int openFd(std::string filename, std::string mode) {
+  if(mode == "w") {
+#ifdef _WIN32
+    int fd = open(filename.c_str(), _O_WRONLY | _O_CREAT | O_TRUNC | _O_BINARY, _S_IWRITE);
+#else
+    int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+#endif
+    if(fd == -1) throw std::runtime_error("error creating file descriptor");
+    return fd;
+  } else if(mode == "r") {
+#ifdef _WIN32
+    int fd = open(filename.c_str(), O_RDONLY | _O_BINARY);
+#else
+    int fd = open(filename.c_str(), O_RDONLY);
+#endif
+    if(fd == -1) throw std::runtime_error("error creating file descriptor");
+    return fd;
+  } else if(mode == "rw" || mode == "wr") {
+#ifdef _WIN32
+    int fd = open(filename.c_str(), _O_RDWR | _O_CREAT | O_TRUNC | _O_BINARY, _S_IWRITE);
+#else
+    int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
+#endif
+    if(fd == -1) throw std::runtime_error("error creating file descriptor");
+    return fd;
+  } else {
+    throw std::runtime_error("mode should be w or r or rw");
+  }
+}
+
+// [[Rcpp::export]]
+RawVector readFdDirect(int fd, int n_bytes) {
+  RawVector x(n_bytes);
+  fd_wrapper fw = fd_wrapper(fd);
+  fw.read(reinterpret_cast<char*>(RAW(x)), n_bytes);
+  return x;
+}
+
+
+// [[Rcpp::export]]
+int closeFd(int fd) {
+  return close(fd);
+}
+
+// [[Rcpp::export]]
+SEXP openMmap(int fd, double length) {
+#ifdef _WIN32
+  throw std::runtime_error("mmap not available on windows");
+#elif __APPLE__
+  size_t _length = static_cast<size_t>(length);
+  void * map = mmap(NULL, _length, PROT_READ, MAP_SHARED, fd, 0);
+  return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
+#else
+  size_t _length = static_cast<size_t>(length);
+  void * map = mmap(NULL, _length, PROT_READ, MAP_SHARED | MAP_POPULATE, fd, 0);
+  return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
+#endif
+}
+
+// [[Rcpp::export]]
+int closeMmap(SEXP map, double length) {
+#ifdef _WIN32
+  throw std::runtime_error("mmap not available on windows");
+#else
+  size_t _length = static_cast<size_t>(length);
+  void * m = R_ExternalPtrAddr(map);
+  return munmap(m, _length);
+#endif
+}
+
+// [[Rcpp::export]]
+SEXP openHandle(std::string filename, std::string mode) {
+#ifdef _WIN32
+  HANDLE h;
+  if(mode == "rw" || mode == "wr") {
+    h = CreateFileA(filename.c_str(), GENERIC_WRITE | GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+  } else if(mode == "w") {
+    h = CreateFileA(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+  } else if(mode == "r") {
+    h = CreateFileA(filename.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  } else {
+    throw std::runtime_error("mode should be w or r or rw");
+  }
+  return R_MakeExternalPtr(h, R_NilValue, R_NilValue);
+#else
+  throw std::runtime_error("Windows handle only available on windows");
+#endif
+}
+
+// [[Rcpp::export]]
+bool closeHandle(SEXP handle) {
+#ifdef _WIN32
+  HANDLE h = R_ExternalPtrAddr(handle);
+  return CloseHandle(h);
+#else
+  throw std::runtime_error("Windows handle only available on windows");
+#endif
+}
+
+// [[Rcpp::export]]
+SEXP openWinFileMapping(SEXP handle, double length) {
+#ifdef _WIN32
+  uint64_t dlen = static_cast<uint64_t>(length);
+  DWORD dlen_high = dlen >> 32;
+  DWORD dlen_low = dlen & 0x00000000FFFFFFFF;
+  HANDLE h = R_ExternalPtrAddr(handle);
+  HANDLE fm = CreateFileMappingA(h, NULL, PAGE_READWRITE, dlen_high, dlen_low, NULL);
+  return R_MakeExternalPtr(fm, R_NilValue, R_NilValue);
+#else
+  throw std::runtime_error("Windows file mapping only available on windows");
+#endif
+}
+
+// [[Rcpp::export]]
+SEXP openWinMapView(SEXP handle, double length) {
+#ifdef _WIN32
+  uint64_t dlen = static_cast<uint64_t>(length);
+  HANDLE h = R_ExternalPtrAddr(handle);
+  void* map = MapViewOfFile(h, FILE_MAP_ALL_ACCESS, 0, 0, dlen);
+  return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
+#else
+  throw std::runtime_error("Windows file mapping only available on windows");
+#endif
+}
+
+// [[Rcpp::export]]
+bool closeWinMapView(SEXP pointer) {
+#ifdef _WIN32
+  void* map = R_ExternalPtrAddr(pointer);
+  return UnmapViewOfFile(map);
+#else
+  throw std::runtime_error("Windows file mapping only available on windows");
+#endif
+}
 
 
 // std::vector<unsigned char> brotli_compress_raw(RawVector x, int compress_level) {

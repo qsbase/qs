@@ -16,9 +16,10 @@ BEGIN_RCPP
 END_RCPP
 }
 // c_qsave
-void c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads);
+double c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads);
 RcppExport SEXP _qs_c_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
@@ -28,8 +29,58 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
     Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads);
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// c_qsave_fd
+double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash);
+RcppExport SEXP _qs_c_qsave_fd(SEXP xSEXP, SEXP fdSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
+    Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
+    Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
+    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qsave_fd(x, fd, preset, algorithm, compress_level, shuffle_control, check_hash));
+    return rcpp_result_gen;
+END_RCPP
+}
+// c_qsave_handle
+double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash);
+RcppExport SEXP _qs_c_qsave_handle(SEXP xSEXP, SEXP handleSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
+    Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
+    Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
+    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qsave_handle(x, handle, preset, algorithm, compress_level, shuffle_control, check_hash));
+    return rcpp_result_gen;
+END_RCPP
+}
+// c_qserialize
+RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash);
+RcppExport SEXP _qs_c_qserialize(SEXP xSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
+    Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
+    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash));
+    return rcpp_result_gen;
 END_RCPP
 }
 // c_qread
@@ -46,57 +97,56 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// c_qsave_fd
-void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode);
-RcppExport SEXP _qs_c_qsave_fd(SEXP xSEXP, SEXP sconSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP popen_modeSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
-    Rcpp::traits::input_parameter< std::string >::type scon(sconSEXP);
-    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
-    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
-    Rcpp::traits::input_parameter< std::string >::type popen_mode(popen_modeSEXP);
-    c_qsave_fd(x, scon, shuffle_control, check_hash, popen_mode);
-    return R_NilValue;
-END_RCPP
-}
-// c_qsave_rconn
-void c_qsave_rconn(SEXP x, SEXP scon, int shuffle_control, bool check_hash);
-RcppExport SEXP _qs_c_qsave_rconn(SEXP xSEXP, SEXP sconSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type scon(sconSEXP);
-    Rcpp::traits::input_parameter< int >::type shuffle_control(shuffle_controlSEXP);
-    Rcpp::traits::input_parameter< bool >::type check_hash(check_hashSEXP);
-    c_qsave_rconn(x, scon, shuffle_control, check_hash);
-    return R_NilValue;
-END_RCPP
-}
 // c_qread_fd
-SEXP c_qread_fd(std::string scon, bool use_alt_rep, bool strict, std::string popen_mode);
-RcppExport SEXP _qs_c_qread_fd(SEXP sconSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP popen_modeSEXP) {
+SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict);
+RcppExport SEXP _qs_c_qread_fd(SEXP fdSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type scon(sconSEXP);
+    Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
     Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
-    Rcpp::traits::input_parameter< std::string >::type popen_mode(popen_modeSEXP);
-    rcpp_result_gen = Rcpp::wrap(c_qread_fd(scon, use_alt_rep, strict, popen_mode));
+    rcpp_result_gen = Rcpp::wrap(c_qread_fd(fd, use_alt_rep, strict));
     return rcpp_result_gen;
 END_RCPP
 }
-// c_qread_rconn
-SEXP c_qread_rconn(SEXP scon, bool use_alt_rep, bool strict);
-RcppExport SEXP _qs_c_qread_rconn(SEXP sconSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
+// c_qread_handle
+SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict);
+RcppExport SEXP _qs_c_qread_handle(SEXP handleSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type scon(sconSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
     Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
-    rcpp_result_gen = Rcpp::wrap(c_qread_rconn(scon, use_alt_rep, strict));
+    rcpp_result_gen = Rcpp::wrap(c_qread_handle(handle, use_alt_rep, strict));
+    return rcpp_result_gen;
+END_RCPP
+}
+// c_qread_ptr
+SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict);
+RcppExport SEXP _qs_c_qread_ptr(SEXP pointerSEXP, SEXP lengthSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pointer(pointerSEXP);
+    Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qread_ptr(pointer, length, use_alt_rep, strict));
+    return rcpp_result_gen;
+END_RCPP
+}
+// c_qdeserialize
+SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict);
+RcppExport SEXP _qs_c_qdeserialize(SEXP xSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qdeserialize(x, use_alt_rep, strict));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -215,6 +265,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// xxhash_raw
+std::string xxhash_raw(std::vector<uint8_t> x);
+RcppExport SEXP _qs_xxhash_raw(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<uint8_t> >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(xxhash_raw(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // convertToAlt
 SEXP convertToAlt(CharacterVector x);
 RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
@@ -226,15 +287,135 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// openFd
+int openFd(std::string filename, std::string mode);
+RcppExport SEXP _qs_openFd(SEXP filenameSEXP, SEXP modeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type mode(modeSEXP);
+    rcpp_result_gen = Rcpp::wrap(openFd(filename, mode));
+    return rcpp_result_gen;
+END_RCPP
+}
+// readFdDirect
+RawVector readFdDirect(int fd, int n_bytes);
+RcppExport SEXP _qs_readFdDirect(SEXP fdSEXP, SEXP n_bytesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
+    Rcpp::traits::input_parameter< int >::type n_bytes(n_bytesSEXP);
+    rcpp_result_gen = Rcpp::wrap(readFdDirect(fd, n_bytes));
+    return rcpp_result_gen;
+END_RCPP
+}
+// closeFd
+int closeFd(int fd);
+RcppExport SEXP _qs_closeFd(SEXP fdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
+    rcpp_result_gen = Rcpp::wrap(closeFd(fd));
+    return rcpp_result_gen;
+END_RCPP
+}
+// openMmap
+SEXP openMmap(int fd, double length);
+RcppExport SEXP _qs_openMmap(SEXP fdSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
+    Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(openMmap(fd, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// closeMmap
+int closeMmap(SEXP map, double length);
+RcppExport SEXP _qs_closeMmap(SEXP mapSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type map(mapSEXP);
+    Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(closeMmap(map, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// openHandle
+SEXP openHandle(std::string filename, std::string mode);
+RcppExport SEXP _qs_openHandle(SEXP filenameSEXP, SEXP modeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type mode(modeSEXP);
+    rcpp_result_gen = Rcpp::wrap(openHandle(filename, mode));
+    return rcpp_result_gen;
+END_RCPP
+}
+// closeHandle
+bool closeHandle(SEXP handle);
+RcppExport SEXP _qs_closeHandle(SEXP handleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
+    rcpp_result_gen = Rcpp::wrap(closeHandle(handle));
+    return rcpp_result_gen;
+END_RCPP
+}
+// openWinFileMapping
+SEXP openWinFileMapping(SEXP handle, double length);
+RcppExport SEXP _qs_openWinFileMapping(SEXP handleSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
+    Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(openWinFileMapping(handle, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// openWinMapView
+SEXP openWinMapView(SEXP handle, double length);
+RcppExport SEXP _qs_openWinMapView(SEXP handleSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
+    Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(openWinMapView(handle, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// closeWinMapView
+bool closeWinMapView(SEXP pointer);
+RcppExport SEXP _qs_closeWinMapView(SEXP pointerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pointer(pointerSEXP);
+    rcpp_result_gen = Rcpp::wrap(closeWinMapView(pointer));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
+    {"_qs_c_qsave_fd", (DL_FUNC) &_qs_c_qsave_fd, 7},
+    {"_qs_c_qsave_handle", (DL_FUNC) &_qs_c_qsave_handle, 7},
+    {"_qs_c_qserialize", (DL_FUNC) &_qs_c_qserialize, 6},
     {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
-    {"_qs_c_qsave_fd", (DL_FUNC) &_qs_c_qsave_fd, 5},
-    {"_qs_c_qsave_rconn", (DL_FUNC) &_qs_c_qsave_rconn, 4},
-    {"_qs_c_qread_fd", (DL_FUNC) &_qs_c_qread_fd, 4},
-    {"_qs_c_qread_rconn", (DL_FUNC) &_qs_c_qread_rconn, 3},
+    {"_qs_c_qread_fd", (DL_FUNC) &_qs_c_qread_fd, 3},
+    {"_qs_c_qread_handle", (DL_FUNC) &_qs_c_qread_handle, 3},
+    {"_qs_c_qread_ptr", (DL_FUNC) &_qs_c_qread_ptr, 4},
+    {"_qs_c_qdeserialize", (DL_FUNC) &_qs_c_qdeserialize, 3},
     {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
@@ -245,7 +426,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_lz4_decompress_raw", (DL_FUNC) &_qs_lz4_decompress_raw, 1},
     {"_qs_blosc_shuffle_raw", (DL_FUNC) &_qs_blosc_shuffle_raw, 2},
     {"_qs_blosc_unshuffle_raw", (DL_FUNC) &_qs_blosc_unshuffle_raw, 2},
+    {"_qs_xxhash_raw", (DL_FUNC) &_qs_xxhash_raw, 1},
     {"_qs_convertToAlt", (DL_FUNC) &_qs_convertToAlt, 1},
+    {"_qs_openFd", (DL_FUNC) &_qs_openFd, 2},
+    {"_qs_readFdDirect", (DL_FUNC) &_qs_readFdDirect, 2},
+    {"_qs_closeFd", (DL_FUNC) &_qs_closeFd, 1},
+    {"_qs_openMmap", (DL_FUNC) &_qs_openMmap, 2},
+    {"_qs_closeMmap", (DL_FUNC) &_qs_closeMmap, 2},
+    {"_qs_openHandle", (DL_FUNC) &_qs_openHandle, 2},
+    {"_qs_closeHandle", (DL_FUNC) &_qs_closeHandle, 1},
+    {"_qs_openWinFileMapping", (DL_FUNC) &_qs_openWinFileMapping, 2},
+    {"_qs_openWinMapView", (DL_FUNC) &_qs_openWinMapView, 2},
+    {"_qs_closeWinMapView", (DL_FUNC) &_qs_closeWinMapView, 1},
     {NULL, NULL, 0}
 };
 

@@ -24,9 +24,9 @@
 // serialization functions
 ////////////////////////////////////////////////////////////////
 
-template <class compress_env> 
+template <class stream_writer, class compress_env> 
 struct CompressBuffer {
-  std::ofstream & myFile;
+  stream_writer & myFile;
   QsMetadata qm;
   compress_env cenv;
   xxhash_env xenv;
@@ -35,14 +35,14 @@ struct CompressBuffer {
   std::vector<char> block = std::vector<char>(BLOCKSIZE);
   uint64_t current_blocksize=0;
   std::vector<char> zblock;
-  CompressBuffer(std::ofstream & f, QsMetadata qm) : myFile(f), qm(qm), cenv(compress_env()), xenv(xxhash_env()) {
+  CompressBuffer(stream_writer & f, QsMetadata qm) : myFile(f), qm(qm), cenv(compress_env()), xenv(xxhash_env()) {
     zblock = std::vector<char>(cenv.compressBound(BLOCKSIZE));
   }
   void flush() {
     if(current_blocksize > 0) {
       uint64_t zsize = cenv.compress(zblock.data(), zblock.size(), block.data(), current_blocksize, qm.compress_level);
-      writeSizeToFile4(myFile, zsize);
-      myFile.write(zblock.data(), zsize);
+      writeSize4(myFile, zsize);
+      write_check(myFile, zblock.data(), zsize);
       current_blocksize = 0;
       number_of_blocks++;
     }
@@ -56,8 +56,8 @@ struct CompressBuffer {
       }
       if(current_blocksize == 0 && len - current_pointer_consumed >= BLOCKSIZE) {
         uint64_t zsize = cenv.compress(zblock.data(), zblock.size(), data + current_pointer_consumed, BLOCKSIZE, qm.compress_level);
-        writeSizeToFile4(myFile, zsize);
-        myFile.write(zblock.data(), zsize);
+        writeSize4(myFile, zsize);
+        write_check(myFile, zblock.data(), zsize);
         current_pointer_consumed += BLOCKSIZE;
         number_of_blocks++;
       } else {

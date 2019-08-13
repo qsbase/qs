@@ -20,14 +20,15 @@
 
 #include "qs_common.h"
 
+#define RESERVE_SIZE 4
+
+template <class stream_reader>
 struct ZSTD_streamRead {
-  std::ifstream & myFile;
+  stream_reader & myFile;
   QsMetadata qm;
-  uint64_t readable_bytes;
   uint64_t bytes_read;
   uint64_t minblocksize;
   uint64_t maxblocksize;
-  uint64_t decompressed_bytes_total;
   uint64_t decompressed_bytes_read;
   std::vector<char> outblock;
   std::vector<char> inblock;
@@ -37,8 +38,10 @@ struct ZSTD_streamRead {
   uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
   uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
   xxhash_env xenv;
-  ZSTD_streamRead(std::ifstream & mf, QsMetadata qm, uint64_t dbt) : 
-    myFile(mf), qm(qm), decompressed_bytes_total(dbt), xenv(xxhash_env()) {
+  std::array<char, 4> hash_reserve;
+  bool eof;
+  ZSTD_streamRead(stream_reader & mf, QsMetadata qm) : 
+    myFile(mf), qm(qm), xenv(xxhash_env()) {
     size_t outblocksize = 4*ZSTD_DStreamOutSize();
     size_t inblocksize = ZSTD_DStreamInSize();
     decompressed_bytes_read = 0;
@@ -59,35 +62,75 @@ struct ZSTD_streamRead {
     
     // need to reserve some bytes for the hash check at the end
     // ref https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file
-    std::streampos current = myFile.tellg();
-    myFile.ignore(std::numeric_limits<std::streamsize>::max());
-    readable_bytes = myFile.gcount();
-    myFile.seekg(current);
-    // std::cout << readable_bytes << std::endl;
-    if(qm.check_hash) readable_bytes -= 4;
-    // std::cout << readable_bytes << std::endl;
+    // std::streampos current = myFile.tellg();
+    // myFile.ignore(std::numeric_limits<std::streamsize>::max());
+    // readable_bytes = myFile.gcount();
+    // myFile.seekg(current);
+    // // std::cout << readable_bytes << std::endl;
+    // if(qm.check_hash) readable_bytes -= 4;
+    // // std::cout << readable_bytes << std::endl;
     bytes_read = 0;
+    hash_reserve = {0,0,0,0};
+    if(qm.check_hash) {
+      read_check(myFile, hash_reserve.data(), RESERVE_SIZE);
+    }
+    eof = false;
   }
   //file at end of reserve
-  bool file_eor() {
-    return bytes_read >= readable_bytes;
-  }
-  uint64_t file_read_reserve(char* data, uint64_t length) {
-    if(bytes_read + length > readable_bytes) {
-      uint64_t new_len = readable_bytes - bytes_read;
-      myFile.read(data, new_len);
-      bytes_read = readable_bytes;
-      // std::cout << "new len, bytes_read: " << new_len << " " << bytes_read << std::endl;
-      return new_len;
-    } else {
-      myFile.read(data, length);
-      bytes_read += length;
-      uint64_t gco = myFile.gcount();
-      // std::cout << "gcount, length: " << gco << " " << length << std::endl;
-      return gco;
+
+  size_t read_reserve(char * dst, size_t length, bool exact=false) {
+    if(!qm.check_hash) {
+      return read_check(myFile, dst, length, exact);
+    }
+    if(exact) {
+      if(length >= RESERVE_SIZE) {
+        std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
+        read_check(myFile, dst + RESERVE_SIZE, length - RESERVE_SIZE, true);
+        read_check(myFile, hash_reserve.data(), RESERVE_SIZE, true);
+      } else { // RESERVE_SIZE > length
+        std::memcpy(dst, hash_reserve.data(), length);
+        // since some of the reserve buffer was consumed, shift the unconsumed bytes to beginning of array
+        // then read from file to fill up reserve buffer
+        std::memmove(hash_reserve.data(), hash_reserve.data() + length, RESERVE_SIZE - length);
+        read_check(myFile, hash_reserve.data() +  RESERVE_SIZE - length, length, true);
+      }
+      
+      // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+      return length;
+    } else { // !exact -- we can't assume that "length" bytes are left in myFile; there could even be zero bytes left
+      if(length >= RESERVE_SIZE) {
+        // use "dst" as a temporary buffer, since it's already allocated
+        // it is not a good idea to allocate a temp buffer of size length, as length can be large
+        std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
+        size_t n_read = read_check(myFile, dst + RESERVE_SIZE, length - RESERVE_SIZE, false);
+        size_t n_bufferable = n_read + RESERVE_SIZE;
+        if(n_bufferable < length) {
+          std::memcpy(hash_reserve.data(), dst + n_bufferable - RESERVE_SIZE, RESERVE_SIZE);
+
+          // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+          return n_bufferable - RESERVE_SIZE;
+        } else {
+          std::array<char, RESERVE_SIZE> temp_buffer = {0,0,0,0};
+          size_t temp_size = read_check(myFile, temp_buffer.data(), RESERVE_SIZE, false);
+          std::memcpy(hash_reserve.data(), dst + n_bufferable - (RESERVE_SIZE - temp_size), RESERVE_SIZE - temp_size);
+          std::memcpy(hash_reserve.data() + RESERVE_SIZE - temp_size, temp_buffer.data(), temp_size);
+          
+          // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+          return n_bufferable - (RESERVE_SIZE - temp_size);
+        }
+      } else { // length < RESERVE_SIZE
+        std::vector<char> temp_buffer(length, '\0');
+        size_t return_value = read_check(myFile, temp_buffer.data(), length, false);
+        // n_bufferable is at most RESERVE_SIZE*2 - 1 = 7
+        std::memcpy(dst, hash_reserve.data(), return_value);
+        std::memmove(hash_reserve.data(), hash_reserve.data() + return_value, RESERVE_SIZE - return_value);
+        std::memcpy(hash_reserve.data() + (RESERVE_SIZE - return_value), temp_buffer.data(), return_value);
+        
+        // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+        return return_value;
+      }
     }
   }
-  
   ~ZSTD_streamRead() {
     ZSTD_freeDStream(zds);
   }
@@ -97,9 +140,11 @@ struct ZSTD_streamRead {
     if(ZSTD_isError(return_value)) throw std::runtime_error("zstd stream decompression error");
     decompressed_bytes_read += zout->pos - temp;
     xenv.update(reinterpret_cast<char*>(zout->dst)+temp, zout->pos - temp);
+    // for(unsigned int i=0; i < zout->pos - temp; i++) std::cout << std::hex << (int)(reinterpret_cast<unsigned char *>(zout->dst)[i+temp]) << " "; std::cout << std::endl;
+    // std::cout << std::dec << xenv.digest() << std::endl;
   }
   void getBlock() {
-    if(decompressed_bytes_read >= decompressed_bytes_total) return;
+    if((qm.clength != 0) & (decompressed_bytes_read >= qm.clength)) return;
     char * ptr = outblock.data();
     if(blocksize > blockoffset) {
       // dst should never overlap since blocksize > minblocksize
@@ -112,10 +157,12 @@ struct ZSTD_streamRead {
     while(zout.pos < minblocksize) {
       if(zin.pos < zin.size) {
         ZSTD_decompressStream_count(zds, &zout, &zin);
-      } else if(! file_eor()) {
-        uint64_t bytes_read = file_read_reserve(inblock.data(), inblock.size());
-        // size_t bytes_read = myFile.gcount();
-        if(bytes_read == 0) continue; // EOF
+      } else if(! eof) {
+        uint64_t bytes_read = read_reserve(inblock.data(), inblock.size(), false);
+        if(bytes_read == 0) {
+          eof = true;
+          continue; // EOF
+        }
         zin.pos = 0;
         zin.size = bytes_read;
         ZSTD_decompressStream_count(zds, &zout, &zin);
@@ -142,9 +189,12 @@ struct ZSTD_streamRead {
         if(zin.pos < zin.size) {
           ZSTD_decompressStream_count(zds, &zout, &zin);
           // std::cout << zin.pos << "/" << zin.size << " zin " << zout.pos << "/" << zout.size << " zout\n";
-        } else if(! file_eor()) {
-          uint64_t bytes_read = file_read_reserve(inblock.data(), minblocksize);
-          if(bytes_read == 0) continue; // EOF
+        } else if(! eof) {
+          uint64_t bytes_read = read_reserve(inblock.data(), minblocksize);
+          if(bytes_read == 0) {
+            eof = true;
+            continue; // EOF
+          }
           zin.pos = 0;
           zin.size = bytes_read;
           ZSTD_decompressStream_count(zds, &zout, &zin);
@@ -173,87 +223,81 @@ struct ZSTD_streamRead {
   }
 };
 
-#ifdef USE_R_CONNECTION
-struct rconn_streamRead {
-  Rconnection con;
+template <class stream_reader>
+struct uncompressed_streamRead {
+  stream_reader & con;
   QsMetadata qm;
   std::vector<char> outblock;
   uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
   uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
+  uint64_t decompressed_bytes_read; // same as total bytes read since no compression
   xxhash_env xenv;
-  uint32_t hashable_bytes;
   std::array<char, 4> hash_reserve;
-  rconn_streamRead(Rconnection _con, QsMetadata qm) : 
+  uncompressed_streamRead(stream_reader & _con, QsMetadata qm) : 
     con(_con), qm(qm),
     outblock(std::vector<char>(BLOCKSIZE+BLOCKRESERVE)), blocksize(0), blockoffset(0),
-    xenv(xxhash_env()), hashable_bytes(0), hash_reserve{{0,0,0,0}} {}
+    decompressed_bytes_read(0), xenv(xxhash_env()) {
+      hash_reserve = {0,0,0,0};
+      if(qm.check_hash) {
+        read_check(con, hash_reserve.data(), RESERVE_SIZE);
+      }
+    }
   
   // fread with updating hash as necessary
-  size_t fread_update(char * ptr, size_t count, bool check_size=true) {
-    size_t return_value = R_ReadConnection(con, ptr, count);
-    if(check_size) {
-      if(return_value != count) {
-        throw std::runtime_error("error reading from stream (wrong size)");
-      }
+  size_t read_update(char * dst, size_t length, bool exact=false) {
+    if(!qm.check_hash) {
+      uint64_t return_value = read_check(con, dst, length, exact);
+      decompressed_bytes_read += return_value;
+      xenv.update(dst, return_value);
+      return return_value;
     }
-    // std::cout << "rv: " << return_value << "\n";
-    if(!qm.check_hash) return return_value;
-    if(return_value == 0) return return_value;
-    
-    // compute hash, reserve at least 4 bytes from hashing
-    uint32_t previous_hashable_bytes = hashable_bytes;
-    hashable_bytes = hashable_bytes + return_value;
-    if(hashable_bytes <= 4) {
-      std::memcpy(hash_reserve.data() + previous_hashable_bytes, ptr, return_value);
-    } else {
-      if(return_value >= 4) {
-        xenv.update(hash_reserve.data(), previous_hashable_bytes);
-        xenv.update(ptr, return_value - 4);
-        std::memcpy(hash_reserve.data(), ptr+return_value-4, 4);
-      } else {
-        // bytes_to_hash_from_ptr = 0 -- don't hash any bytes from pointer, since they will all be going towards the reserve
-        // worst case: hashable_bytes = 7, previous_hashable = 4, return_value = 3
-        uint32_t bytes_to_hash_from_reserve = hashable_bytes - 4; // worst case: 3
-        uint32_t bytes_remaining_in_reserve = previous_hashable_bytes - bytes_to_hash_from_reserve; // worst case: 4 - 3 = 1
-        xenv.update(hash_reserve.data(), bytes_to_hash_from_reserve);
-        std::memmove(hash_reserve.data(), hash_reserve.data() + bytes_to_hash_from_reserve, bytes_remaining_in_reserve);
-        std::memcpy(hash_reserve.data() + bytes_remaining_in_reserve, ptr, return_value);
+    if(exact) {
+      if(length >= RESERVE_SIZE) {
+        std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
+        read_check(con, dst + RESERVE_SIZE, length - RESERVE_SIZE, true);
+        read_check(con, hash_reserve.data(), RESERVE_SIZE, true);
+      } else { // RESERVE_SIZE > length
+        std::memcpy(dst, hash_reserve.data(), length);
+        // since some of the reserve buffer was consumed, shift the unconsumed bytes to beginning of array
+        // then read from file to fill up reserve buffer
+        std::memmove(hash_reserve.data(), hash_reserve.data() + length, RESERVE_SIZE - length);
+        read_check(con, hash_reserve.data() +  RESERVE_SIZE - length, length, true);
       }
-      hashable_bytes = 4;
-    }
-    return return_value;
-  }
-  
-  // current does not check end of stream -- should this be checked?
-  uint32_t validate_hash(bool strict) {
-    if(qm.check_hash) {
-      std::array<char,4> a = {0,0,0,0};
-      uint64_t bytes_read = fread_check(a.data(), 4, con, false);
-      // std::cout << "remaining bytes " << bytes_read << std::endl;
-      
-      uint32_t recorded_hash;
-      // shift hash bytes if part of hash is in the reserve
-      if(bytes_read == 0) {
-        recorded_hash = *reinterpret_cast<uint32_t*>(hash_reserve.data());
-      } else if(bytes_read == 4) {
-        xenv.update(hash_reserve.data(), bytes_read);
-        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-      } else {
-        std::memmove(a.data() + 4 - bytes_read, a.data(), bytes_read);
-        std::memcpy(a.data(), hash_reserve.data() + bytes_read, 4-bytes_read);
-        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-        xenv.update(hash_reserve.data(), 4-bytes_read);
+      decompressed_bytes_read += length;
+      xenv.update(dst, length);
+      return length;
+    } else { // !exact -- we can't assume that "length" bytes are left in myFile; there could even be zero bytes left
+      if(length >= RESERVE_SIZE) {
+        // use "dst" as a temporary buffer, since it's already allocated
+        // it is not a good idea to allocate a temp buffer of size length, as length can be large
+        std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
+        size_t n_read = read_check(con, dst + RESERVE_SIZE, length - RESERVE_SIZE, false);
+        size_t n_bufferable = n_read + RESERVE_SIZE;
+        if(n_bufferable < length) {
+          std::memcpy(hash_reserve.data(), dst + n_bufferable - RESERVE_SIZE, RESERVE_SIZE);
+          decompressed_bytes_read += n_bufferable - RESERVE_SIZE;
+          xenv.update(dst, n_bufferable - RESERVE_SIZE);
+          return n_bufferable - RESERVE_SIZE;
+        } else {
+          std::array<char, RESERVE_SIZE> temp_buffer = {0,0,0,0};
+          size_t temp_size = read_check(con, temp_buffer.data(), RESERVE_SIZE, false);
+          std::memcpy(hash_reserve.data(), dst + n_bufferable - (RESERVE_SIZE - temp_size), RESERVE_SIZE - temp_size);
+          std::memcpy(hash_reserve.data() + RESERVE_SIZE - temp_size, temp_buffer.data(), temp_size);
+          decompressed_bytes_read += n_bufferable - (RESERVE_SIZE - temp_size);
+          xenv.update(dst, n_bufferable - (RESERVE_SIZE - temp_size));
+          return n_bufferable - (RESERVE_SIZE - temp_size);
+        }
+      } else { // length < RESERVE_SIZE
+        std::vector<char> temp_buffer(length, '\0');
+        size_t return_value = read_check(con, temp_buffer.data(), length, false);
+        // n_bufferable is at most RESERVE_SIZE*2 - 1 = 7
+        std::memcpy(dst, hash_reserve.data(), return_value);
+        std::memmove(hash_reserve.data(), hash_reserve.data() + return_value, RESERVE_SIZE - return_value);
+        std::memcpy(hash_reserve.data() + (RESERVE_SIZE - return_value), temp_buffer.data(), return_value);
+        decompressed_bytes_read += return_value;
+        xenv.update(dst, return_value);
+        return return_value;
       }
-      
-      uint32_t computed_hash = xenv.digest();
-      if(computed_hash != recorded_hash) {
-        if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
-           std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
-        Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
-      }
-      return recorded_hash;
-    } else {
-      return 0;
     }
   }
   
@@ -266,7 +310,8 @@ struct rconn_streamRead {
     } else {
       block_offset = 0;
     }
-    uint64_t bytes_read = fread_update(ptr + block_offset, BLOCKSIZE - block_offset, false);
+    uint64_t bytes_read = read_update(ptr + block_offset, BLOCKSIZE - block_offset, false);
+    // std::cout << bytes_read << std::endl;
     blocksize = block_offset + bytes_read;
     blockoffset = 0;
   }
@@ -275,126 +320,7 @@ struct rconn_streamRead {
     if(dst_size > blocksize - blockoffset) {
       std::memcpy(dst, ptr + blockoffset, blocksize - blockoffset);
       uint64_t block_offset = blocksize - blockoffset;
-      fread_update(dst + block_offset, dst_size - block_offset, true);
-      blockoffset = 0;
-      blocksize = 0;
-    } else {
-      std::memcpy(dst, ptr + blockoffset, dst_size);
-      blockoffset += dst_size;
-    }
-    if(blocksize - blockoffset < BLOCKRESERVE) {
-      getBlock();
-    }
-  }
-};
-#endif
-
-// FILE pointer
-struct fd_streamRead {
-  FILE * con;
-  QsMetadata qm;
-  std::vector<char> outblock;
-  uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
-  uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
-  xxhash_env xenv;
-  uint32_t hashable_bytes;
-  std::array<char, 4> hash_reserve;
-  fd_streamRead(FILE * _con, QsMetadata qm) : 
-    con(_con), qm(qm),
-    outblock(std::vector<char>(BLOCKSIZE+BLOCKRESERVE)), blocksize(0), blockoffset(0),
-    xenv(xxhash_env()), hashable_bytes(0), hash_reserve{{0,0,0,0}} {}
-  
-  // fread with updating hash as necessary
-  size_t fread_update(char * ptr, size_t count, bool check_size=true) {
-    size_t return_value = fread(ptr, 1, count, con);
-    if (ferror(con)) {
-      throw std::runtime_error("error writing to connection (ferror)");
-    }
-    if(check_size) {
-      if(return_value != count) {
-        throw std::runtime_error("error reading from stream (wrong size)");
-      }
-    }
-    // std::cout << "rv: " << return_value << "\n";
-    if(!qm.check_hash) return return_value;
-    if(return_value == 0) return return_value;
-    
-    // compute hash, reserve at least 4 bytes from hashing
-    uint32_t previous_hashable_bytes = hashable_bytes;
-    hashable_bytes = hashable_bytes + return_value;
-    if(hashable_bytes <= 4) {
-      std::memcpy(hash_reserve.data() + previous_hashable_bytes, ptr, return_value);
-    } else {
-      if(return_value >= 4) {
-        xenv.update(hash_reserve.data(), previous_hashable_bytes);
-        xenv.update(ptr, return_value - 4);
-        std::memcpy(hash_reserve.data(), ptr+return_value-4, 4);
-      } else {
-        // bytes_to_hash_from_ptr = 0 -- don't hash any bytes from pointer, since they will all be going towards the reserve
-        // worst case: hashable_bytes = 7, previous_hashable = 4, return_value = 3
-        uint32_t bytes_to_hash_from_reserve = hashable_bytes - 4; // worst case: 3
-        uint32_t bytes_remaining_in_reserve = previous_hashable_bytes - bytes_to_hash_from_reserve; // worst case: 4 - 3 = 1
-        xenv.update(hash_reserve.data(), bytes_to_hash_from_reserve);
-        std::memmove(hash_reserve.data(), hash_reserve.data() + bytes_to_hash_from_reserve, bytes_remaining_in_reserve);
-        std::memcpy(hash_reserve.data() + bytes_remaining_in_reserve, ptr, return_value);
-      }
-      hashable_bytes = 4;
-    }
-    return return_value;
-  }
-  
-  // current does not check end of stream -- should this be checked?
-  uint32_t validate_hash(bool strict) {
-    if(qm.check_hash) {
-      std::array<char,4> a = {0,0,0,0};
-      uint64_t bytes_read = fread_check(a.data(), 4, con, false);
-      // std::cout << "remaining bytes " << bytes_read << std::endl;
-      
-      uint32_t recorded_hash;
-      // shift hash bytes if part of hash is in the reserve
-      if(bytes_read == 0) {
-        recorded_hash = *reinterpret_cast<uint32_t*>(hash_reserve.data());
-      } else if(bytes_read == 4) {
-        xenv.update(hash_reserve.data(), bytes_read);
-        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-      } else {
-        std::memmove(a.data() + 4 - bytes_read, a.data(), bytes_read);
-        std::memcpy(a.data(), hash_reserve.data() + bytes_read, 4-bytes_read);
-        recorded_hash = *reinterpret_cast<uint32_t*>(a.data());
-        xenv.update(hash_reserve.data(), 4-bytes_read);
-      }
-      
-      uint32_t computed_hash = xenv.digest();
-      if(computed_hash != recorded_hash) {
-        if(strict) throw std::runtime_error("Warning: hash checksum does not match ( " + 
-           std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
-        Rcerr << "Warning: hash checksum does not match ( " << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
-      }
-      return recorded_hash;
-    } else {
-      return 0;
-    }
-  }
-  
-  void getBlock() {
-    char * ptr = outblock.data();
-    uint64_t block_offset;
-    if(blocksize > blockoffset) {
-      std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset);
-      block_offset = blocksize - blockoffset;
-    } else {
-      block_offset = 0;
-    }
-    uint64_t bytes_read = fread_update(ptr + block_offset, BLOCKSIZE - block_offset, false);
-    blocksize = block_offset + bytes_read;
-    blockoffset = 0;
-  }
-  void copyData(char* dst,uint64_t dst_size) {
-    char * ptr = outblock.data();
-    if(dst_size > blocksize - blockoffset) {
-      std::memcpy(dst, ptr + blockoffset, blocksize - blockoffset);
-      uint64_t block_offset = blocksize - blockoffset;
-      fread_update(dst + block_offset, dst_size - block_offset, true);
+      read_update(dst + block_offset, dst_size - block_offset, true);
       blockoffset = 0;
       blocksize = 0;
     } else {
@@ -592,3 +518,5 @@ struct Data_Context_Stream {
     return std::move(obj);
   }
 };
+
+#undef RESERVE_SIZE

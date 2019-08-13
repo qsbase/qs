@@ -4,6 +4,18 @@ suppressMessages(library(data.table))
 suppressMessages(library(qs))
 options(warn=1)
 
+args <- commandArgs(T)
+if(length(args) == 0) {
+  mode <- "filestream"
+} else {
+  mode <- args[1] # "fd", "HANDLE"
+}
+if(length(args) < 2) {
+  reps <- 5
+} else {
+  reps <- as.numeric(args[2])
+}
+
 Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
 cppFunction("CharacterVector splitstr(std::string x, std::vector<double> cuts){
             CharacterVector ret(cuts.size() - 1);
@@ -52,7 +64,7 @@ get_obj_size <- function() {
 }
 set_obj_size <- function(x) {
   assign("obj_size", get_obj_size() + as.numeric(object.size(x)), envir=globalenv())
-  # print(get_obj_size());
+  # printCarriage(get_obj_size());
   return(get_obj_size());
 }
 random_object_generator <- function(N) { # additional input: global obj_size, max_size
@@ -103,9 +115,16 @@ nested_tibble <- function() {
 
 test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
 extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
-reps <- 5
 
-myfile <- "/tmp/ctest.z"
+if (Sys.info()[['sysname']] != "Windows") {
+  myfile <- "/tmp/ctest.z"
+} else {
+  myfile <- "N:/ctest.z"
+}
+
+printCarriage <- function(x) {
+  cat(x, "\r")
+}
 ################################################################################################
 # some one off tests
 
@@ -123,26 +142,47 @@ stopifnot(identical(c("a", "b"), colnames(xu)))
 ################################################################################################
 
 qsave_rand <- function(x, file) {
-  alg <- sample(c("lz4", "zstd", "lz4hc", "zstd_stream"), 1)
+  alg <- sample(c("lz4", "zstd", "lz4hc", "zstd_stream", "uncompressed"), 1)
   nt <- sample(5,1)
   sc <- sample(0:15,1)
   cl <- sample(10,1)
   ch <- sample(c(T,F),1)
-  # print(alg)
-  # print(nt)
-  # print(sc)
-  # print(cl)
-  qsave(x, file=file, preset = "custom", algorithm = alg,
-      compress_level=cl, shuffle_control = sc, nthreads=nt, check_hash = ch )
+  if(mode == "filestream") {
+    qsave(x, file=file, preset = "custom", algorithm = alg,
+        compress_level=cl, shuffle_control = sc, nthreads=nt, check_hash = ch)
+  } else if(mode == "fd") {
+    fd <- qs:::openFd(myfile, "w")
+    qsave_fd(x, fd, preset = "custom", algorithm = alg,
+          compress_level=cl, shuffle_control = sc, check_hash = ch)
+    qs:::closeFd(fd)
+  } else {
+    stop(paste0("wrong mode selected: ", mode))
+  }
 }
 
 qread_rand <- function(file) {
-  x <- qread(file, use_alt_rep = sample(c(T,F),1), nthreads=sample(5,1), strict=T)
+  ar <- sample(c(T,F),1)
+  nt <- sample(5,1)
+  if(mode == "filestream") {
+    x <- qread(file, use_alt_rep=ar, nthreads=nt, strict=T)
+  } else if(mode == "fd") {
+    if(sample(2) == 1) {
+      fd <- qs:::openFd(myfile, "r")
+      x <- qread_fd(fd, use_alt_rep=ar, strict=T)
+      qs:::close(fd)
+    } else {
+      x <- qread(file, use_alt_rep=ar, nthreads=nt, strict=T)
+    }
+  } else {
+    stop(paste0("wrong mode selected: ", mode))
+  }
   return(x)
 }
 
+################################################################################################
+
 for(q in 1:reps) {
-  
+  cat(q, "\n")
   # String correctness
   time <- vector("numeric", length=3)
   for(tp in test_points) {
@@ -156,7 +196,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("strings: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("strings: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # Character vectors
@@ -175,7 +215,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # Integers
@@ -191,14 +231,13 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("Integers: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("Integers: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # Doubles
   time <- vector("numeric", length=3)
   for(tp in test_points) {
     for(i in 1:3) {
-      
       x1 <- rnorm(tp)
       x1 <- c(NA, x1)
       time[i] <- Sys.time()
@@ -208,7 +247,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("Numeric: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("Numeric: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # Logical
@@ -224,7 +263,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("Logical: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("Logical: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # List
@@ -239,7 +278,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("List: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("List: %s, %s s",tp, signif(mean(time),4)))
   }
   
   for(i in 1:3) {
@@ -250,7 +289,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  print("Data.frame test")
+  printCarriage("Data.frame test")
   
   for(i in 1:3) {
     x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
@@ -260,7 +299,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(all(z==x1))
   }
-  print("Data.table test")
+  printCarriage("Data.table test")
   
   for(i in 1:3) {
     
@@ -271,7 +310,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  print("Tibble test")
+  printCarriage("Tibble test")
   
   # Encoding test
   if (Sys.info()[['sysname']] != "Windows") {
@@ -289,9 +328,9 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print("Encoding test")
+    printCarriage("Encoding test")
   } else {
-    print("(Encoding test not run on windows)")
+    printCarriage("(Encoding test not run on windows)")
   }
   
   # complex vectors
@@ -310,7 +349,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("Complex: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("Complex: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # factors
@@ -325,7 +364,7 @@ for(q in 1:reps) {
       gc()
       stopifnot(identical(z, x1))
     }
-    print(sprintf("Factors: %s, %s s",tp, signif(mean(time),4)))
+    printCarriage(sprintf("Factors: %s, %s s",tp, signif(mean(time),4)))
   }
   
   # nested lists
@@ -334,7 +373,7 @@ for(q in 1:reps) {
     # qs_use_alt_rep(sample(c(T,F), size=1))
     obj_size <- 0
     x1 <- random_object_generator(12)
-    print(sprintf("Nested list/attributes: %s bytes", object.size(x1) %>% as.numeric))
+    printCarriage(sprintf("Nested list/attributes: %s bytes", object.size(x1) %>% as.numeric))
     time[i] <- Sys.time()
     qsave_rand(x1, file=myfile)
     z <- qread_rand(file=myfile)
@@ -342,7 +381,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  print(sprintf("Nested list/attributes: %s s", signif(mean(time),4)))
+  printCarriage(sprintf("Nested list/attributes: %s s", signif(mean(time),4)))
   
   # nested attributes
   time <- vector("numeric", length=3)
@@ -359,7 +398,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  print(sprintf("Nested attributes: %s s", signif(mean(time),4)))
+  printCarriage(sprintf("Nested attributes: %s s", signif(mean(time),4)))
   
   # alt-rep -- should serialize the unpacked object
   time <- vector("numeric", length=3)
@@ -372,7 +411,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  print(sprintf("Alt rep integer: %s s", signif(mean(time),4)))
+  printCarriage(sprintf("Alt rep integer: %s s", signif(mean(time),4)))
   
   
   # Environment test
@@ -391,7 +430,7 @@ for(q in 1:reps) {
     time[i] <- Sys.time() - time[i]
     gc()
   }
-  print(sprintf("Environment test: %s s", signif(mean(time),4)))
+  printCarriage(sprintf("Environment test: %s s", signif(mean(time),4)))
   
   time <- vector("numeric", length=3)
   for(i in 1:3) {
@@ -403,12 +442,12 @@ for(q in 1:reps) {
     time[i] <- Sys.time() - time[i]
     gc()
   }
-  print(sprintf("nested tibble test: %s s", signif(mean(time),4)))
+  printCarriage(sprintf("nested tibble test: %s s", signif(mean(time),4)))
   
  }
 
 rm(list=ls())
 gc()
 
-print("tests done")
+printCarriage("tests done")
 

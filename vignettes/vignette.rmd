@@ -37,12 +37,8 @@ df2 <- qread("myfile.qs")
 # CRAN version
 install.packages("qs")
 
-# Linux/Mac CRAN version compile from source (recommended)
-remotes::install_cran("qs", type="source", configure.args="--with-simd=AVX2 --with-allow-rconn")
-
-# Windows CRAN version compile from source (recommended)
-Sys.setenv(ALLOW_RCONN=1)
-remotes::install_cran("qs", type="source")
+# CRAN version compile from source (recommended)
+remotes::install_cran("qs", type="source", configure.args="--with-simd=AVX2")
 ```
 
 ## Features

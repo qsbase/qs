@@ -77,8 +77,7 @@ struct Data_Thread_Context {
   Data_Thread_Context(std::ifstream* mf, unsigned int nt, QsMetadata qm) : 
     denv(decompress_env()),
     myFile(mf), nthreads(nt), blocks_read(0), blocks_processed(0) {
-    blocks_total = readSizeFromFile8(*myFile);
-    
+    blocks_total = qm.clength;
     zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(denv.compressBound(BLOCKSIZE)));
     data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
     data_blocks2 = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));

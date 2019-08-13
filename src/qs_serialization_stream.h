@@ -21,8 +21,9 @@
 #include "qs_common.h"
 
 // built in zstd streaming context
+template <class stream_writer>
 struct ZSTD_streamWrite {
-  std::ofstream & myFile;
+  stream_writer & myFile;
   xxhash_env xenv;
   QsMetadata qm;
   uint64_t bytes_written;
@@ -30,7 +31,7 @@ struct ZSTD_streamWrite {
   ZSTD_inBuffer zin;
   ZSTD_outBuffer zout;
   ZSTD_CStream* zcs;
-  ZSTD_streamWrite(std::ofstream & mf, QsMetadata qm) : myFile(mf), xenv(xxhash_env()), qm(qm), bytes_written(0) {
+  ZSTD_streamWrite(stream_writer & mf, QsMetadata qm) : myFile(mf), xenv(xxhash_env()), qm(qm), bytes_written(0) {
     size_t outblocksize = ZSTD_CStreamOutSize();
     outblock = std::vector<char>(outblocksize);
     zcs = ZSTD_createCStream();
@@ -52,7 +53,7 @@ struct ZSTD_streamWrite {
       zout.pos = 0;
       size_t return_value = ZSTD_compressStream(zcs, &zout, &zin);
       if(ZSTD_isError(return_value)) throw std::runtime_error("zstd stream compression error; output is likely corrupted");
-      if(zout.pos > 0) myFile.write(reinterpret_cast<char*>(zout.dst), zout.pos);
+      if(zout.pos > 0) write_check(myFile, reinterpret_cast<char*>(zout.dst), zout.pos);
     }
   }
   template<typename POD>
@@ -71,34 +72,35 @@ struct ZSTD_streamWrite {
   }
 };
 
-#ifdef USE_R_CONNECTION
-// Rconnection context
-struct rconn_streamWrite {
-  Rconnection con;
-  xxhash_env xenv;
-  QsMetadata qm;
-  rconn_streamWrite(Rconnection _con, QsMetadata qm) : con(_con), xenv(xxhash_env()), qm(qm) {}
-  void push(char * data, uint64_t length) {
-    if(qm.check_hash) xenv.update(data, length);
-    fwrite_check(data, length, con);
-  }
-  template<typename POD>
-  void push_pod(POD pod) {
-    push(reinterpret_cast<char*>(&pod), sizeof(pod));
-  }
-};
-#endif
+// #ifdef USE_R_CONNECTION
+// // Rconnection context
+// struct rconn_streamWrite {
+//   Rconnection con;
+//   xxhash_env xenv;
+//   QsMetadata qm;
+//   rconn_streamWrite(Rconnection _con, QsMetadata qm) : con(_con), xenv(xxhash_env()), qm(qm) {}
+//   void push(char * data, uint64_t length) {
+//     if(qm.check_hash) xenv.update(data, length);
+//     fwrite_check(data, length, con);
+//   }
+//   template<typename POD>
+//   void push_pod(POD pod) {
+//     push(reinterpret_cast<char*>(&pod), sizeof(pod));
+//   }
+// };
+// #endif
 
-// FILE pointer / pipe
-struct fd_streamWrite {
-  FILE * con;
+template <class stream_writer>
+struct uncompressed_streamWrite {
+  stream_writer & con;
   xxhash_env xenv;
   QsMetadata qm;
   uint64_t bytes_written;
-  fd_streamWrite(FILE * _con, QsMetadata qm) : con(_con), xenv(xxhash_env()), qm(qm) {}
+  uncompressed_streamWrite(stream_writer & _con, QsMetadata qm) : con(_con), xenv(xxhash_env()), qm(qm), bytes_written(0) {}
   void push(char * data, uint64_t length) {
     if(qm.check_hash) xenv.update(data, length);
-    fwrite_check(data, length, con);
+    bytes_written += length;
+    write_check(con, data, length);
   }
   template<typename POD>
   void push_pod(POD pod) {

@@ -586,7 +586,6 @@ PACKAGE_URL=''
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-DEFINE_USE_R_CONNECTION
 INCLUDE_PATHS
 COMPILE_STRING
 PKGCONF
@@ -632,7 +631,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_allow_rconn
 with_zstd_force_compile
 with_lz4_force_compile
 with_zstd_include
@@ -1263,7 +1261,6 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-allow-rconn      Allows use of R connections
   --with-zstd-force-compile
                           Force compilation of bundled zstd source files
   --with-lz4-force-compile
@@ -1788,13 +1785,6 @@ clean:
 ### Configure args
 
 
-# Check whether --with-allow-rconn was given.
-if test "${with_allow_rconn+set}" = set; then :
-  withval=$with_allow_rconn; allow_r_connection="true"
-fi
-
-
-
 # Check whether --with-zstd-force-compile was given.
 if test "${with_zstd_force_compile+set}" = set; then :
   withval=$with_zstd_force_compile; zstd_force_compile="true"
@@ -1951,13 +1941,15 @@ elif test xx$with_simd = "xxSSE2"; then
   INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
 fi
 
-if test xx$allow_r_connection = "xxtrue"; then
-  echo "Allowing R connections"
-  R_CONNECTION_STRING="#define USE_R_CONNECTION"
-else
-  echo "Excluding R connections"
-  R_CONNECTION_STRING=""
-fi
+# else
+#  if test xx$AVX2_SUPPORTED = "xx1"; then
+#    echo "AVX2 support detected"
+#    INCLUDE_PATHS="$INCLUDE_PATHS -mavx2"
+#  elif test xx$SSE2_SUPPORTED = "xx1"; then
+#    echo "SSE2 supported detected"
+#    INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
+#  fi
+# fi
 
 echo $LIBS
 echo $INCLUDE_PATHS
@@ -1967,12 +1959,8 @@ COMPILE_STRING=$COMPILE_STRING
 
 INCLUDE_PATHS=$INCLUDE_PATHS
 
-DEFINE_USE_R_CONNECTION=$R_CONNECTION_STRING
-
 
 ac_config_files="$ac_config_files src/Makevars"
-
-ac_config_files="$ac_config_files src/qs_common.h"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2680,7 +2668,6 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "src/Makevars") CONFIG_FILES="$CONFIG_FILES src/Makevars" ;;
-    "src/qs_common.h") CONFIG_FILES="$CONFIG_FILES src/qs_common.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -3129,3 +3116,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
+

@@ -1,6 +1,14 @@
+Version 0.18.3 (2019-8-12)
+   * `qsave` now returns invisibly the number of bytes written to file
+   * Fixed an issue with deserialization of large S4 objects (https://github.com/traversc/qs/issues/14)
+   * Additional serialization and deserialization functions for advanced usage:
+      * `qserialize` and `qdeserialize` reads and writes objects in memory to raw vectors
+      * `qsave_fd` and `qread_fd` reads and write objects to file descriptors
+      * `qsave_handle` and `qread_handle` reads and writes objects to Windows HANDLE pointer (Windows only)
+      * `qread_ptr` reads objects from a void pointer
+   
 Version 0.18.2 (2019-7-19)
    * Changed license to GPL-3 (https://github.com/traversc/qs/issues/13)
-   * Implemented two new functions: `qsave_pipe` and `qread_pipe`.  These functions allow for reading and writing using pipes, file descriptors, etc.  
 
 Version 0.18.1 (2019-7-14)
    * Revised header format in order to include more information -- files created by 0/18.1 cannot by read by earlier versions

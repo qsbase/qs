@@ -106,7 +106,7 @@ struct Compress_Thread_Context {
       while (blocks_written % nthreads != thread_id) {
         std::this_thread::yield();
       }
-      writeSizeToFile4(*myFile, zsize);
+      writeSize4(*myFile, zsize);
       myFile->write(zblocks[thread_id].data(), zsize);
       blocks_written += 1;
 
@@ -127,7 +127,7 @@ struct Compress_Thread_Context {
       while (blocks_written % nthreads != thread_id) {
         std::this_thread::yield();
       }
-      writeSizeToFile4(*myFile, zsize);
+      writeSize4(*myFile, zsize);
       myFile->write(zblocks[thread_id].data(), zsize);
       blocks_written += 1;
 

@@ -13,9 +13,9 @@ shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 
 \item{file}{the file name/path.}
 
-\item{preset}{One of "fast", "balanced" (default), "high", "archive" or "custom".  See details.}
+\item{preset}{One of "fast", "balanced" (default), "high", "archive", "uncompressed" or "custom".  See details.}
 
-\item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc" or "zstd_stream".}
+\item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".}
 
 \item{compress_level}{The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).}
 
@@ -24,6 +24,9 @@ shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 \item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization}
 
 \item{nthreads}{Number of threads to use.  Default 1.}
+}
+\value{
+The total number of bytes written to the file (returned invisibly)
 }
 \description{
 Saves (serializes) an object to disk.

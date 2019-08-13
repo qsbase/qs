@@ -6,27 +6,39 @@ is_big_endian <- function() {
 }
 
 c_qsave <- function(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads) {
-    invisible(.Call(`_qs_c_qsave`, x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads))
+    .Call(`_qs_c_qsave`, x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads)
+}
+
+c_qsave_fd <- function(x, fd, preset, algorithm, compress_level, shuffle_control, check_hash) {
+    .Call(`_qs_c_qsave_fd`, x, fd, preset, algorithm, compress_level, shuffle_control, check_hash)
+}
+
+c_qsave_handle <- function(x, handle, preset, algorithm, compress_level, shuffle_control, check_hash) {
+    .Call(`_qs_c_qsave_handle`, x, handle, preset, algorithm, compress_level, shuffle_control, check_hash)
+}
+
+c_qserialize <- function(x, preset, algorithm, compress_level, shuffle_control, check_hash) {
+    .Call(`_qs_c_qserialize`, x, preset, algorithm, compress_level, shuffle_control, check_hash)
 }
 
 c_qread <- function(file, use_alt_rep, strict, nthreads) {
     .Call(`_qs_c_qread`, file, use_alt_rep, strict, nthreads)
 }
 
-c_qsave_fd <- function(x, scon, shuffle_control, check_hash, popen_mode) {
-    invisible(.Call(`_qs_c_qsave_fd`, x, scon, shuffle_control, check_hash, popen_mode))
+c_qread_fd <- function(fd, use_alt_rep, strict) {
+    .Call(`_qs_c_qread_fd`, fd, use_alt_rep, strict)
 }
 
-c_qsave_rconn <- function(x, scon, shuffle_control, check_hash) {
-    invisible(.Call(`_qs_c_qsave_rconn`, x, scon, shuffle_control, check_hash))
+c_qread_handle <- function(handle, use_alt_rep, strict) {
+    .Call(`_qs_c_qread_handle`, handle, use_alt_rep, strict)
 }
 
-c_qread_fd <- function(scon, use_alt_rep, strict, popen_mode) {
-    .Call(`_qs_c_qread_fd`, scon, use_alt_rep, strict, popen_mode)
+c_qread_ptr <- function(pointer, length, use_alt_rep, strict) {
+    .Call(`_qs_c_qread_ptr`, pointer, length, use_alt_rep, strict)
 }
 
-c_qread_rconn <- function(scon, use_alt_rep, strict) {
-    .Call(`_qs_c_qread_rconn`, scon, use_alt_rep, strict)
+c_qdeserialize <- function(x, use_alt_rep, strict) {
+    .Call(`_qs_c_qdeserialize`, x, use_alt_rep, strict)
 }
 
 c_qdump <- function(file) {
@@ -69,7 +81,51 @@ blosc_unshuffle_raw <- function(x, bytesofsize) {
     .Call(`_qs_blosc_unshuffle_raw`, x, bytesofsize)
 }
 
+xxhash_raw <- function(x) {
+    .Call(`_qs_xxhash_raw`, x)
+}
+
 convertToAlt <- function(x) {
     .Call(`_qs_convertToAlt`, x)
+}
+
+openFd <- function(filename, mode) {
+    .Call(`_qs_openFd`, filename, mode)
+}
+
+readFdDirect <- function(fd, n_bytes) {
+    .Call(`_qs_readFdDirect`, fd, n_bytes)
+}
+
+closeFd <- function(fd) {
+    .Call(`_qs_closeFd`, fd)
+}
+
+openMmap <- function(fd, length) {
+    .Call(`_qs_openMmap`, fd, length)
+}
+
+closeMmap <- function(map, length) {
+    .Call(`_qs_closeMmap`, map, length)
+}
+
+openHandle <- function(filename, mode) {
+    .Call(`_qs_openHandle`, filename, mode)
+}
+
+closeHandle <- function(handle) {
+    .Call(`_qs_closeHandle`, handle)
+}
+
+openWinFileMapping <- function(handle, length) {
+    .Call(`_qs_openWinFileMapping`, handle, length)
+}
+
+openWinMapView <- function(handle, length) {
+    .Call(`_qs_openWinMapView`, handle, length)
+}
+
+closeWinMapView <- function(pointer) {
+    .Call(`_qs_closeWinMapView`, pointer)
 }
 
