@@ -443,11 +443,11 @@ for(q in 1:reps) {
     gc()
   }
   printCarriage(sprintf("nested tibble test: %s s", signif(mean(time),4)))
-  
- }
+}
 
+printCarriage("tests done")
 rm(list=ls())
 gc()
 
-printCarriage("tests done")
+
 
