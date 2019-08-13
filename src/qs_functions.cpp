@@ -287,12 +287,12 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
       if(qm.compress_algorithm == 0) {
         Data_Context<std::ifstream, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
-        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context<std::ifstream, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
-        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
         return ret;
       } else {
         throw std::runtime_error("Invalid compression algorithm in file");
@@ -302,13 +302,13 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
         Data_Context_MT<zstd_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
-        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), 0, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
-        validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), 0, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
         return ret;
       } else {
         throw std::runtime_error("Invalid compression algorithm in file");
@@ -337,12 +337,12 @@ SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict) {
   } else if(qm.compress_algorithm == 0) {
     Data_Context<fd_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     Data_Context<fd_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else {
     throw std::runtime_error("Invalid compression algorithm in file");
@@ -371,12 +371,12 @@ SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict) {
   } else if(qm.compress_algorithm == 0) {
     Data_Context<handle_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     Data_Context<handle_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else {
     throw std::runtime_error("Invalid compression algorithm in file");
@@ -407,12 +407,12 @@ SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict) {
   } else if(qm.compress_algorithm == 0) {
     Data_Context<mem_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     Data_Context<mem_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
     SEXP ret = PROTECT(dc.processBlock()); pt++;
-    validate_data(qm, myFile, readSize4(myFile), dc.xenv.digest(), dc.blocks_read, strict);
+    validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else {
     throw std::runtime_error("Invalid compression algorithm in file");

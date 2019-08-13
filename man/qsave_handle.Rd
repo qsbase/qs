@@ -6,7 +6,7 @@
 \usage{
 qsave_handle(x, handle, 
 preset = "balanced", algorithm = "lz4", compress_level = 1L, 
-shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
+shuffle_control = 15L, check_hash=TRUE)
 }
 \arguments{
 \item{x}{the object to serialize.}
@@ -32,8 +32,4 @@ Saves an object to a windows handle
 \details{
 This function serializes and compresses an R object to a stream using a file descriptor
 If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.
-}
-\examples{
-\dontrun{
-}
 }

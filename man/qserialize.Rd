@@ -4,9 +4,9 @@
 \alias{qserialize}
 \title{qserialize}
 \usage{
-qserialize(x, file, 
-preset = "balanced", algorithm = "lz4", compress_level = 1L, 
-shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
+qserialize(x, preset = "balanced", 
+algorithm = "lz4", compress_level = 1L, 
+shuffle_control = 15L, check_hash=TRUE)
 }
 \arguments{
 \item{x}{the object to serialize.}
@@ -20,14 +20,10 @@ shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 \item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.}
 
 \item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization
-d @details 
-This function serializes and compresses an R object to a stream using a file descriptor
+c @details 
+This function serializes and compresses an R object to a raw vctor
 If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.}
 }
 \description{
 Saves an object to a raw vector
-}
-\examples{
-\dontrun{
-}
 }

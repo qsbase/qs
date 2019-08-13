@@ -43,11 +43,13 @@ https://github.com/traversc/qs
 
 // platform specific headers
 #ifdef _WIN32
+#define TRUE WINTRUE // TRUE is defined in one of these headers as 1; conflicts with #define in R headers
 #include <sys/stat.h> // _S_IWRITE
 #include <Fileapi.h>
 #include <WinDef.h>
 #include <Winbase.h>
 #include <Handleapi.h>
+#undef TRUE
 #else
 #include <sys/mman.h> // mmap
 #endif

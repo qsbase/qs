@@ -4,10 +4,10 @@
 \alias{qread_ptr}
 \title{qread_ptr}
 \usage{
-qread_ptr(fd, use_alt_rep=FALSE, strict=FALSE)
+qread_ptr(pointer, length, use_alt_rep=FALSE, strict=FALSE)
 }
 \arguments{
-\item{pointer}{An external pointer to memory (e.g., created by `Rcpp::XPtr<char>`)}
+\item{pointer}{An external pointer to memory}
 
 \item{length}{the length of the object in memory}
 
