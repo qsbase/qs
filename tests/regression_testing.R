@@ -14,7 +14,7 @@ if(F) {
   library(qs151)
   library(qs161)
   library(qs173)
-  library(qs) # v 0.18.1
+  library(qs) # v 0.18.3
 }
 
 file <- "/tmp/test.z"

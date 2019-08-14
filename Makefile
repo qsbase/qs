@@ -50,8 +50,9 @@ vignette:
 	sed -r -i 's/\((.+)\.png/\(vignettes\/\1\.png/' README.md
 	
 test:
-	Rscript tests/correctness_testing.R filestream
+	Rscript tests/correctness_testing.R memory
 	Rscript tests/correctness_testing.R fd
+	Rscript tests/correctness_testing.R filestream
 	Rscript tests/regression_testing.R
 	
 bench:

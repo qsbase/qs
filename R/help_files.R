@@ -217,7 +217,7 @@ qread_handle <- function(handle, use_alt_rep=FALSE, strict=FALSE) {
 #' If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.   
 #' @export
 qserialize <- function(x, preset = "balanced",  algorithm="lz4", compress_level=1L, shuffle_control=15L, check_hash = TRUE) {
-  invisible(c_qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash))
+  c_qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash)
 }
 
 

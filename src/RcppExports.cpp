@@ -10,7 +10,6 @@ bool is_big_endian();
 RcppExport SEXP _qs_is_big_endian() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(is_big_endian());
     return rcpp_result_gen;
 END_RCPP
@@ -20,7 +19,6 @@ double c_qsave(SEXP x, std::string file, std::string preset, std::string algorit
 RcppExport SEXP _qs_c_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
@@ -38,7 +36,6 @@ double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int
 RcppExport SEXP _qs_c_qsave_fd(SEXP xSEXP, SEXP fdSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
     Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
@@ -55,7 +52,6 @@ double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algor
 RcppExport SEXP _qs_c_qsave_handle(SEXP xSEXP, SEXP handleSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
     Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
@@ -72,7 +68,6 @@ RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int co
 RcppExport SEXP _qs_c_qserialize(SEXP xSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
     Rcpp::traits::input_parameter< std::string >::type preset(presetSEXP);
     Rcpp::traits::input_parameter< std::string >::type algorithm(algorithmSEXP);
@@ -88,7 +83,6 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads);
 RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
     Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
@@ -102,7 +96,6 @@ SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict);
 RcppExport SEXP _qs_c_qread_fd(SEXP fdSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
     Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
@@ -115,7 +108,6 @@ SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict);
 RcppExport SEXP _qs_c_qread_handle(SEXP handleSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
     Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
@@ -128,7 +120,6 @@ SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict);
 RcppExport SEXP _qs_c_qread_ptr(SEXP pointerSEXP, SEXP lengthSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type pointer(pointerSEXP);
     Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
@@ -142,7 +133,6 @@ SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict);
 RcppExport SEXP _qs_c_qdeserialize(SEXP xSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< bool >::type use_alt_rep(use_alt_repSEXP);
     Rcpp::traits::input_parameter< bool >::type strict(strictSEXP);
@@ -155,7 +145,6 @@ RObject c_qdump(std::string file);
 RcppExport SEXP _qs_c_qdump(SEXP fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type file(fileSEXP);
     rcpp_result_gen = Rcpp::wrap(c_qdump(file));
     return rcpp_result_gen;
@@ -166,7 +155,6 @@ std::vector<std::string> randomStrings(int N, int string_size);
 RcppExport SEXP _qs_randomStrings(SEXP NSEXP, SEXP string_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type string_size(string_sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(randomStrings(N, string_size));
@@ -178,7 +166,6 @@ int zstd_compress_bound(int size);
 RcppExport SEXP _qs_zstd_compress_bound(SEXP sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(zstd_compress_bound(size));
     return rcpp_result_gen;
@@ -189,7 +176,6 @@ int lz4_compress_bound(int size);
 RcppExport SEXP _qs_lz4_compress_bound(SEXP sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(lz4_compress_bound(size));
     return rcpp_result_gen;
@@ -200,7 +186,6 @@ std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level);
 RcppExport SEXP _qs_zstd_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
     rcpp_result_gen = Rcpp::wrap(zstd_compress_raw(x, compress_level));
@@ -212,7 +197,6 @@ RawVector zstd_decompress_raw(RawVector x);
 RcppExport SEXP _qs_zstd_decompress_raw(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(zstd_decompress_raw(x));
     return rcpp_result_gen;
@@ -223,7 +207,6 @@ std::vector<unsigned char> lz4_compress_raw(RawVector x, int compress_level);
 RcppExport SEXP _qs_lz4_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type compress_level(compress_levelSEXP);
     rcpp_result_gen = Rcpp::wrap(lz4_compress_raw(x, compress_level));
@@ -235,7 +218,6 @@ std::vector<unsigned char> lz4_decompress_raw(RawVector x);
 RcppExport SEXP _qs_lz4_decompress_raw(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< RawVector >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(lz4_decompress_raw(x));
     return rcpp_result_gen;
@@ -246,7 +228,6 @@ std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesof
 RcppExport SEXP _qs_blosc_shuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::vector<uint8_t> >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
     rcpp_result_gen = Rcpp::wrap(blosc_shuffle_raw(x, bytesofsize));
@@ -258,7 +239,6 @@ std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytes
 RcppExport SEXP _qs_blosc_unshuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::vector<uint8_t> >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
     rcpp_result_gen = Rcpp::wrap(blosc_unshuffle_raw(x, bytesofsize));
@@ -270,7 +250,6 @@ std::string xxhash_raw(std::vector<uint8_t> x);
 RcppExport SEXP _qs_xxhash_raw(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::vector<uint8_t> >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(xxhash_raw(x));
     return rcpp_result_gen;
@@ -281,7 +260,6 @@ SEXP convertToAlt(CharacterVector x);
 RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< CharacterVector >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(convertToAlt(x));
     return rcpp_result_gen;
@@ -292,7 +270,6 @@ int openFd(std::string filename, std::string mode);
 RcppExport SEXP _qs_openFd(SEXP filenameSEXP, SEXP modeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type filename(filenameSEXP);
     Rcpp::traits::input_parameter< std::string >::type mode(modeSEXP);
     rcpp_result_gen = Rcpp::wrap(openFd(filename, mode));
@@ -304,7 +281,6 @@ RawVector readFdDirect(int fd, int n_bytes);
 RcppExport SEXP _qs_readFdDirect(SEXP fdSEXP, SEXP n_bytesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
     Rcpp::traits::input_parameter< int >::type n_bytes(n_bytesSEXP);
     rcpp_result_gen = Rcpp::wrap(readFdDirect(fd, n_bytes));
@@ -316,7 +292,6 @@ int closeFd(int fd);
 RcppExport SEXP _qs_closeFd(SEXP fdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
     rcpp_result_gen = Rcpp::wrap(closeFd(fd));
     return rcpp_result_gen;
@@ -327,7 +302,6 @@ SEXP openMmap(int fd, double length);
 RcppExport SEXP _qs_openMmap(SEXP fdSEXP, SEXP lengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type fd(fdSEXP);
     Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
     rcpp_result_gen = Rcpp::wrap(openMmap(fd, length));
@@ -339,7 +313,6 @@ int closeMmap(SEXP map, double length);
 RcppExport SEXP _qs_closeMmap(SEXP mapSEXP, SEXP lengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type map(mapSEXP);
     Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
     rcpp_result_gen = Rcpp::wrap(closeMmap(map, length));
@@ -351,7 +324,6 @@ SEXP openHandle(std::string filename, std::string mode);
 RcppExport SEXP _qs_openHandle(SEXP filenameSEXP, SEXP modeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type filename(filenameSEXP);
     Rcpp::traits::input_parameter< std::string >::type mode(modeSEXP);
     rcpp_result_gen = Rcpp::wrap(openHandle(filename, mode));
@@ -363,7 +335,6 @@ bool closeHandle(SEXP handle);
 RcppExport SEXP _qs_closeHandle(SEXP handleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
     rcpp_result_gen = Rcpp::wrap(closeHandle(handle));
     return rcpp_result_gen;
@@ -374,7 +345,6 @@ SEXP openWinFileMapping(SEXP handle, double length);
 RcppExport SEXP _qs_openWinFileMapping(SEXP handleSEXP, SEXP lengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
     Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
     rcpp_result_gen = Rcpp::wrap(openWinFileMapping(handle, length));
@@ -386,7 +356,6 @@ SEXP openWinMapView(SEXP handle, double length);
 RcppExport SEXP _qs_openWinMapView(SEXP handleSEXP, SEXP lengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type handle(handleSEXP);
     Rcpp::traits::input_parameter< double >::type length(lengthSEXP);
     rcpp_result_gen = Rcpp::wrap(openWinMapView(handle, length));
@@ -398,7 +367,6 @@ bool closeWinMapView(SEXP pointer);
 RcppExport SEXP _qs_closeWinMapView(SEXP pointerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type pointer(pointerSEXP);
     rcpp_result_gen = Rcpp::wrap(closeWinMapView(pointer));
     return rcpp_result_gen;

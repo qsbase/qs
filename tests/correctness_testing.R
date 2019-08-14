@@ -8,7 +8,7 @@ args <- commandArgs(T)
 if(length(args) == 0) {
   mode <- "filestream"
 } else {
-  mode <- args[1] # "fd", "HANDLE"
+  mode <- args[1] # fd, memory, HANDLE
 }
 if(length(args) < 2) {
   reps <- 5
@@ -155,8 +155,16 @@ qsave_rand <- function(x, file) {
     qsave_fd(x, fd, preset = "custom", algorithm = alg,
           compress_level=cl, shuffle_control = sc, check_hash = ch)
     qs:::closeFd(fd)
+  } else if(mode == "handle") {
+    h <- qs:::openHandle(myfile, "w")
+    qsave_handle(x, h, preset = "custom", algorithm = alg,
+             compress_level=cl, shuffle_control = sc, check_hash = ch)
+    qs:::closeHandle(h)
+  } else if(mode == "memory") {
+    .sobj <<- qserialize(x, preset = "custom", algorithm = alg,
+                         compress_level=cl, shuffle_control = sc, check_hash = ch)
   } else {
-    stop(paste0("wrong mode selected: ", mode))
+    stop(paste0("wrong write-mode selected: ", mode))
   }
 }
 
@@ -166,15 +174,25 @@ qread_rand <- function(file) {
   if(mode == "filestream") {
     x <- qread(file, use_alt_rep=ar, nthreads=nt, strict=T)
   } else if(mode == "fd") {
-    if(sample(2) == 1) {
+    if(sample(2,1) == 1) {
       fd <- qs:::openFd(myfile, "r")
       x <- qread_fd(fd, use_alt_rep=ar, strict=T)
-      qs:::close(fd)
+      qs:::closeFd(fd)
     } else {
       x <- qread(file, use_alt_rep=ar, nthreads=nt, strict=T)
     }
+  } else if(mode == "handle") {
+    if(sample(2,1) == 1) {
+      h <- qs:::openHandle(myfile, "r")
+      x <- qread_handle(h, use_alt_rep=ar, strict=T)
+      qs:::closeHandle(h)
+    } else {
+      x <- qread(file, use_alt_rep=ar, nthreads=nt, strict=T)
+    }
+  } else if(mode == "memory") {
+    x <- qdeserialize(.sobj, use_alt_rep=ar, strict=T)
   } else {
-    stop(paste0("wrong mode selected: ", mode))
+    stop(paste0("wrong read-mode selected: ", mode))
   }
   return(x)
 }

@@ -1,6 +1,6 @@
 CXX_STD      = CXX11
 
-PKG_CPPFLAGS = -I. -IZSTD -IZSTD/common -IZSTD/decompress -IZSTD/compress -ILZ4
+PKG_CPPFLAGS = -DRCPP_USE_UNWIND_PROTECT -I. -IZSTD -IZSTD/common -IZSTD/decompress -IZSTD/compress -ILZ4
 
 PKG_LIBS     = -lpthread -L. -lQSZSTD -lQSLZ4
 

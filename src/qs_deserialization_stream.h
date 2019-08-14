@@ -144,11 +144,10 @@ struct ZSTD_streamRead {
     // std::cout << std::dec << xenv.digest() << std::endl;
   }
   void getBlock() {
-    if((qm.clength != 0) & (decompressed_bytes_read >= qm.clength)) return;
+    // if((qm.clength != 0) & (decompressed_bytes_read >= qm.clength)) return;
+    if(eof) return;
     char * ptr = outblock.data();
     if(blocksize > blockoffset) {
-      // dst should never overlap since blocksize > minblocksize
-      // 7/14/2019: is this really true? let's use memmove to be safe
       std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset); 
       zout.pos = blocksize - blockoffset;
     } else {

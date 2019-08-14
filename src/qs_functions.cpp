@@ -39,7 +39,7 @@
  */
 
 // https://stackoverflow.com/a/1001373
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool is_big_endian()
 {
   union {
@@ -49,7 +49,7 @@ bool is_big_endian()
   return bint.c[0] == 1; 
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 double c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads) {
   std::ofstream myFile(file.c_str(), std::ios::out | std::ios::binary);
   if(!myFile) {
@@ -133,7 +133,7 @@ double c_qsave(SEXP x, std::string file, std::string preset, std::string algorit
   return static_cast<double>(total_file_size);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
   fd_wrapper myFile(fd);
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
@@ -172,7 +172,7 @@ double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int
   return static_cast<double>(myFile.bytes_processed);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
@@ -215,7 +215,7 @@ double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algor
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
   vec_wrapper myFile;
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
@@ -262,7 +262,7 @@ RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int co
   return RawVector(myFile.buffer.begin(), myFile.buffer.end());
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
@@ -317,7 +317,7 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
   }
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict) {
   fd_wrapper myFile(fd);
   Protect_Tracker pt = Protect_Tracker();
@@ -349,7 +349,7 @@ SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict) {
   }
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
@@ -386,7 +386,7 @@ SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict) {
   void * vp = R_ExternalPtrAddr(pointer);
   mem_wrapper myFile(vp, static_cast<uint64_t>(length));
@@ -419,7 +419,7 @@ SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict) {
   }
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict) {
   void * p = reinterpret_cast<void*>(RAW(x));
   double dlen = static_cast<double>(Rf_xlength(x));
@@ -459,7 +459,7 @@ SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict) {
 //   return ret;
 // }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 RObject c_qdump(std::string file) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
@@ -569,7 +569,7 @@ RObject c_qdump(std::string file) {
 //   use_alt_rep_bool = s;
 // }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::vector<std::string> randomStrings(int N, int string_size = 50) {
   std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   std::vector<std::string> ret(N);
@@ -588,17 +588,17 @@ std::vector<std::string> randomStrings(int N, int string_size = 50) {
 // functions for users to investigate compression algorithms
 ////////////////////////////////////////////////////////////////
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int zstd_compress_bound(int size) {
   return ZSTD_compressBound(size);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int lz4_compress_bound(int size) {
   return LZ4_compressBound(size);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level) {
   if(compress_level > 22 || compress_level < -50) throw std::runtime_error("compress_level must be an integer between -50 and 22");
   uint64_t zsize = ZSTD_compressBound(x.size());
@@ -610,7 +610,7 @@ std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level) {
   return ret;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 RawVector zstd_decompress_raw(RawVector x) {
   uint64_t zsize = x.size();
   char* xdata = reinterpret_cast<char*>(RAW(x));
@@ -621,7 +621,7 @@ RawVector zstd_decompress_raw(RawVector x) {
   return ret;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> lz4_compress_raw(RawVector x, int compress_level) {
   if(compress_level < 1) throw std::runtime_error("compress_level must be an integer greater than 1");
   uint64_t zsize = LZ4_compressBound(x.size());
@@ -633,7 +633,7 @@ std::vector<unsigned char> lz4_compress_raw(RawVector x, int compress_level) {
   return ret;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> lz4_decompress_raw(RawVector x) {
   int zsize = x.size();
   char* xdata = reinterpret_cast<char*>(RAW(x));
@@ -656,7 +656,7 @@ std::vector<unsigned char> lz4_decompress_raw(RawVector x) {
   return ret;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesofsize) {
 #if defined (__AVX2__)
   Rcpp::Rcerr << "AVX2" << std::endl;
@@ -675,7 +675,7 @@ std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesof
   return xshuf;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytesofsize) {
 #if defined (__AVX2__)
   Rcpp::Rcerr << "AVX2" << std::endl;
@@ -694,14 +694,14 @@ std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytes
   return xshuf;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::string xxhash_raw(std::vector<uint8_t> x) {
   xxhash_env xenv = xxhash_env();
   xenv.update(x.data(), x.size());
   return std::to_string(xenv.digest());
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP convertToAlt(CharacterVector x) {
 #ifdef ALTREP_SUPPORTED
   auto ret = new stdvec_data(x.size());
@@ -740,7 +740,7 @@ SEXP convertToAlt(CharacterVector x) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int openFd(std::string filename, std::string mode) {
   if(mode == "w") {
 #ifdef _WIN32
@@ -771,7 +771,7 @@ int openFd(std::string filename, std::string mode) {
   }
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 RawVector readFdDirect(int fd, int n_bytes) {
   RawVector x(n_bytes);
   fd_wrapper fw = fd_wrapper(fd);
@@ -780,12 +780,12 @@ RawVector readFdDirect(int fd, int n_bytes) {
 }
 
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int closeFd(int fd) {
   return close(fd);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP openMmap(int fd, double length) {
 #ifdef _WIN32
   throw std::runtime_error("mmap not available on windows");
@@ -800,7 +800,7 @@ SEXP openMmap(int fd, double length) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int closeMmap(SEXP map, double length) {
 #ifdef _WIN32
   throw std::runtime_error("mmap not available on windows");
@@ -811,7 +811,7 @@ int closeMmap(SEXP map, double length) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP openHandle(std::string filename, std::string mode) {
 #ifdef _WIN32
   HANDLE h;
@@ -830,7 +830,7 @@ SEXP openHandle(std::string filename, std::string mode) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool closeHandle(SEXP handle) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
@@ -840,7 +840,7 @@ bool closeHandle(SEXP handle) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP openWinFileMapping(SEXP handle, double length) {
 #ifdef _WIN32
   uint64_t dlen = static_cast<uint64_t>(length);
@@ -854,7 +854,7 @@ SEXP openWinFileMapping(SEXP handle, double length) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 SEXP openWinMapView(SEXP handle, double length) {
 #ifdef _WIN32
   uint64_t dlen = static_cast<uint64_t>(length);
@@ -866,7 +866,7 @@ SEXP openWinMapView(SEXP handle, double length) {
 #endif
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool closeWinMapView(SEXP pointer) {
 #ifdef _WIN32
   void* map = R_ExternalPtrAddr(pointer);
