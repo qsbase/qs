@@ -3,8 +3,8 @@ if(F) {
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.13.1.tar.gz", "qs131") # zstd block compress only
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.14.1.tar.gz", "qs141") # zstd and lz4 block compress, byte shuffling
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions
   
   # test if pacakges can be loaded
