@@ -795,7 +795,7 @@ SEXP openMmap(int fd, double length) {
   return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
 #else
   size_t _length = static_cast<size_t>(length);
-  void * map = mmap(NULL, _length, PROT_READ, MAP_SHARED | MAP_POPULATE, fd, 0);
+  void * map = mmap(NULL, _length, PROT_READ, MAP_SHARED, fd, 0);
   return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
 #endif
 }

@@ -64,6 +64,7 @@ qs173_zstd_stream_save <- function(x) qs173::qsave(x, file, preset = "custom", a
 qs173_zstd_stream_save_nohash <- function(x) qs173::qsave(x, file, preset = "custom", algorithm = "zstd_stream", check_hash = F)
 qs173_no_shuffle <- function(x) qs173::qsave(x, file, preset = "custom", algorithm = "zstd", shuffle_control = 0)
 
+
 print("qs12 save"); test_compatability(qs12_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs::qread))
 print("qs131 save"); test_compatability(qs131_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs::qread))
 print("qs141 lz4 save"); test_compatability(qs141_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs::qread))
