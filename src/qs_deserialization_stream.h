@@ -478,7 +478,7 @@ struct Data_Context_Stream {
       SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
       getBlockData(reinterpret_cast<char*>(RAW(obj_data)), r_array_len);
       obj = PROTECT(unserializeFromRaw(obj_data)); pt++;
-      // UNPROTECT(2);
+      
       return obj;
     }
     default: // also NILSXP
@@ -496,10 +496,13 @@ struct Data_Context_Stream {
         }
         std::string temp_attribute_string = std::string(r_string_len, '\0');
         getBlockData(&temp_attribute_string[0], r_string_len);
-        Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), processBlock());
+        // Rf_install may allocate, therefore we need to protect the result of processBlock
+        // ref: https://github.com/kalibera/rchk/blob/master/doc/USAGE.md
+        SEXP attrib_obj = PROTECT(processBlock()); pt++;
+        Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), attrib_obj);
       }
     }
-    // UNPROTECT(1);
+    
     return std::move(obj);
   }
 };
