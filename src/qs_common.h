@@ -1278,9 +1278,9 @@ uint32_t validate_data(QsMetadata & qm, stream_reader & myFile, uint32_t recorde
   uint64_t remaining_bytes = read_check(myFile, temp.data(), 4, false);
   if(remaining_bytes != 0) {
     if(strict) {
-      throw std::runtime_error("end of file reached not reached");
+      throw std::runtime_error("end of file not reached");
     } else {
-      Rcerr << "Warning: end of file reached not reached, data may be corrupted";
+      Rcerr << "Warning: end of file not reached, data may be corrupted";
     }
   }
   if((qm.clength != 0) && (computed_length != 0) && (computed_length != qm.clength)) {
@@ -1742,23 +1742,34 @@ struct zstd_decompress_stream_simple {
   ZSTD_inBuffer zin;
   ZSTD_outBuffer zout;
   ZSTD_DStream* zds;
-  
-  zstd_decompress_stream_simple(char* outp, size_t outsize, char* inp, size_t insize) {
+  std::vector<char> outblock;
+  zstd_decompress_stream_simple(size_t outsize, char* inp, size_t insize) {
+    if(outsize == 0) {
+      outblock = std::vector<char>(BLOCKSIZE);
+      zout.size = BLOCKSIZE;
+    } else {
+      outblock = std::vector<char>(outsize);
+      zout.size = outsize;
+    }
     zout.pos = 0;
-    zout.dst = outp;
-    zout.size = outsize;
+    zout.dst = outblock.data();
     zin.pos = 0;
     zin.src = inp;
     zin.size = insize;
     zds = ZSTD_createDStream();
   }
   
-  // returns true if error
   bool decompress() {
-    while(zout.pos < zout.size) {
-      size_t return_value = ZSTD_decompressStream(zds, &zout, &zin);
+    size_t return_value = ZSTD_decompressStream(zds, &zout, &zin);
+    if(ZSTD_isError(return_value)) return true;
+    while(zout.pos == zout.size) {
+      outblock.resize(outblock.size() * 3 / 2);
+      zout.dst = outblock.data();
+      zout.size = outblock.size();
+      return_value = ZSTD_decompressStream(zds, &zout, &zin);
       if(ZSTD_isError(return_value)) return true;
     }
+    outblock.resize(zout.pos);
     return false;
   }
   ~zstd_decompress_stream_simple() {

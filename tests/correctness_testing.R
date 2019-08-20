@@ -143,6 +143,7 @@ stopifnot(identical(c("a", "b"), colnames(xu)))
 
 qsave_rand <- function(x, file) {
   alg <- sample(c("lz4", "zstd", "lz4hc", "zstd_stream", "uncompressed"), 1)
+  # alg <- "zstd_stream"
   nt <- sample(5,1)
   sc <- sample(0:15,1)
   cl <- sample(10,1)

@@ -1,4 +1,4 @@
-Version 0.18.3 (2019-8-12)
+Version 0.18.3 (2019-8-20)
    * `qsave` now returns invisibly the number of bytes written to file
    * Fixed an issue with deserialization of large S4 objects (https://github.com/traversc/qs/issues/14)
    * Additional serialization and deserialization functions for advanced usage:
@@ -11,7 +11,7 @@ Version 0.18.2 (2019-7-19)
    * Changed license to GPL-3 (https://github.com/traversc/qs/issues/13)
 
 Version 0.18.1 (2019-7-14)
-   * Revised header format in order to include more information -- files created by 0/18.1 cannot by read by earlier versions
+   * Revised header format in order to include more information -- files created by 0.18.1 cannot by read by earlier versions
    * Remove R version restriction.  Previously, `qs` required R >= 3.5.0.  R alt-rep functionality will not be used in earlier versions.  
 
 Version 0.17.3 (2019-7-8)

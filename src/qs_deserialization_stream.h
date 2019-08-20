@@ -30,6 +30,7 @@ struct ZSTD_streamRead {
   uint64_t minblocksize;
   uint64_t maxblocksize;
   uint64_t decompressed_bytes_read;
+  uint64_t compressed_bytes_read;
   std::vector<char> outblock;
   std::vector<char> inblock;
   ZSTD_inBuffer zin;
@@ -39,12 +40,13 @@ struct ZSTD_streamRead {
   uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
   xxhash_env xenv;
   std::array<char, 4> hash_reserve;
-  bool eof;
+  bool end_of_decompression;
   ZSTD_streamRead(stream_reader & mf, QsMetadata qm) : 
     myFile(mf), qm(qm), xenv(xxhash_env()) {
     size_t outblocksize = 4*ZSTD_DStreamOutSize();
     size_t inblocksize = ZSTD_DStreamInSize();
     decompressed_bytes_read = 0;
+    compressed_bytes_read = 0;
     outblock = std::vector<char>(outblocksize);
     inblock = std::vector<char>(inblocksize);
     minblocksize = ZSTD_DStreamOutSize();
@@ -59,28 +61,20 @@ struct ZSTD_streamRead {
     zin.src = inblock.data();
     blocksize = 0;
     blockoffset = 0;
-    
-    // need to reserve some bytes for the hash check at the end
-    // ref https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file
-    // std::streampos current = myFile.tellg();
-    // myFile.ignore(std::numeric_limits<std::streamsize>::max());
-    // readable_bytes = myFile.gcount();
-    // myFile.seekg(current);
-    // // std::cout << readable_bytes << std::endl;
-    // if(qm.check_hash) readable_bytes -= 4;
-    // // std::cout << readable_bytes << std::endl;
     bytes_read = 0;
     hash_reserve = {0,0,0,0};
+    end_of_decompression = false;
     if(qm.check_hash) {
       read_check(myFile, hash_reserve.data(), RESERVE_SIZE);
     }
-    eof = false;
   }
-  //file at end of reserve
 
   size_t read_reserve(char * dst, size_t length, bool exact=false) {
     if(!qm.check_hash) {
-      return read_check(myFile, dst, length, exact);
+      size_t bytes_out = read_check(myFile, dst, length, exact);
+      compressed_bytes_read += bytes_out;
+      // std::cout << "compressed bytes read: " << compressed_bytes_read << std::endl;
+      return bytes_out;
     }
     if(exact) {
       if(length >= RESERVE_SIZE) {
@@ -134,18 +128,21 @@ struct ZSTD_streamRead {
   ~ZSTD_streamRead() {
     ZSTD_freeDStream(zds);
   }
-  inline void ZSTD_decompressStream_count(ZSTD_DStream* zds, ZSTD_outBuffer * zout, ZSTD_inBuffer * zin) {
+  inline uint64_t ZSTD_decompressStream_count(ZSTD_DStream* zds, ZSTD_outBuffer * zout, ZSTD_inBuffer * zin) {
     uint64_t temp = zout->pos;
     size_t return_value = ZSTD_decompressStream(zds, zout, zin);
     if(ZSTD_isError(return_value)) throw std::runtime_error("zstd stream decompression error");
     decompressed_bytes_read += zout->pos - temp;
+    // std::cout << "decomp: " << zout->pos - temp << std::endl;
     xenv.update(reinterpret_cast<char*>(zout->dst)+temp, zout->pos - temp);
+    return zout->pos - temp;
     // for(unsigned int i=0; i < zout->pos - temp; i++) std::cout << std::hex << (int)(reinterpret_cast<unsigned char *>(zout->dst)[i+temp]) << " "; std::cout << std::endl;
     // std::cout << std::dec << xenv.digest() << std::endl;
   }
   void getBlock() {
+    // std::cout << "getblock: offset: " << blockoffset << ", blocksize: " << blocksize << ", bytes_read: " << decompressed_bytes_read << std::endl;
+    if(end_of_decompression) return;
     // if((qm.clength != 0) & (decompressed_bytes_read >= qm.clength)) return;
-    if(eof) return;
     char * ptr = outblock.data();
     if(blocksize > blockoffset) {
       std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset); 
@@ -156,25 +153,22 @@ struct ZSTD_streamRead {
     while(zout.pos < minblocksize) {
       if(zin.pos < zin.size) {
         ZSTD_decompressStream_count(zds, &zout, &zin);
-      } else if(! eof) {
+      } else {
         uint64_t bytes_read = read_reserve(inblock.data(), inblock.size(), false);
-        if(bytes_read == 0) {
-          eof = true;
-          continue; // EOF
-        }
         zin.pos = 0;
         zin.size = bytes_read;
-        ZSTD_decompressStream_count(zds, &zout, &zin);
-      } else {
-        size_t current_pos = zout.pos;
-        ZSTD_decompressStream_count(zds, &zout, &zin);
-        if(zout.pos == current_pos) break; // no more data
+        uint64_t bytes_decompressed = ZSTD_decompressStream_count(zds, &zout, &zin);
+        if(bytes_read == 0 && bytes_decompressed == 0) {
+          end_of_decompression = true;
+          break;
+        }
       }
     }
     blocksize = zout.pos;
     blockoffset = 0;
   }
-  void copyData(char* dst,uint64_t dst_size) {
+  void copyData(char* dst, uint64_t dst_size) {
+    // std::cout << "copydata: offset: " << blockoffset << ", blocksize: " << blocksize << ", bytes_read: " << decompressed_bytes_read << std::endl;
     char * ptr = outblock.data();
     // dst should never overlap since blocksize > MINBLOCKSIZE
     if(dst_size > blocksize - blockoffset) {
@@ -188,24 +182,12 @@ struct ZSTD_streamRead {
         if(zin.pos < zin.size) {
           ZSTD_decompressStream_count(zds, &zout, &zin);
           // std::cout << zin.pos << "/" << zin.size << " zin " << zout.pos << "/" << zout.size << " zout\n";
-        } else if(! eof) {
-          uint64_t bytes_read = read_reserve(inblock.data(), minblocksize);
-          if(bytes_read == 0) {
-            eof = true;
-            continue; // EOF
-          }
+        } else {
+          uint64_t bytes_read = read_reserve(inblock.data(), inblock.size(), false);
+          // std::cout << "zin.pos >= zin.size: " << zin.pos << "/" << zin.size << " zin " << zout.pos << "/" << zout.size << " zout\n";
           zin.pos = 0;
           zin.size = bytes_read;
           ZSTD_decompressStream_count(zds, &zout, &zin);
-          // std::cout << zin.pos << "/" << zin.size << " zin " << zout.pos << "/" << zout.size << " zout new inblock\n";
-        } else {
-          size_t current_pos = zout.pos;
-          ZSTD_decompressStream_count(zds, &zout, &zin);
-          // std::cout << zin.pos << "/" << zin.size << " zin " << zout.pos << "/" << zout.size << " zout flush\n";
-          if(zout.pos == current_pos) {
-            Rcpp::Rcerr << "End of file reached, but more data was expected (object may be incomplete)" << std::endl;
-            break; // no more data, also we should throw an error as more data was expected
-          }
         }
       }
       blockoffset = 0;
@@ -381,6 +363,7 @@ struct Data_Context_Stream {
     if(obj_type == ANYSXP) {
       number_of_attributes = r_array_len;
       readHeader(obj_type, r_array_len);
+      // std::cout << r_array_len << " " << obj_type << "\n";
     } else {
       number_of_attributes = 0;
     }
@@ -437,6 +420,7 @@ struct Data_Context_Stream {
           uint32_t r_string_len;
           cetype_t string_encoding = CE_NATIVE;
           readStringHeader(r_string_len, string_encoding);
+          // std::cout << "string " << r_string_len << " " << string_encoding << "\n";
           if(r_string_len == NA_STRING_LENGTH) {
             ret->encodings[i] = 5;
           } else if(r_string_len == 0) {
@@ -472,6 +456,7 @@ struct Data_Context_Stream {
           uint32_t r_string_len;
           cetype_t string_encoding = CE_NATIVE;
           readStringHeader(r_string_len, string_encoding);
+          // std::cout << "string " << r_string_len << " " << string_encoding << "\n";
           if(r_string_len == NA_STRING_LENGTH) {
             SET_STRING_ELT(obj, i, NA_STRING);
           } else if(r_string_len == 0) {
@@ -505,6 +490,7 @@ struct Data_Context_Stream {
         uint32_t r_string_len;
         cetype_t string_encoding;
         readStringHeader(r_string_len, string_encoding);
+        // std::cout << "attribute " << r_string_len << " " << string_encoding << "\n";
         if(r_string_len > temp_string.size()) {
           temp_string.resize(r_string_len);
         }

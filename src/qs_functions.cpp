@@ -476,26 +476,26 @@ RObject c_qdump(std::string file) {
   if(qm.compress_algorithm == 3) { // zstd_stream
     if(qm.check_hash) readable_bytes -= 4;
     RawVector input(readable_bytes);
-    RawVector output(totalsize);
     char* inp = reinterpret_cast<char*>(RAW(input));
-    char* outp = reinterpret_cast<char*>(RAW(output));
     myFile.read(inp, readable_bytes);
-    auto zstream = zstd_decompress_stream_simple(outp, totalsize, inp, readable_bytes);
+    auto zstream = zstd_decompress_stream_simple(totalsize, inp, readable_bytes);
     bool is_error = zstream.decompress();
-    uint32_t computed_hash = XXH32(outp, totalsize, XXH_SEED);
     
     // append results
     outvec["readable_bytes"] = std::to_string(readable_bytes);
     outvec["decompressed_size"] = std::to_string(totalsize);
-    outvec["computed_hash"] = std::to_string(computed_hash);
     if(qm.check_hash) {
       uint32_t recorded_hash = readSize4(myFile);
       outvec["recorded_hash"] = std::to_string(recorded_hash);
     }
     outvec["compressed_data"] = input;
-    outvec["uncompressed_data"] = output;
     if(is_error) {
       outvec["error"] = "decompression_error";
+    } else {
+      RawVector output = RawVector(zstream.outblock.begin(), zstream.outblock.end());
+      uint32_t computed_hash = XXH32(RAW(output), totalsize, XXH_SEED);
+      outvec["computed_hash"] = std::to_string(computed_hash);
+      outvec["uncompressed_data"] = output;
     }
   } else if(qm.compress_algorithm == 4) { // uncompressed
     if(qm.check_hash) readable_bytes -= 4;

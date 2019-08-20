@@ -1,4 +1,4 @@
 .onAttach <- function(libname, pkgname) {
-  msg <- c("qs v0.18.3. Fixed an issue reading large S4 objects. See ChangeLog.")
-  packageStartupMessage(msg)
+  packageStartupMessage("qs v.0.18.3. Fixed an issue reading large S4 objects.")
+  packageStartupMessage("Objects saved in 0.18 cannot be read by earlier versions. See ChangeLog.")
 }
