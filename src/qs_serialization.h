@@ -164,7 +164,8 @@ struct CompressBuffer {
         }
       }
     } else { // other non-supported SEXPTYPEs use the built in R serialization method
-      SEXP xserialized = serializeToRaw(x);
+      Protect_Tracker pt = Protect_Tracker();
+      SEXP xserialized = PROTECT(serializeToRaw(x)); pt++;
       uint64_t xs_size = Rf_xlength(xserialized);
       if(xs_size < 4294967296) {
         push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_32)), 1);
