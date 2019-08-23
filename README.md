@@ -62,6 +62,7 @@ approaches in R.
 | Character Encoding   | ✔  | (vector-wide only) |    ✔    |
 | Complex Vectors      | ✔  |         ❌          |    ✔    |
 | Data.Frames          | ✔  |         ✔          |    ✔    |
+| Random column access | ❌  |         ✔          |    ❌    |
 | On disk row access   | ❌  |         ✔          |    ❌    |
 | Attributes           | ✔  |        Some        |    ✔    |
 | Lists / Nested Lists | ✔  |         ❌          |    ✔    |
