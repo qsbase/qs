@@ -63,6 +63,7 @@ approaches in R.
 | Complex Vectors      | ✔  |         ❌          |    ✔    |
 | Data.Frames          | ✔  |         ✔          |    ✔    |
 | On disk row access   | ❌  |         ✔          |    ❌    |
+| Random column access | ❌  |         ✔          |    ❌    |
 | Attributes           | ✔  |        Some        |    ✔    |
 | Lists / Nested Lists | ✔  |         ❌          |    ✔    |
 | Multi-threaded       | ✔  |         ✔          |    ❌    |

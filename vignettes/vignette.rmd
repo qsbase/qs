@@ -55,6 +55,7 @@ The table below compares the features of different serialization approaches in R
 | Complex Vectors    | &#10004;   | &#10060;      | &#10004;  |
 | Data.Frames        | &#10004;   | &#10004;       | &#10004;  |
 | On disk row access | &#10060;  | &#10004;       | &#10060; |
+| Random column access | &#10060; | &#10004;      | &#10060;  |
 | Attributes         | &#10004;   | Some          | &#10004;  |
 | Lists / Nested Lists| &#10004;   |  &#10060;     | &#10004;  |
 | Multi-threaded     | &#10004;  | &#10004;      |  &#10060;   |
