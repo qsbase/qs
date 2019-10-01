@@ -5,6 +5,7 @@ if(F) {
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions
   
   # test if pacakges can be loaded
@@ -14,7 +15,7 @@ if(F) {
   library(qs151)
   library(qs161)
   library(qs173)
-  library(qs) # v 0.18.3
+  library(qs183) # v 0.18.3
 }
 
 file <- "/tmp/test.z"

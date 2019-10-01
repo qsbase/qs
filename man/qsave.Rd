@@ -13,7 +13,7 @@ shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 
 \item{file}{the file name/path.}
 
-\item{preset}{One of "fast", "balanced" (default), "high", "archive", "uncompressed" or "custom".  See details.}
+\item{preset}{One of "fast", "high" (default), "high", "archive", "uncompressed" or "custom".  See details.}
 
 \item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".}
 

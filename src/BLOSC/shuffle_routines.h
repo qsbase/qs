@@ -222,7 +222,7 @@ static void shuffle4_sse2(uint8_t* const dest, const uint8_t* const src,
 #endif
 
 // shuffle dispatcher
-static void blosc_shuffle(uint8_t* src, uint8_t* dest, uint64_t blocksize, uint64_t bytesoftype) {
+static void blosc_shuffle(const uint8_t * const src, uint8_t * const dest, const uint64_t blocksize, const uint64_t bytesoftype) {
   #if defined (__AVX2__)
   uint64_t total_elements = blocksize / bytesoftype;
   uint64_t vectorized_chunk_size = bytesoftype * sizeof(__m256i);

@@ -76,14 +76,11 @@ struct Compress_Thread_Context {
   int compress_level;  
   std::atomic<bool> done;
   
-  std::vector< std::atomic<bool> > data_ready;
-  
   std::vector<std::vector<char> > zblocks; // one per thread
   std::vector<std::vector<char> > data_blocks; // one per thread
-  std::vector< std::pair<char*, uint64_t> > block_pointers;
+  std::vector< std::pair<const char*, uint64_t> > block_pointers;
   
-  char* current_block_ptr;
-  
+  std::vector< std::atomic<bool> > data_ready;
   std::vector<std::thread> threads;
   
   void worker_thread(unsigned int thread_id) {
@@ -149,26 +146,21 @@ struct Compress_Thread_Context {
     }
   }
   
-  Compress_Thread_Context(std::ofstream* mf, unsigned int nt, QsMetadata qm) : myFile(mf), cenv(compress_env()), blocks_total(0), blocks_written(0) {
-    compress_level = qm.compress_level;
-    nthreads = nt - 1;
-    done = false;
+  Compress_Thread_Context(std::ofstream* mf, unsigned int nt, QsMetadata qm) : 
+    myFile(mf), blocks_total(0), blocks_written(0),
+    nthreads(nt-1), compress_level(qm.compress_level), done(false),
+    zblocks(std::vector< std::vector<char> >(nthreads, std::vector<char>(this->cenv.compressBound(BLOCKSIZE)))),
+    data_blocks(std::vector< std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE))),
+    block_pointers(std::vector< std::pair<const char*, uint64_t> >(nthreads)) {
     
     data_ready = std::vector< std::atomic<bool> >(nthreads);
     for(unsigned int i=0; i<nthreads; i++) {
       data_ready[i] = false;
     }
     
-    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(cenv.compressBound(BLOCKSIZE)));
-    data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
-    block_pointers = std::vector< std::pair<char*, uint64_t> >(nthreads);
-    
     for (unsigned int i = 0; i < nthreads; i++) {
       threads.push_back(std::thread(&Compress_Thread_Context::worker_thread, this, i));
     }
-    
-    // blocks_total = std::atomic<uint64_t>(0);
-    // blocks_written = std::atomic<uint64_t>(0);
   }
   
   char* get_new_block_ptr() {
@@ -183,7 +175,7 @@ struct Compress_Thread_Context {
     return data_blocks[block_check].data();
   }
   
-  void push_block(unsigned int datasize) {
+  void push_block(const uint32_t datasize) {
     uint64_t block_check = blocks_total % nthreads;
 
     // tout << "push block " << block_check << "\n" << std::flush;
@@ -193,7 +185,7 @@ struct Compress_Thread_Context {
     blocks_total++;
   }
   
-  void push_ptr(char* ptr, unsigned int datasize) {
+  void push_ptr(const char * const ptr, const uint32_t datasize) {
     uint64_t block_check = blocks_total % nthreads;
     
     // tout << "push ptr " << block_check << "\n" << std::flush;
@@ -210,10 +202,10 @@ struct Compress_Thread_Context {
 
 template <class compress_env> 
 struct CompressBuffer_MT {
+  QsMetadata qm;
   std::ofstream * myFile;
   xxhash_env xenv;
   Compress_Thread_Context<compress_env> ctc;
-  QsMetadata qm;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
   // shuffle_endblock is tracking when shuffleblock is finished processing
@@ -223,7 +215,7 @@ struct CompressBuffer_MT {
   uint64_t number_of_blocks = 0;
   char* block_data_ptr;
   
-  CompressBuffer_MT(std::ofstream * f, QsMetadata _qm, unsigned int nthreads) : myFile(f), xenv(xxhash_env()), ctc(f, nthreads, _qm), qm(_qm) {
+  CompressBuffer_MT(std::ofstream * f, QsMetadata _qm, unsigned int nthreads) : qm(_qm), myFile(f), ctc(f, nthreads, _qm) {
     block_data_ptr = ctc.get_new_block_ptr();
   }
   void flush() {
@@ -234,11 +226,11 @@ struct CompressBuffer_MT {
       block_data_ptr = ctc.get_new_block_ptr();
     }
   }
-  void push(char* data, uint64_t len, bool contiguous = false) {
+  void push_contiguous(const char * const data, const uint64_t len) {
     if(qm.check_hash) xenv.update(data, len);
     uint64_t current_pointer_consumed = 0;
     while(current_pointer_consumed < len) {
-      if( (current_blocksize == BLOCKSIZE) || ((BLOCKSIZE - current_blocksize < BLOCKRESERVE) && !contiguous) ) {
+      if( current_blocksize == BLOCKSIZE ) {
         flush();
       }
       if(current_blocksize == 0 && len - current_pointer_consumed >= BLOCKSIZE) {
@@ -255,32 +247,56 @@ struct CompressBuffer_MT {
       }
     }
   }
-  void shuffle_push(char* data, uint64_t len, size_t bytesoftype, bool contiguous = false) {
+  void push_noncontiguous(const char * const data, const uint64_t len) {
+    if(qm.check_hash) xenv.update(data, len);
+    uint64_t current_pointer_consumed = 0;
+    while(current_pointer_consumed < len) {
+      if( BLOCKSIZE - current_blocksize < BLOCKRESERVE ) {
+        flush();
+      }
+      if(current_blocksize == 0 && len - current_pointer_consumed >= BLOCKSIZE) {
+        ctc.push_ptr(data + current_pointer_consumed, BLOCKSIZE);
+        current_pointer_consumed += BLOCKSIZE;
+        block_data_ptr = ctc.get_new_block_ptr();
+        number_of_blocks++;
+      } else {
+        uint64_t remaining_pointer_available = len - current_pointer_consumed;
+        uint64_t add_length = remaining_pointer_available < (BLOCKSIZE - current_blocksize) ? remaining_pointer_available : BLOCKSIZE-current_blocksize;
+        std::memcpy(block_data_ptr + current_blocksize, data + current_pointer_consumed, add_length);
+        current_blocksize += add_length;
+        current_pointer_consumed += add_length;
+      }
+    }
+  }
+  template<typename POD>
+  inline void push_pod_contiguous(const POD pod) {
+    push_contiguous(reinterpret_cast<const char * const>(&pod), sizeof(pod));
+  }
+  template<typename POD>
+  inline void push_pod_noncontiguous(const POD pod) {
+    push_noncontiguous(reinterpret_cast<const char * const>(&pod), sizeof(pod));
+  }
+  void shuffle_push(const char * const data, const uint64_t len, const uint64_t bytesoftype) {
     if(len > MIN_SHUFFLE_ELEMENTS) {
       // blocks_written = number of blocks file written
       // (len + current_blocksize)/BLOCKSIZE = additional full blocks due to shuffleblock
       // number_of_blocks = number of blocks pushed to ctc
       while( shuffle_endblock > ctc.blocks_written ) {
-
+        
         // tout << "shuffle " << shuffle_endblock << " " << ctc.blocks_written << "\n" << std::flush;
-
+        
         std::this_thread::yield();
       }
       shuffle_endblock = (len + current_blocksize)/BLOCKSIZE + number_of_blocks;
       if(len > shuffleblock.size()) shuffleblock.resize(len);
-      blosc_shuffle(reinterpret_cast<uint8_t*>(data), shuffleblock.data(), len, bytesoftype);
-      push(reinterpret_cast<char*>(shuffleblock.data()), len, true);
+      blosc_shuffle(reinterpret_cast<const uint8_t * const>(data), shuffleblock.data(), len, bytesoftype);
+      push_contiguous(reinterpret_cast<char*>(shuffleblock.data()), len);
     } else if(len > 0) {
-      push(data, len, true);
+      push_contiguous(data, len);
     }
   }
-  template<typename POD>
-  inline void push_pod(POD pod, bool contiguous = false) {
-    push(reinterpret_cast<char*>(&pod), sizeof(pod), contiguous);
-  }
   
-  // to do: use SEXP instead of RObject?
-  void pushObj(SEXP & x, bool attributes_processed = false) {
+  void pushObj(SEXP const x, bool attributes_processed = false) {
     if(!attributes_processed && stypes.find(TYPEOF(x)) != stypes.end()) {
       std::vector<SEXP> anames;
       std::vector<SEXP> attrs;
@@ -296,7 +312,7 @@ struct CompressBuffer_MT {
         for(uint64_t i=0; i<anames.size(); i++) {
           uint64_t alen = strlen(CHAR(anames[i]));
           writeStringHeader_common(alen,CE_NATIVE, this);
-          push(const_cast<char*>(CHAR(anames[i])), alen, true);
+          push_contiguous(CHAR(anames[i]), alen);
           pushObj(attrs[i]);
         }
       } else {
@@ -308,11 +324,11 @@ struct CompressBuffer_MT {
       for(uint64_t i=0; i<dl; i++) {
         SEXP xi = STRING_ELT(x, i);
         if(xi == NA_STRING) {
-          push(reinterpret_cast<char*>(const_cast<unsigned char*>(&string_header_NA)), 1);
+          push_noncontiguous(reinterpret_cast<char*>(const_cast<uint8_t*>(&string_header_NA)), 1);
         } else {
           uint64_t dl = LENGTH(xi);
           writeStringHeader_common(dl, Rf_getCharCE(xi), this);
-          push(const_cast<char*>(CHAR(xi)), dl, true);
+          push_contiguous(CHAR(xi), dl);
         }
       }
     } else if(stypes.find(TYPEOF(x)) != stypes.end()) {
@@ -327,33 +343,33 @@ struct CompressBuffer_MT {
         switch(TYPEOF(x)) {
         case REALSXP:
           if(qm.real_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(REAL(x)), dl*8, 8, true);
+            shuffle_push(reinterpret_cast<char*>(REAL(x)), dl*8, 8);
           } else {
-            push(reinterpret_cast<char*>(REAL(x)), dl*8, true); 
+            push_contiguous(reinterpret_cast<char*>(REAL(x)), dl*8); 
           }
           break;
         case INTSXP:
           if(qm.int_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(INTEGER(x)), dl*4, 4, true); break;
+            shuffle_push(reinterpret_cast<char*>(INTEGER(x)), dl*4, 4); break;
           } else {
-            push(reinterpret_cast<char*>(INTEGER(x)), dl*4, true); 
+            push_contiguous(reinterpret_cast<char*>(INTEGER(x)), dl*4); 
           }
           break;
         case LGLSXP:
           if(qm.lgl_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(LOGICAL(x)), dl*4, 4, true); break;
+            shuffle_push(reinterpret_cast<char*>(LOGICAL(x)), dl*4, 4); break;
           } else {
-            push(reinterpret_cast<char*>(LOGICAL(x)), dl*4, true); 
+            push_contiguous(reinterpret_cast<char*>(LOGICAL(x)), dl*4); 
           }
           break;
         case RAWSXP:
-          push(reinterpret_cast<char*>(RAW(x)), dl, true); 
+          push_contiguous(reinterpret_cast<char*>(RAW(x)), dl); 
           break;
         case CPLXSXP:
           if(qm.cplx_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(COMPLEX(x)), dl*16, 8, true); break;
+            shuffle_push(reinterpret_cast<char*>(COMPLEX(x)), dl*16, 8); break;
           } else {
-            push(reinterpret_cast<char*>(COMPLEX(x)), dl*16, true); 
+            push_contiguous(reinterpret_cast<char*>(COMPLEX(x)), dl*16); 
           }
           break;
         case NILSXP:
@@ -364,13 +380,13 @@ struct CompressBuffer_MT {
       SEXP xserialized = serializeToRaw(x);
       uint64_t xs_size = Rf_xlength(xserialized);
       if(xs_size < 4294967296) {
-        push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_32)), 1);
-        push_pod(static_cast<uint32_t>(xs_size), true );
+        push_noncontiguous(reinterpret_cast<char*>(const_cast<uint8_t*>(&nstype_header_32)), 1);
+        push_pod_contiguous(static_cast<uint32_t>(xs_size) );
       } else {
-        push(reinterpret_cast<char*>(const_cast<unsigned char*>(&nstype_header_64)), 1);
-        push_pod(static_cast<uint64_t>(xs_size), true );
+        push_noncontiguous(reinterpret_cast<char*>(const_cast<uint8_t*>(&nstype_header_64)), 1);
+        push_pod_contiguous(static_cast<uint64_t>(xs_size) );
       }
-      push(reinterpret_cast<char*>(RAW(xserialized)), xs_size, true);
+      push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);
     }
   }
 };

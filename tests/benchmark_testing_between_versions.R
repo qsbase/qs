@@ -4,7 +4,8 @@ library(qs141)
 library(qs151)
 library(qs161)
 library(qs173)
-library(qs) # v 0.18.3
+library(qs183)
+library(qs) #  # v 0.18.4
 library(dplyr)
 
 
@@ -22,13 +23,14 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-grid <- expand.grid(ver = c(14:18), data = c("list", "dataframe"), 
-                    preset = c("fast", "balanced", "high"), 
-                    reps=1:10, stringsAsFactors = F)
+grid <- expand.grid(ver = c(14:19), data = c("list", "dataframe"), 
+                    preset = c("uncompressed", "fast", "balanced", "high", "archive"), 
+                    reps=1:10, stringsAsFactors = F) %>% sample_frac(1)
 
 write_time <- numeric(nrow(grid))
 read_time <- numeric(nrow(grid))
 for(i in 1:nrow(grid)) {
+  print(i)
   if(grid$data[i] == "list") {
     x <- listGen()
   } else if(grid$data[i] == "dataframe") {
@@ -39,20 +41,43 @@ for(i in 1:nrow(grid)) {
     read <- qs141::qread
   } else if(grid$ver[i] == 15) {
     save <- qs151::qsave
-    read <- qs151::qread
+    read <- function(...) qs151::qread(..., use_alt_rep=F)
   } else if(grid$ver[i] == 16) {
     save <- qs161::qsave
-    read <- qs161::qread
+    read <- function(...) qs161::qread(..., use_alt_rep=F)
   } else if(grid$ver[i] == 17) {
     save <- function(...) qs173::qsave(..., check_hash = F)
     read <- qs173::qread
-  } else {
+  } else if(grid$ver[i] == 18) {
+    save <- function(...) qs183::qsave(..., check_hash = F)
+    read <- qs183::qread
+  } else if(grid$ver[i] == 19) {
     save <- function(...) qs::qsave(..., check_hash = F)
     read <- qs::qread
   }
-  time <- as.numeric(Sys.time())
-  save(x, file, preset = grid$preset[i])
-  write_time[i] <- 1000 * (as.numeric(Sys.time()) - time)
+  write_time[i] <- if(grid$preset[i] == "archive") {
+    if(grid$ver[i] <= 15) next;
+    time <- as.numeric(Sys.time())
+    save(x, file, preset = "custom", algorithm = "zstd_stream", compress_level=5)
+    1000 * (as.numeric(Sys.time()) - time)
+  } else if(grid$preset[i] == "high") {
+    time <- as.numeric(Sys.time())
+    save(x, file, preset = "custom", algorithm = "zstd", compress_level=5)
+    1000 * (as.numeric(Sys.time()) - time)
+  } else if(grid$preset[i] == "balanced") {
+    time <- as.numeric(Sys.time())
+    save(x, file, preset = "custom", algorithm = "lz4", compress_level=1)
+    1000 * (as.numeric(Sys.time()) - time)
+  } else if(grid$preset[i] == "fast") {
+    time <- as.numeric(Sys.time())
+    save(x, file, preset = "custom", algorithm = "lz4", compress_level=100)
+    1000 * (as.numeric(Sys.time()) - time)
+  } else if(grid$preset[i] == "uncompressed") {
+    if(grid$ver[i] <= 17) next;
+    time <- as.numeric(Sys.time())
+    save(x, file, preset = "custom", algorithm = "uncompressed")
+    1000 * (as.numeric(Sys.time()) - time)
+  }
   rm(x); gc()
   time <- as.numeric(Sys.time())
   x <- read(file)
@@ -72,6 +97,22 @@ print(gs)
 
 if(F) {
   library(ggplot2)
-  ggplot(grid, aes(x = preset, fill = as.factor(ver), y = read_time)) + geom_boxplot() + facet_grid(~data)
-  ggplot(grid, aes(x = preset, fill = as.factor(ver), y = write_time)) + geom_boxplot() + facet_grid(~data)
+  
+  ggplot(grid, aes(x = preset, fill = as.factor(ver), group=as.factor(ver), y = read_time)) + 
+    geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") + 
+    geom_point(position = position_dodge(width=0.9), shape=21, fill = NA) + 
+    facet_wrap(~data, scales = "free", ncol=2) + 
+    theme_bw() + theme(legend.position = "bottom") + 
+    guides(fill = guide_legend(nrow = 1)) +
+    trqwe:::gg_rotate_xlabels(angle=45, vjust=1) + 
+    labs(fill = "Version", title = "read benchmarks")
+  
+  ggplot(grid, aes(x = preset, fill = as.factor(ver),  group=as.factor(ver), y = write_time)) + 
+    geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") + 
+    geom_point(position = position_dodge(width=.9), shape=21, fill = NA, alpha=0.5) + 
+    facet_wrap(~data, scales = "free", ncol=2) + 
+    theme_bw() + theme(legend.position = "bottom") + 
+    guides(fill = guide_legend(nrow = 1)) +
+    trqwe:::gg_rotate_xlabels(angle=45, vjust=1) + 
+    labs(fill = "Version", title = "write benchmarks")
 }

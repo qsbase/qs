@@ -26,31 +26,24 @@
 
 template <class stream_reader, class decompress_env> 
 struct Data_Context {
-  stream_reader & myFile;
-  decompress_env denv;
-  xxhash_env xenv;
   QsMetadata qm;
+  stream_reader & myFile;
   bool use_alt_rep_bool;
   
-  // uint64_t number_of_blocks;
-  std::vector<char> zblock;
-  std::vector<char> block;
+  decompress_env denv; // default constructor
+  xxhash_env xenv; // default constructor
+  
+  std::vector<char> zblock = std::vector<char>(denv.compressBound(BLOCKSIZE));
+  std::vector<char> block = std::vector<char>(BLOCKSIZE);
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
-  uint64_t data_offset;
-  uint64_t blocks_read;
-  uint64_t block_size;
-  std::string temp_string;
+  uint64_t data_offset = 0;
+  uint64_t blocks_read = 0;
+  uint64_t block_size = 0;
+  std::string temp_string = std::string(256, '\0');
   
   Data_Context(stream_reader & mf, QsMetadata qm, bool use_alt_rep) : 
-    myFile(mf), denv(decompress_env()), xenv(xxhash_env()), qm(qm), use_alt_rep_bool(use_alt_rep) {
-    // number_of_blocks = readSize8(myFile);
-    zblock = std::vector<char>(denv.compressBound(BLOCKSIZE));
-    block = std::vector<char>(BLOCKSIZE);
-    data_offset = 0;
-    blocks_read = 0;
-    block_size = 0;
-    temp_string = std::string(256, '\0');
-  }
+    qm(qm), myFile(mf), use_alt_rep_bool(use_alt_rep) {}
+  
   void readHeader(SEXPTYPE & object_type, uint64_t & r_array_len) {
     if(data_offset >= block_size) decompress_block();
     char* header = block.data();
@@ -63,19 +56,19 @@ struct Data_Context {
   }
   void decompress_direct(char* bpointer) {
     blocks_read++;
-    std::array<char, 4> zsize_ar = {0,0,0,0};
-    read_check(myFile, zsize_ar.data(), 4);
+    std::array<char, 4> zsize_ar;
+    read_allow(myFile, zsize_ar.data(), 4);
     uint64_t zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
-    read_check(myFile, zblock.data(), zsize);
+    read_allow(myFile, zblock.data(), zsize);
     block_size = denv.decompress(bpointer, BLOCKSIZE, zblock.data(), zsize);
     if(qm.check_hash) xenv.update(bpointer, BLOCKSIZE);
   }
   void decompress_block() {
     blocks_read++;
-    std::array<char, 4> zsize_ar = {0,0,0,0};
-    read_check(myFile, zsize_ar.data(), 4);
+    std::array<char, 4> zsize_ar;
+    read_allow(myFile, zsize_ar.data(), 4);
     uint64_t zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
-    read_check(myFile, zblock.data(), zsize);
+    read_allow(myFile, zblock.data(), zsize);
     block_size = denv.decompress(block.data(), BLOCKSIZE, zblock.data(), zsize);
     data_offset = 0;
     if(qm.check_hash) xenv.update(block.data(), block_size);
@@ -248,12 +241,13 @@ struct Data_Context {
         std::string temp_attribute_string = std::string(r_string_len, '\0');
         getBlockData(&temp_attribute_string[0], r_string_len);
         // Rf_install may allocate, therefore we need to protect the result of processBlock
+        // Is this really true?  Could be slow with lots of attributes
         // ref: https://github.com/kalibera/rchk/blob/master/doc/USAGE.md
         SEXP attrib_obj = PROTECT(processBlock()); pt++;
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), attrib_obj);
       }
     }
     
-    return std::move(obj);
+    return obj;
   }
 };

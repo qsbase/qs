@@ -1,23 +1,3 @@
-/* qs - Quick Serialization of R Objects
- Copyright (C) 2019-present Travers Ching
- 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as
- published by the Free Software Foundation, either version 3 of the
- License, or (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
- 
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
- You can contact the author at:
- https://github.com/traversc/qs
- */
-
 /* The following shuffle routines were adapted from the Blosc meta-compression library 
  */
 
@@ -35,13 +15,13 @@
 //no other includes necessary
 #endif
 
-static inline void unshuffle_generic_inline(const size_t type_size,
-                                     const size_t vectorizable_elements, const size_t blocksize,
+static inline void unshuffle_generic_inline(const uint64_t type_size,
+                                     const uint64_t vectorizable_elements, const uint64_t blocksize,
                                      const uint8_t* const _src, uint8_t* const _dest) {
-  size_t i, j;
+  uint64_t i, j;
   
   /* Calculate the number of elements in the block. */
-  const size_t neblock_quot = blocksize / type_size;
+  const uint64_t neblock_quot = blocksize / type_size;
   
   /* Non-optimized unshuffle */
   for (i = vectorizable_elements; i < neblock_quot; i++) {
@@ -54,9 +34,9 @@ static inline void unshuffle_generic_inline(const size_t type_size,
 #if defined (__AVX2__)
 
 static void unshuffle4_avx2(uint8_t* const dest, const uint8_t* const src,
-                            const size_t vectorizable_elements, const size_t total_elements) {
-  static const size_t bytesoftype = 4;
-  size_t i;
+                            const uint64_t vectorizable_elements, const uint64_t total_elements) {
+  static const uint64_t bytesoftype = 4;
+  uint64_t i;
   int j;
   __m256i ymm0[4], ymm1[4];
   
@@ -93,9 +73,9 @@ static void unshuffle4_avx2(uint8_t* const dest, const uint8_t* const src,
 }
 
 static void unshuffle8_avx2(uint8_t* const dest, const uint8_t* const src,
-                  const size_t vectorizable_elements, const size_t total_elements) {
-  static const size_t bytesoftype = 8;
-  size_t i;
+                  const uint64_t vectorizable_elements, const uint64_t total_elements) {
+  static const uint64_t bytesoftype = 8;
+  uint64_t i;
   int j;
   __m256i ymm0[8], ymm1[8];
   
@@ -148,9 +128,9 @@ static void unshuffle8_avx2(uint8_t* const dest, const uint8_t* const src,
 #elif defined(__SSE2__)
 
 static void unshuffle4_sse2(uint8_t* const dest, const uint8_t* const src,
-                  const size_t vectorizable_elements, const size_t total_elements) {
-    static const size_t bytesoftype = 4;
-    size_t i;
+                  const uint64_t vectorizable_elements, const uint64_t total_elements) {
+    static const uint64_t bytesoftype = 4;
+    uint64_t i;
     int j;
     __m128i xmm0[4], xmm1[4];
     
@@ -184,9 +164,9 @@ static void unshuffle4_sse2(uint8_t* const dest, const uint8_t* const src,
 
 /* Routine optimized for unshuffling a buffer for a type size of 8 bytes. */
 static void unshuffle8_sse2(uint8_t* const dest, const uint8_t* const src,
-                  const size_t vectorizable_elements, const size_t total_elements) {
-    static const size_t bytesoftype = 8;
-    size_t i;
+                  const uint64_t vectorizable_elements, const uint64_t total_elements) {
+    static const uint64_t bytesoftype = 8;
+    uint64_t i;
     int j;
     __m128i xmm0[8], xmm1[8];
     
@@ -234,7 +214,7 @@ static void unshuffle8_sse2(uint8_t* const dest, const uint8_t* const src,
 #endif
 
 // shuffle dispatcher
-static void blosc_unshuffle(uint8_t* src, uint8_t* dest, uint64_t blocksize, uint64_t bytesoftype) {
+static void blosc_unshuffle(const uint8_t * const src, uint8_t * const dest, const uint64_t blocksize, const uint64_t bytesoftype) {
   #if defined (__AVX2__)
   uint64_t total_elements = blocksize / bytesoftype;
   uint64_t vectorized_chunk_size = bytesoftype * sizeof(__m256i);

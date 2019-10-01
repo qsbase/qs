@@ -41,7 +41,7 @@ install:
 	find . -iname "*.a" -exec rm {} \;
 	find . -iname "*.o" -exec rm {} \;
 	find . -iname "*.so" -exec rm {} \;
-	R CMD build .
+	R CMD build . # --no-build-vignettes
 	R CMD INSTALL $(BUILD) --configure-args="--with-simd=AVX2"
 
 vignette:

@@ -38,6 +38,8 @@
  * qs_common.h is protected with an include guard
  */
 
+// [[Rcpp::interfaces(r, cpp)]]
+
 // https://stackoverflow.com/a/1001373
 // [[Rcpp::export(rng = false)]]
 bool is_big_endian()
@@ -50,8 +52,9 @@ bool is_big_endian()
 }
 
 // [[Rcpp::export(rng = false)]]
-double c_qsave(SEXP x, std::string file, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash, int nthreads) {
-  std::ofstream myFile(file.c_str(), std::ios::out | std::ios::binary);
+double c_qsave(SEXP const x, const std::string & file, const std::string & preset, const std::string & algorithm, 
+               const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
+  std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }
@@ -134,7 +137,8 @@ double c_qsave(SEXP x, std::string file, std::string preset, std::string algorit
 }
 
 // [[Rcpp::export(rng = false)]]
-double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+double c_qsave_fd(SEXP const x, const int fd, const std::string & preset, const std::string & algorithm, 
+                  const int compress_level, const int shuffle_control, const bool check_hash) {
   fd_wrapper myFile(fd);
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
@@ -173,7 +177,8 @@ double c_qsave_fd(SEXP x, int fd, std::string preset, std::string algorithm, int
 }
 
 // [[Rcpp::export(rng = false)]]
-double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+double c_qsave_handle(SEXP const x, SEXP const handle, const std::string & preset, 
+                      const std::string & algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
   handle_wrapper myFile(h);
@@ -216,7 +221,8 @@ double c_qsave_handle(SEXP x, SEXP handle, std::string preset, std::string algor
 }
 
 // [[Rcpp::export(rng = false)]]
-RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int compress_level, int shuffle_control, bool check_hash) {
+RawVector c_qserialize(SEXP const x, const std::string & preset, const std::string & algorithm, 
+                       const int compress_level, const int shuffle_control, const bool check_hash) {
   vec_wrapper myFile;
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
@@ -263,8 +269,8 @@ RawVector c_qserialize(SEXP x, std::string preset, std::string algorithm, int co
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
-  std::ifstream myFile(file, std::ios::in | std::ios::binary);
+SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict, const int nthreads) {
+  std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }
@@ -299,13 +305,13 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
       }
     } else {
       if(qm.compress_algorithm == 0) {
-        Data_Context_MT<zstd_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
+        Data_Context_MT<zstd_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
-        Data_Context_MT<lz4_decompress_env> dc(&myFile, qm, use_alt_rep, nthreads);
+        Data_Context_MT<lz4_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(dc.processBlock()); pt++;
         dc.dtc.finish();
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
@@ -318,7 +324,7 @@ SEXP c_qread(std::string file, bool use_alt_rep, bool strict, int nthreads) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict) {
+SEXP c_qread_fd(const int fd, const bool use_alt_rep, const bool strict) {
   fd_wrapper myFile(fd);
   Protect_Tracker pt = Protect_Tracker();
   QsMetadata qm  = QsMetadata::create(myFile);
@@ -350,7 +356,7 @@ SEXP c_qread_fd(int fd, bool use_alt_rep, bool strict) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict) {
+SEXP c_qread_handle(SEXP const handle, const bool use_alt_rep, const bool strict) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
   handle_wrapper myFile(h);
@@ -387,7 +393,7 @@ SEXP c_qread_handle(SEXP handle, bool use_alt_rep, bool strict) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict) {
+SEXP c_qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep, const bool strict) {
   void * vp = R_ExternalPtrAddr(pointer);
   mem_wrapper myFile(vp, static_cast<uint64_t>(length));
   Protect_Tracker pt = Protect_Tracker();
@@ -420,7 +426,7 @@ SEXP c_qread_ptr(SEXP pointer, double length, bool use_alt_rep, bool strict) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict) {
+SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
   void * p = reinterpret_cast<void*>(RAW(x));
   double dlen = static_cast<double>(Rf_xlength(x));
   Protect_Tracker pt = Protect_Tracker();
@@ -459,8 +465,9 @@ SEXP c_qdeserialize(RawVector x, bool use_alt_rep, bool strict) {
 //   return ret;
 // }
 
+// TODO: use SEXPs
 // [[Rcpp::export(rng = false)]]
-RObject c_qdump(std::string file) {
+RObject c_qdump(const std::string & file) {
   std::ifstream myFile(file, std::ios::in | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
@@ -569,8 +576,8 @@ RObject c_qdump(std::string file) {
 //   use_alt_rep_bool = s;
 // }
 
-// [[Rcpp::export(rng = false)]]
-std::vector<std::string> randomStrings(int N, int string_size = 50) {
+// [[Rcpp::export]]
+std::vector<std::string> randomStrings(const int N, const int string_size = 50) {
   std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   std::vector<std::string> ret(N);
   std::string str(string_size, '0');
@@ -589,32 +596,33 @@ std::vector<std::string> randomStrings(int N, int string_size = 50) {
 ////////////////////////////////////////////////////////////////
 
 // [[Rcpp::export(rng = false)]]
-int zstd_compress_bound(int size) {
+int zstd_compress_bound(const int size) {
   return ZSTD_compressBound(size);
 }
 
 // [[Rcpp::export(rng = false)]]
-int lz4_compress_bound(int size) {
+int lz4_compress_bound(const int size) {
   return LZ4_compressBound(size);
 }
 
 // [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> zstd_compress_raw(RawVector x, int compress_level) {
+std::vector<unsigned char> zstd_compress_raw(SEXP const x, const int compress_level) {
   if(compress_level > 22 || compress_level < -50) throw std::runtime_error("compress_level must be an integer between -50 and 22");
-  uint64_t zsize = ZSTD_compressBound(x.size());
+  uint64_t xsize = Rf_xlength(x);
+  uint64_t zsize = ZSTD_compressBound(xsize);
   char* xdata = reinterpret_cast<char*>(RAW(x));
   std::vector<unsigned char> ret(zsize);
   char* retdata = reinterpret_cast<char*>(ret.data());
-  zsize = ZSTD_compress(retdata, zsize, xdata, x.size(), compress_level);
+  zsize = ZSTD_compress(retdata, zsize, xdata, xsize, compress_level);
   ret.resize(zsize);
   return ret;
 }
 
 // [[Rcpp::export(rng = false)]]
-RawVector zstd_decompress_raw(RawVector x) {
-  uint64_t zsize = x.size();
+RawVector zstd_decompress_raw(SEXP const x) {
+  uint64_t zsize = Rf_xlength(x);
   char* xdata = reinterpret_cast<char*>(RAW(x));
-  uint64_t retsize = ZSTD_getFrameContentSize(xdata, x.size());
+  uint64_t retsize = ZSTD_getFrameContentSize(xdata, zsize);
   RawVector ret(retsize);
   char* retdata = reinterpret_cast<char*>(RAW(ret));
   ZSTD_decompress(retdata, retsize, xdata, zsize);
@@ -622,22 +630,23 @@ RawVector zstd_decompress_raw(RawVector x) {
 }
 
 // [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> lz4_compress_raw(RawVector x, int compress_level) {
+std::vector<unsigned char> lz4_compress_raw(SEXP const x, const int compress_level) {
   if(compress_level < 1) throw std::runtime_error("compress_level must be an integer greater than 1");
-  uint64_t zsize = LZ4_compressBound(x.size());
+  uint64_t xsize = Rf_xlength(x);
+  uint64_t zsize = LZ4_compressBound(xsize);
   char* xdata = reinterpret_cast<char*>(RAW(x));
   std::vector<unsigned char> ret(zsize);
   char* retdata = reinterpret_cast<char*>(ret.data());
-  zsize = LZ4_compress_fast(xdata, retdata, x.size(), zsize, compress_level);
+  zsize = LZ4_compress_fast(xdata, retdata, xsize, zsize, compress_level);
   ret.resize(zsize);
   return ret;
 }
 
 // [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> lz4_decompress_raw(RawVector x) {
-  int zsize = x.size();
+std::vector<unsigned char> lz4_decompress_raw(SEXP const x) {
+  int zsize = Rf_xlength(x);
   char* xdata = reinterpret_cast<char*>(RAW(x));
-  std::vector<unsigned char> ret(x.size()*3/2);
+  std::vector<unsigned char> ret(zsize*3/2);
   
   // char* retdata = reinterpret_cast<char*>(ret.data());
   // int decomp = LZ4_decompress_safe(xdata, retdata, zsize, ret.size());
@@ -657,7 +666,7 @@ std::vector<unsigned char> lz4_decompress_raw(RawVector x) {
 }
 
 // [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesofsize) {
+std::vector<unsigned char> blosc_shuffle_raw(SEXP const x, int bytesofsize) {
 #if defined (__AVX2__)
   Rcpp::Rcerr << "AVX2" << std::endl;
 #elif defined (__SSE2__)
@@ -666,17 +675,18 @@ std::vector<unsigned char> blosc_shuffle_raw(std::vector<uint8_t> x, int bytesof
   Rcpp::Rcerr << "no SIMD" << std::endl;
 #endif
   if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
-  size_t blocksize = x.size();
+  uint64_t blocksize = Rf_xlength(x);
+  uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
   std::vector<uint8_t> xshuf(blocksize);
-  blosc_shuffle(x.data(), xshuf.data(), blocksize, bytesofsize);
-  size_t remainder = blocksize % bytesofsize;
-  size_t vectorizablebytes = blocksize - remainder;
-  std::memcpy(xshuf.data() + vectorizablebytes, x.data() + vectorizablebytes, remainder);
+  blosc_shuffle(xdata, xshuf.data(), blocksize, bytesofsize);
+  uint64_t remainder = blocksize % bytesofsize;
+  uint64_t vectorizablebytes = blocksize - remainder;
+  std::memcpy(xshuf.data() + vectorizablebytes, xdata + vectorizablebytes, remainder);
   return xshuf;
 }
 
 // [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytesofsize) {
+std::vector<unsigned char> blosc_unshuffle_raw(SEXP const x, int bytesofsize) {
 #if defined (__AVX2__)
   Rcpp::Rcerr << "AVX2" << std::endl;
 #elif defined (__SSE2__)
@@ -685,24 +695,28 @@ std::vector<unsigned char> blosc_unshuffle_raw(std::vector<uint8_t> x, int bytes
   Rcpp::Rcerr << "no SIMD" << std::endl;
 #endif
   if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
-  size_t blocksize = x.size();
+  uint64_t blocksize = Rf_xlength(x);
+  uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
   std::vector<uint8_t> xshuf(blocksize);
-  blosc_unshuffle(x.data(), xshuf.data(), blocksize, bytesofsize);
-  size_t remainder = blocksize % bytesofsize;
-  size_t vectorizablebytes = blocksize - remainder;
-  std::memcpy(xshuf.data() + vectorizablebytes, x.data() + vectorizablebytes, remainder);
+  blosc_unshuffle(xdata, xshuf.data(), blocksize, bytesofsize);
+  uint64_t remainder = blocksize % bytesofsize;
+  uint64_t vectorizablebytes = blocksize - remainder;
+  std::memcpy(xshuf.data() + vectorizablebytes, xdata + vectorizablebytes, remainder);
   return xshuf;
 }
 
 // [[Rcpp::export(rng = false)]]
-std::string xxhash_raw(std::vector<uint8_t> x) {
+std::string xxhash_raw(SEXP const x) {
+  uint64_t xsize = Rf_xlength(x);
+  uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
   xxhash_env xenv = xxhash_env();
-  xenv.update(x.data(), x.size());
+  xenv.update(xdata, xsize);
   return std::to_string(xenv.digest());
 }
 
+// TODO: use SEXP instead of CharacterVector
 // [[Rcpp::export(rng = false)]]
-SEXP convertToAlt(CharacterVector x) {
+SEXP convertToAlt(const CharacterVector & x) {
 #ifdef ALTREP_SUPPORTED
   auto ret = new stdvec_data(x.size());
   for(int i=0; i < x.size(); i++) {
@@ -741,28 +755,28 @@ SEXP convertToAlt(CharacterVector x) {
 }
 
 // [[Rcpp::export(rng = false)]]
-int openFd(std::string filename, std::string mode) {
+int openFd(const std::string & file, const std::string & mode) {
   if(mode == "w") {
 #ifdef _WIN32
-    int fd = open(filename.c_str(), _O_WRONLY | _O_CREAT | O_TRUNC | _O_BINARY, _S_IWRITE);
+    int fd = open(R_ExpandFileName(file.c_str()), _O_WRONLY | _O_CREAT | O_TRUNC | _O_BINARY, _S_IWRITE);
 #else
-    int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int fd = open(R_ExpandFileName(file.c_str()), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 #endif
     if(fd == -1) throw std::runtime_error("error creating file descriptor");
     return fd;
   } else if(mode == "r") {
 #ifdef _WIN32
-    int fd = open(filename.c_str(), O_RDONLY | _O_BINARY);
+    int fd = open(R_ExpandFileName(file.c_str()), O_RDONLY | _O_BINARY);
 #else
-    int fd = open(filename.c_str(), O_RDONLY);
+    int fd = open(R_ExpandFileName(file.c_str()), O_RDONLY);
 #endif
     if(fd == -1) throw std::runtime_error("error creating file descriptor");
     return fd;
   } else if(mode == "rw" || mode == "wr") {
 #ifdef _WIN32
-    int fd = open(filename.c_str(), _O_RDWR | _O_CREAT | O_TRUNC | _O_BINARY, _S_IWRITE);
+    int fd = open(R_ExpandFileName(file.c_str()), _O_RDWR | _O_CREAT | O_TRUNC | _O_BINARY, _S_IWRITE);
 #else
-    int fd = open(filename.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644);
+    int fd = open(R_ExpandFileName(file.c_str()), O_RDWR | O_CREAT | O_TRUNC, 0644);
 #endif
     if(fd == -1) throw std::runtime_error("error creating file descriptor");
     return fd;
@@ -771,8 +785,9 @@ int openFd(std::string filename, std::string mode) {
   }
 }
 
+// TODO: use SEXP instead of RawVector
 // [[Rcpp::export(rng = false)]]
-RawVector readFdDirect(int fd, int n_bytes) {
+SEXP readFdDirect(const int fd, const int n_bytes) {
   RawVector x(n_bytes);
   fd_wrapper fw = fd_wrapper(fd);
   fw.read(reinterpret_cast<char*>(RAW(x)), n_bytes);
@@ -781,46 +796,46 @@ RawVector readFdDirect(int fd, int n_bytes) {
 
 
 // [[Rcpp::export(rng = false)]]
-int closeFd(int fd) {
+int closeFd(const int fd) {
   return close(fd);
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP openMmap(int fd, double length) {
+SEXP openMmap(const int fd, const double length) {
 #ifdef _WIN32
   throw std::runtime_error("mmap not available on windows");
 #elif __APPLE__
-  size_t _length = static_cast<size_t>(length);
+  uint64_t _length = static_cast<uint64_t>(length);
   void * map = mmap(NULL, _length, PROT_READ, MAP_SHARED, fd, 0);
   return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
 #else
-  size_t _length = static_cast<size_t>(length);
+  uint64_t _length = static_cast<uint64_t>(length);
   void * map = mmap(NULL, _length, PROT_READ, MAP_SHARED, fd, 0);
   return R_MakeExternalPtr(map, R_NilValue, R_NilValue);
 #endif
 }
 
 // [[Rcpp::export(rng = false)]]
-int closeMmap(SEXP map, double length) {
+int closeMmap(SEXP const map, const double length) {
 #ifdef _WIN32
   throw std::runtime_error("mmap not available on windows");
 #else
-  size_t _length = static_cast<size_t>(length);
+  uint64_t _length = static_cast<uint64_t>(length);
   void * m = R_ExternalPtrAddr(map);
   return munmap(m, _length);
 #endif
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP openHandle(std::string filename, std::string mode) {
+SEXP openHandle(const std::string & file, const std::string & mode) {
 #ifdef _WIN32
   HANDLE h;
   if(mode == "rw" || mode == "wr") {
-    h = CreateFileA(filename.c_str(), GENERIC_WRITE | GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    h = CreateFileA(R_ExpandFileName(file.c_str()), GENERIC_WRITE | GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   } else if(mode == "w") {
-    h = CreateFileA(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    h = CreateFileA(R_ExpandFileName(file.c_str()), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   } else if(mode == "r") {
-    h = CreateFileA(filename.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    h = CreateFileA(R_ExpandFileName(file.c_str()), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   } else {
     throw std::runtime_error("mode should be w or r or rw");
   }
@@ -831,7 +846,7 @@ SEXP openHandle(std::string filename, std::string mode) {
 }
 
 // [[Rcpp::export(rng = false)]]
-bool closeHandle(SEXP handle) {
+bool closeHandle(SEXP const handle) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
   return CloseHandle(h);
@@ -841,7 +856,7 @@ bool closeHandle(SEXP handle) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP openWinFileMapping(SEXP handle, double length) {
+SEXP openWinFileMapping(SEXP const handle, const double length) {
 #ifdef _WIN32
   uint64_t dlen = static_cast<uint64_t>(length);
   DWORD dlen_high = dlen >> 32;
@@ -855,7 +870,7 @@ SEXP openWinFileMapping(SEXP handle, double length) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP openWinMapView(SEXP handle, double length) {
+SEXP openWinMapView(SEXP const handle, const double length) {
 #ifdef _WIN32
   uint64_t dlen = static_cast<uint64_t>(length);
   HANDLE h = R_ExternalPtrAddr(handle);
@@ -867,7 +882,7 @@ SEXP openWinMapView(SEXP handle, double length) {
 }
 
 // [[Rcpp::export(rng = false)]]
-bool closeWinMapView(SEXP pointer) {
+bool closeWinMapView(SEXP const pointer) {
 #ifdef _WIN32
   void* map = R_ExternalPtrAddr(pointer);
   return UnmapViewOfFile(map);
@@ -878,7 +893,7 @@ bool closeWinMapView(SEXP pointer) {
 
 
 // std::vector<unsigned char> brotli_compress_raw(RawVector x, int compress_level) {
-//   size_t zsize = BrotliEncoderMaxCompressedSize(x.size());
+//   uint64_t zsize = BrotliEncoderMaxCompressedSize(x.size());
 //   uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
 //   std::vector<unsigned char> ret(zsize);
 //   uint8_t* retdata = reinterpret_cast<uint8_t*>(ret.data());
@@ -889,10 +904,10 @@ bool closeWinMapView(SEXP pointer) {
 // }
 
 // std::vector<unsigned char> brotli_decompress_raw(RawVector x) {
-//   size_t available_in = x.size();
+//   uint64_t available_in = x.size();
 //   const uint8_t* next_in = reinterpret_cast<uint8_t*>(RAW(x));
 //   std::vector<uint8_t> dbuffer(available_in);
-//   size_t available_out = dbuffer.size();
+//   uint64_t available_out = dbuffer.size();
 //   uint8_t * next_out = dbuffer.data();
 //   std::vector<unsigned char> retdata(0);
 //   BrotliDecoderResult result;
@@ -910,4 +925,8 @@ bool closeWinMapView(SEXP pointer) {
 //   } while (result != BROTLI_DECODER_RESULT_SUCCESS);
 //   BrotliDecoderDestroyInstance(state);
 //   return retdata;
+// }
+//   BrotliDecoderDestroyInstance(state);
+//   return retdata;
+// }
 // }

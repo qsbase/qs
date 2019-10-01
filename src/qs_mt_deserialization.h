@@ -56,45 +56,43 @@
 
 template <class decompress_env> 
 struct Data_Thread_Context {
-  decompress_env denv;
-  std::ifstream* myFile;
+  std::ifstream & myFile;
+  decompress_env denv; // default constructor
   const unsigned int nthreads;
+  
   uint64_t blocks_total;
   std::atomic<uint64_t> blocks_read;
   std::atomic<uint64_t>  blocks_processed;
   
-  std::vector<std::thread> threads;
-  std::vector<bool> primary_block;
+  std::vector<bool> primary_block = std::vector<bool>(nthreads, true);
   std::vector< std::vector<char> > zblocks; // one per thread
   std::vector< std::vector<char> > data_blocks; // one per thread
   std::vector< std::vector<char> > data_blocks2; // one per thread
+  std::pair<char*, uint64_t> data_pass; // default constructor
+  
   std::vector< std::atomic<char*> > block_pointers;
   std::vector< std::atomic<uint64_t> > block_sizes;
-  
   std::vector< std::atomic<uint8_t> > data_task;
-  std::pair<char*, uint64_t> data_pass;
-  
-  Data_Thread_Context(std::ifstream* mf, unsigned int nt, QsMetadata qm) : 
-    denv(decompress_env()),
-    myFile(mf), nthreads(nt), blocks_read(0), blocks_processed(0) {
-    blocks_total = qm.clength;
-    zblocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(denv.compressBound(BLOCKSIZE)));
-    data_blocks = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
-    data_blocks2 = std::vector<std::vector<char> >(nthreads, std::vector<char>(BLOCKSIZE));
-    block_pointers = std::vector<std::atomic<char*>>(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
+  std::vector<std::thread> threads;
+
+  Data_Thread_Context(std::ifstream & mf, unsigned int nt, QsMetadata qm) : 
+    myFile(mf), nthreads(nt), blocks_total(qm.clength), blocks_read(0), blocks_processed(0),
+    zblocks(std::vector< std::vector<char> >(nt, std::vector<char>(this->denv.compressBound(BLOCKSIZE)))),
+    data_blocks(std::vector< std::vector<char> >(nt, std::vector<char>(BLOCKSIZE))),
+    data_blocks2(std::vector<std::vector<char> >(nt, std::vector<char>(BLOCKSIZE))) {
+    block_pointers = std::vector< std::atomic<char*> >(nt);
+    for(unsigned int i=0; i<nt; i++) {
       block_pointers[i] = nullptr;
     }
-    block_sizes = std::vector<std::atomic<uint64_t>>(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
+    block_sizes = std::vector< std::atomic<uint64_t> >(nt);
+    for(unsigned int i=0; i<nt; i++) {
       block_sizes[i] = 0;
     }
-    primary_block = std::vector<bool>(nthreads, true);
-    data_task = std::vector< std::atomic<uint8_t> >(nthreads);
-    for(unsigned int i=0; i<nthreads; i++) {
+    data_task = std::vector< std::atomic<uint8_t> >(nt);
+    for(unsigned int i=0; i<nt; i++) {
       data_task[i] = 0;
     }
-    for (unsigned int i = 0; i < nthreads; i++) {
+    for (unsigned int i = 0; i < nt; i++) {
       threads.push_back(std::thread(&Data_Thread_Context::worker_thread, this, i));
     }
   }
@@ -106,9 +104,9 @@ struct Data_Thread_Context {
       while(blocks_read != i) {
         std::this_thread::yield();
       }
-      myFile->read(zsize_ar.data(), 4);
+      myFile.read(zsize_ar.data(), 4);
       uint32_t zsize = unaligned_cast<uint32_t>(zsize_ar.data(),0);
-      myFile->read(zblocks[thread_id].data(), zsize);
+      myFile.read(zblocks[thread_id].data(), zsize);
       blocks_read++;
       
       // task marching orders from main thread
@@ -179,24 +177,20 @@ struct Data_Thread_Context {
 
 template <class decompress_env> 
 struct Data_Context_MT {
-  std::ifstream * myFile;
-  Data_Thread_Context<decompress_env> dtc;
-  xxhash_env xenv;
   QsMetadata qm;
+  std::ifstream & myFile;
+  Data_Thread_Context<decompress_env> dtc;
+  xxhash_env xenv; // default constructoer
   bool use_alt_rep_bool;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
-  uint64_t data_offset;
-  char* block_data = nullptr;
-  uint64_t block_size;
-  std::string temp_string;
+  char* block_data; // default constructor
+  uint64_t block_size = 0;
+  uint64_t data_offset = 0;
+  std::string temp_string = std::string(256, '\0');
   
-  Data_Context_MT(std::ifstream * mf, QsMetadata qm, bool use_alt_rep, unsigned int nthreads) : 
-    myFile(mf), dtc(mf, nthreads-1, qm), xenv(xxhash_env()), qm(qm), use_alt_rep_bool(use_alt_rep) {
-    data_offset = 0;
-    block_size = 0;
-    temp_string = std::string(256, '\0');
-  }
+  Data_Context_MT(std::ifstream & mf, QsMetadata qm, bool use_alt_rep, unsigned int nthreads) : 
+    qm(qm), myFile(mf), dtc(mf, nthreads-1, qm), use_alt_rep_bool(use_alt_rep) {}
   void readHeader(SEXPTYPE & object_type, uint64_t & r_array_len) {
     if(data_offset >= block_size) decompress_block();
     char* header = block_data;
@@ -388,12 +382,13 @@ struct Data_Context_MT {
         std::string temp_attribute_string = std::string(r_string_len, '\0');
         getBlockData(&temp_attribute_string[0], r_string_len);
         // Rf_install may allocate, therefore we need to protect the result of processBlock
+        // Is this really true?  Could be slow with lots of attributes
         // ref: https://github.com/kalibera/rchk/blob/master/doc/USAGE.md
         SEXP attrib_obj = PROTECT(processBlock()); pt++;
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), attrib_obj);
       }
     }
     
-    return std::move(obj);
+    return obj;
   }
 };

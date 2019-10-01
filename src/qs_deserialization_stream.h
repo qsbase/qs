@@ -20,37 +20,29 @@
 
 #include "qs_common.h"
 
-#define RESERVE_SIZE 4
+static constexpr uint64_t RESERVE_SIZE = 4; // 2^17
 
 template <class stream_reader>
 struct ZSTD_streamRead {
-  stream_reader & myFile;
   QsMetadata qm;
-  uint64_t bytes_read;
-  uint64_t minblocksize;
-  uint64_t maxblocksize;
-  uint64_t decompressed_bytes_read;
-  uint64_t compressed_bytes_read;
-  std::vector<char> outblock;
-  std::vector<char> inblock;
+  stream_reader & myFile;
+  xxhash_env xenv; // default constructor
+  uint64_t minblocksize = ZSTD_DStreamOutSize();
+  uint64_t maxblocksize = 4 * ZSTD_DStreamOutSize();
+  uint64_t decompressed_bytes_read = 0;
+  uint64_t compressed_bytes_read = 0;
+  std::vector<char> outblock = std::vector<char>(maxblocksize);
+  std::vector<char> inblock = std::vector<char>(ZSTD_DStreamInSize());
+  uint64_t blocksize = 0; // shared with Data_Context_Stream by reference -- block_size
+  uint64_t blockoffset = 0; // shared with Data_Context_Stream by reference -- data_offset
   ZSTD_inBuffer zin;
   ZSTD_outBuffer zout;
   ZSTD_DStream* zds;
-  uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
-  uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
-  xxhash_env xenv;
   std::array<char, 4> hash_reserve;
-  bool end_of_decompression;
+  bool end_of_decompression = false;
+  
   ZSTD_streamRead(stream_reader & mf, QsMetadata qm) : 
-    myFile(mf), qm(qm), xenv(xxhash_env()) {
-    size_t outblocksize = 4*ZSTD_DStreamOutSize();
-    size_t inblocksize = ZSTD_DStreamInSize();
-    decompressed_bytes_read = 0;
-    compressed_bytes_read = 0;
-    outblock = std::vector<char>(outblocksize);
-    inblock = std::vector<char>(inblocksize);
-    minblocksize = ZSTD_DStreamOutSize();
-    maxblocksize = 4*ZSTD_DStreamOutSize();
+    qm(qm), myFile(mf) {
     zds = ZSTD_createDStream();
     ZSTD_initDStream(zds);
     zout.size = maxblocksize;
@@ -59,11 +51,6 @@ struct ZSTD_streamRead {
     zin.size = 0;
     zin.pos = 0;
     zin.src = inblock.data();
-    blocksize = 0;
-    blockoffset = 0;
-    bytes_read = 0;
-    hash_reserve = {0,0,0,0};
-    end_of_decompression = false;
     if(qm.check_hash) {
       read_check(myFile, hash_reserve.data(), RESERVE_SIZE);
     }
@@ -71,56 +58,61 @@ struct ZSTD_streamRead {
 
   size_t read_reserve(char * dst, size_t length, bool exact=false) {
     if(!qm.check_hash) {
-      size_t bytes_out = read_check(myFile, dst, length, exact);
-      compressed_bytes_read += bytes_out;
+      size_t bytes_out;
+      if(exact) {
+        bytes_out = read_check(myFile, dst, length);
+      } else {
+        bytes_out = read_allow(myFile, dst, length);
+      }
+      // compressed_bytes_read += bytes_out;
       // std::cout << "compressed bytes read: " << compressed_bytes_read << std::endl;
       return bytes_out;
     }
     if(exact) {
       if(length >= RESERVE_SIZE) {
         std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
-        read_check(myFile, dst + RESERVE_SIZE, length - RESERVE_SIZE, true);
-        read_check(myFile, hash_reserve.data(), RESERVE_SIZE, true);
+        read_check(myFile, dst + RESERVE_SIZE, length - RESERVE_SIZE);
+        read_check(myFile, hash_reserve.data(), RESERVE_SIZE);
       } else { // RESERVE_SIZE > length
         std::memcpy(dst, hash_reserve.data(), length);
         // since some of the reserve buffer was consumed, shift the unconsumed bytes to beginning of array
         // then read from file to fill up reserve buffer
         std::memmove(hash_reserve.data(), hash_reserve.data() + length, RESERVE_SIZE - length);
-        read_check(myFile, hash_reserve.data() +  RESERVE_SIZE - length, length, true);
+        read_check(myFile, hash_reserve.data() +  RESERVE_SIZE - length, length);
       }
       
-      // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+      // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
       return length;
     } else { // !exact -- we can't assume that "length" bytes are left in myFile; there could even be zero bytes left
       if(length >= RESERVE_SIZE) {
         // use "dst" as a temporary buffer, since it's already allocated
         // it is not a good idea to allocate a temp buffer of size length, as length can be large
         std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
-        size_t n_read = read_check(myFile, dst + RESERVE_SIZE, length - RESERVE_SIZE, false);
+        size_t n_read = read_allow(myFile, dst + RESERVE_SIZE, length - RESERVE_SIZE);
         size_t n_bufferable = n_read + RESERVE_SIZE;
         if(n_bufferable < length) {
           std::memcpy(hash_reserve.data(), dst + n_bufferable - RESERVE_SIZE, RESERVE_SIZE);
 
-          // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+          // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
           return n_bufferable - RESERVE_SIZE;
         } else {
-          std::array<char, RESERVE_SIZE> temp_buffer = {0,0,0,0};
-          size_t temp_size = read_check(myFile, temp_buffer.data(), RESERVE_SIZE, false);
+          std::array<char, RESERVE_SIZE> temp_buffer;
+          size_t temp_size = read_allow(myFile, temp_buffer.data(), RESERVE_SIZE);
           std::memcpy(hash_reserve.data(), dst + n_bufferable - (RESERVE_SIZE - temp_size), RESERVE_SIZE - temp_size);
           std::memcpy(hash_reserve.data() + RESERVE_SIZE - temp_size, temp_buffer.data(), temp_size);
           
-          // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+          // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
           return n_bufferable - (RESERVE_SIZE - temp_size);
         }
       } else { // length < RESERVE_SIZE
         std::vector<char> temp_buffer(length, '\0');
-        size_t return_value = read_check(myFile, temp_buffer.data(), length, false);
+        size_t return_value = read_allow(myFile, temp_buffer.data(), length);
         // n_bufferable is at most RESERVE_SIZE*2 - 1 = 7
         std::memcpy(dst, hash_reserve.data(), return_value);
         std::memmove(hash_reserve.data(), hash_reserve.data() + return_value, RESERVE_SIZE - return_value);
         std::memcpy(hash_reserve.data() + (RESERVE_SIZE - return_value), temp_buffer.data(), return_value);
         
-        // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<unsigned char &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
+        // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
         return return_value;
       }
     }
@@ -136,7 +128,7 @@ struct ZSTD_streamRead {
     // std::cout << "decomp: " << zout->pos - temp << std::endl;
     xenv.update(reinterpret_cast<char*>(zout->dst)+temp, zout->pos - temp);
     return zout->pos - temp;
-    // for(unsigned int i=0; i < zout->pos - temp; i++) std::cout << std::hex << (int)(reinterpret_cast<unsigned char *>(zout->dst)[i+temp]) << " "; std::cout << std::endl;
+    // for(unsigned int i=0; i < zout->pos - temp; i++) std::cout << std::hex << (int)(reinterpret_cast<uint8_t *>(zout->dst)[i+temp]) << " "; std::cout << std::endl;
     // std::cout << std::dec << xenv.digest() << std::endl;
   }
   void getBlock() {
@@ -206,28 +198,30 @@ struct ZSTD_streamRead {
 
 template <class stream_reader>
 struct uncompressed_streamRead {
-  stream_reader & con;
   QsMetadata qm;
-  std::vector<char> outblock;
-  uint64_t blocksize; // shared with Data_Context_Stream by reference -- block_size
-  uint64_t blockoffset; // shared with Data_Context_Stream by reference -- data_offset
-  uint64_t decompressed_bytes_read; // same as total bytes read since no compression
-  xxhash_env xenv;
+  stream_reader & con;
+  std::vector<char> outblock = std::vector<char>(BLOCKSIZE+BLOCKRESERVE);
+  uint64_t blocksize = 0; // shared with Data_Context_Stream by reference -- block_size
+  uint64_t blockoffset = 0; // shared with Data_Context_Stream by reference -- data_offset
+  uint64_t decompressed_bytes_read = 0; // same as total bytes read since no compression
+  xxhash_env xenv; // default constructor
   std::array<char, 4> hash_reserve;
   uncompressed_streamRead(stream_reader & _con, QsMetadata qm) : 
-    con(_con), qm(qm),
-    outblock(std::vector<char>(BLOCKSIZE+BLOCKRESERVE)), blocksize(0), blockoffset(0),
-    decompressed_bytes_read(0), xenv(xxhash_env()) {
-      hash_reserve = {0,0,0,0};
-      if(qm.check_hash) {
-        read_check(con, hash_reserve.data(), RESERVE_SIZE);
-      }
+    qm(qm), con(_con) {
+    if(qm.check_hash) {
+      read_check(con, hash_reserve.data(), RESERVE_SIZE);
     }
+  }
   
   // fread with updating hash as necessary
   size_t read_update(char * dst, size_t length, bool exact=false) {
     if(!qm.check_hash) {
-      uint64_t return_value = read_check(con, dst, length, exact);
+      size_t return_value;
+      if(exact) {
+        return_value = read_check(con, dst, length);
+      } else {
+        return_value = read_allow(con, dst, length);
+      }
       decompressed_bytes_read += return_value;
       xenv.update(dst, return_value);
       return return_value;
@@ -235,14 +229,14 @@ struct uncompressed_streamRead {
     if(exact) {
       if(length >= RESERVE_SIZE) {
         std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
-        read_check(con, dst + RESERVE_SIZE, length - RESERVE_SIZE, true);
-        read_check(con, hash_reserve.data(), RESERVE_SIZE, true);
+        read_check(con, dst + RESERVE_SIZE, length - RESERVE_SIZE);
+        read_check(con, hash_reserve.data(), RESERVE_SIZE);
       } else { // RESERVE_SIZE > length
         std::memcpy(dst, hash_reserve.data(), length);
         // since some of the reserve buffer was consumed, shift the unconsumed bytes to beginning of array
         // then read from file to fill up reserve buffer
         std::memmove(hash_reserve.data(), hash_reserve.data() + length, RESERVE_SIZE - length);
-        read_check(con, hash_reserve.data() +  RESERVE_SIZE - length, length, true);
+        read_check(con, hash_reserve.data() +  RESERVE_SIZE - length, length);
       }
       decompressed_bytes_read += length;
       xenv.update(dst, length);
@@ -252,7 +246,7 @@ struct uncompressed_streamRead {
         // use "dst" as a temporary buffer, since it's already allocated
         // it is not a good idea to allocate a temp buffer of size length, as length can be large
         std::memcpy(dst, hash_reserve.data(), RESERVE_SIZE);
-        size_t n_read = read_check(con, dst + RESERVE_SIZE, length - RESERVE_SIZE, false);
+        size_t n_read = read_allow(con, dst + RESERVE_SIZE, length - RESERVE_SIZE);
         size_t n_bufferable = n_read + RESERVE_SIZE;
         if(n_bufferable < length) {
           std::memcpy(hash_reserve.data(), dst + n_bufferable - RESERVE_SIZE, RESERVE_SIZE);
@@ -260,8 +254,8 @@ struct uncompressed_streamRead {
           xenv.update(dst, n_bufferable - RESERVE_SIZE);
           return n_bufferable - RESERVE_SIZE;
         } else {
-          std::array<char, RESERVE_SIZE> temp_buffer = {0,0,0,0};
-          size_t temp_size = read_check(con, temp_buffer.data(), RESERVE_SIZE, false);
+          std::array<char, RESERVE_SIZE> temp_buffer;
+          size_t temp_size = read_allow(con, temp_buffer.data(), RESERVE_SIZE);
           std::memcpy(hash_reserve.data(), dst + n_bufferable - (RESERVE_SIZE - temp_size), RESERVE_SIZE - temp_size);
           std::memcpy(hash_reserve.data() + RESERVE_SIZE - temp_size, temp_buffer.data(), temp_size);
           decompressed_bytes_read += n_bufferable - (RESERVE_SIZE - temp_size);
@@ -270,7 +264,7 @@ struct uncompressed_streamRead {
         }
       } else { // length < RESERVE_SIZE
         std::vector<char> temp_buffer(length, '\0');
-        size_t return_value = read_check(con, temp_buffer.data(), length, false);
+        size_t return_value = read_allow(con, temp_buffer.data(), length);
         // n_bufferable is at most RESERVE_SIZE*2 - 1 = 7
         std::memcpy(dst, hash_reserve.data(), return_value);
         std::memmove(hash_reserve.data(), hash_reserve.data() + return_value, RESERVE_SIZE - return_value);
@@ -317,18 +311,17 @@ struct uncompressed_streamRead {
 
 template <class DestreamClass> 
 struct Data_Context_Stream {
-  DestreamClass & dsc;
   QsMetadata qm;
+  DestreamClass & dsc;
   bool use_alt_rep_bool;
-  std::vector<uint8_t> shuffleblock;
+  std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
   uint64_t & data_offset; // dsc.blockoffset
   uint64_t & block_size; // dsc.blocksize
   char * data_ptr;
-  std::string temp_string;
+  std::string temp_string = std::string(256, '\0');
   
-  Data_Context_Stream(DestreamClass & d, QsMetadata q, bool use_alt_rep) : dsc(d), qm(q), use_alt_rep_bool(use_alt_rep),
-    shuffleblock(std::vector<uint8_t>(256)), data_offset(d.blockoffset), block_size(d.blocksize), data_ptr(d.outblock.data()), 
-    temp_string(std::string(256, '\0')) {}
+  Data_Context_Stream(DestreamClass & d, QsMetadata q, bool use_alt_rep) : qm(q), dsc(d), use_alt_rep_bool(use_alt_rep),
+    shuffleblock(std::vector<uint8_t>(256)), data_offset(d.blockoffset), block_size(d.blocksize), data_ptr(d.outblock.data()) {}
   
   void getBlock() {
     dsc.getBlock();
@@ -497,14 +490,13 @@ struct Data_Context_Stream {
         std::string temp_attribute_string = std::string(r_string_len, '\0');
         getBlockData(&temp_attribute_string[0], r_string_len);
         // Rf_install may allocate, therefore we need to protect the result of processBlock
+        // Is this really true?  Could be slow with lots of attributes
         // ref: https://github.com/kalibera/rchk/blob/master/doc/USAGE.md
         SEXP attrib_obj = PROTECT(processBlock()); pt++;
         Rf_setAttrib(obj, Rf_install(temp_attribute_string.data()), attrib_obj);
       }
     }
     
-    return std::move(obj);
+    return obj;
   }
 };
-
-#undef RESERVE_SIZE

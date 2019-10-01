@@ -89,8 +89,8 @@ convertToAlt <- function(x) {
     .Call(`_qs_convertToAlt`, x)
 }
 
-openFd <- function(filename, mode) {
-    .Call(`_qs_openFd`, filename, mode)
+openFd <- function(file, mode) {
+    .Call(`_qs_openFd`, file, mode)
 }
 
 readFdDirect <- function(fd, n_bytes) {
@@ -109,8 +109,8 @@ closeMmap <- function(map, length) {
     .Call(`_qs_closeMmap`, map, length)
 }
 
-openHandle <- function(filename, mode) {
-    .Call(`_qs_openHandle`, filename, mode)
+openHandle <- function(file, mode) {
+    .Call(`_qs_openHandle`, file, mode)
 }
 
 closeHandle <- function(handle) {
@@ -129,3 +129,7 @@ closeWinMapView <- function(pointer) {
     .Call(`_qs_closeWinMapView`, pointer)
 }
 
+# Register entry points for exported C++ functions
+methods::setLoadAction(function(ns) {
+    .Call('_qs_RcppExport_registerCCallable', PACKAGE = 'qs')
+})
