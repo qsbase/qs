@@ -148,6 +148,46 @@ system.time(qread("temp.qs", use_alt_rep=F))[1]
 #     1.703 seconds
 ```
 
+## Serializing to memory
+You can use `qs` to directly serialize objects to memory.  
+
+Example:
+```{r eval=FALSE}
+library(qs)
+x <- qserialize(c(1,2,3))
+qdeserialize(x)
+[1] 1 2 3
+```
+
+## Using qs within Rcpp
+`qs` functions can be called directly with C++ code via Rcpp.  
+
+Example C++ script:
+```
+// [[Rcpp::depends(qs)]]
+#include <Rcpp.h>
+#include <qs.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+void test() {
+  qs::c_qsave(IntegerVector::create(1,2,3), "/tmp/myfile.qs", "high", "zstd", 1, 15, true, 1);
+}
+```
+
+R side:
+```{r eval=FALSE}
+library(qs)
+library(Rcpp)
+sourceCpp("test.cpp")
+# save file using Rcpp interface
+test()
+# read in file create through Rcpp interface
+qread("/tmp/myfile.qs")
+[1] 1 2 3
+```
+The direct C++ functions do not have default parameters; all paramters must be specified.  
+
 ## Future developments
 
 * Additional compression algorithms

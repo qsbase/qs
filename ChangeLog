@@ -1,5 +1,9 @@
+Version 0.19.1 (2019-9-2)
+   * Exposed C++ API for use in other Rcpp packages and Rcpp scripts (https://github.com/traversc/qs/issues/18)
+
 Version 0.18.4 (2019-8-22)
    * Fixed an rchk issue with a missing `PROTECT` call during serialization
+   * Various code refactor and optimizations
 
 Version 0.18.3 (2019-8-20)
    * `qsave` now returns invisibly the number of bytes written to file
@@ -9,7 +13,7 @@ Version 0.18.3 (2019-8-20)
       * `qsave_fd` and `qread_fd` reads and write objects to file descriptors
       * `qsave_handle` and `qread_handle` reads and writes objects to Windows HANDLE pointer (Windows only)
       * `qread_ptr` reads objects from a void pointer
-   
+
 Version 0.18.2 (2019-7-19)
    * Changed license to GPL-3 (https://github.com/traversc/qs/issues/13)
 
@@ -43,9 +47,9 @@ Version 0.16.2 (2019-6-15)
    * Added `Set_elt` method for alt-rep string class (https://github.com/traversc/qs/issues/9)
    * Code cleanup:
       * Additional error checking during compression and de-compression
-	  * Use of RAII for protection stack handling
+     * Use of RAII for protection stack handling
       * Use of templates instead of function pointers for compression and decompression
-	  * Moved some functions to qs_common.h as templates to avoid code redundancy
+     * Moved some functions to qs_common.h as templates to avoid code redundancy
 
 Version 0.16.1 (2019-5-15)
 
