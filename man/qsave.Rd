@@ -5,7 +5,7 @@
 \title{qsave}
 \usage{
 qsave(x, file, 
-preset = "balanced", algorithm = "lz4", compress_level = 1L, 
+preset = "high", algorithm = "zstd", compress_level = 4L, 
 shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 }
 \arguments{

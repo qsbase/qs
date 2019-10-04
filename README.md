@@ -256,7 +256,7 @@ must be specified.
 ## Future developments
 
   - Additional compression algorithms
-  - Non-blocked compressed options (for greater compression ratio)
-  - Parameter optimization
+  - Improved alt-rep string reading support
+  - Improved S4 object serialization
 
 Future versions will be backwards compatible with the current version.

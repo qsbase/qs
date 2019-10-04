@@ -5,7 +5,7 @@ library(qs151)
 library(qs161)
 library(qs173)
 library(qs183)
-library(qs) #  # v 0.18.4
+library(qs) #  # v 0.19.1
 library(dplyr)
 
 
@@ -100,7 +100,7 @@ if(F) {
   
   ggplot(grid, aes(x = preset, fill = as.factor(ver), group=as.factor(ver), y = read_time)) + 
     geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") + 
-    geom_point(position = position_dodge(width=0.9), shape=21, fill = NA) + 
+    # geom_point(position = position_dodge(width=0.9), shape=21, fill = NA) + 
     facet_wrap(~data, scales = "free", ncol=2) + 
     theme_bw() + theme(legend.position = "bottom") + 
     guides(fill = guide_legend(nrow = 1)) +

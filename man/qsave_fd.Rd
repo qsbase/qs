@@ -5,7 +5,7 @@
 \title{qsave_fd}
 \usage{
 qsave_fd(x, fd, 
-preset = "balanced", algorithm = "lz4", compress_level = 1L, 
+preset = "high", algorithm = "zstd", compress_level = 4L, 
 shuffle_control = 15L, check_hash=TRUE)
 }
 \arguments{
@@ -13,7 +13,7 @@ shuffle_control = 15L, check_hash=TRUE)
 
 \item{fd}{A file descriptor}
 
-\item{preset}{One of "fast", "balanced" (default), "high", "archive", "uncompressed" or "custom".  See details.}
+\item{preset}{One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom".  See details.}
 
 \item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".}
 

@@ -716,7 +716,7 @@ inline uint64_t read_allow(handle_wrapper & con, char * const ptr, const uint64_
   uint64_t return_value = con.read(ptr, count);
   return return_value;
 }
-inline uint64_t write_check(handle_wrapper & con, char * const ptr, const uint64_t count) {
+inline uint64_t write_check(handle_wrapper & con, const char * const ptr, const uint64_t count) {
   uint64_t return_value = con.write(ptr, count);
   // if(check_size) {
   //   if(return_value != count) {
