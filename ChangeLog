@@ -1,3 +1,6 @@
+Version 0.20.2 (2019-12-1)
+   * Fix to minor bug involving serialization of locked environments
+
 Version 0.20.1 (2019-12-1)
    * More efficient serialization of S4 objects, environments and other complex types (DOTSXP, PROMSXP, CLOSXP)
    * Better support for S4 objects

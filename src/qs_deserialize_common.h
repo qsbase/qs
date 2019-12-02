@@ -48,6 +48,11 @@ inline void readHeader_common(qstype & object_type, uint64_t & r_array_len, uint
       data_offset += 6;
       object_type = qstype::UNLOCKED_ENV;
       return;
+    case locked_env_header:
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      data_offset += 6;
+      object_type = qstype::LOCKED_ENV;
+      return;
     case reference_object_header:
       r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
       data_offset += 6;

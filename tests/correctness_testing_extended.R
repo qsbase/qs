@@ -5,6 +5,7 @@ suppressMessages(library(qs))
 suppressMessages(library(ggplot2))
 suppressMessages(library(sf))
 suppressMessages(library(nanotime))
+suppressMessages(library(R6))
 options(warn=1)
 
 if (Sys.info()[['sysname']] != "Windows") {
@@ -116,7 +117,7 @@ gc()
 print("github.com/traversc/qs/issues/9")
 x <- data.table(x = 1:26, y = letters)
 qsave_rand(x, file=myfile)
-xu <- qread_rand(myfile, use_alt_rep = T)
+xu <- qread(myfile, use_alt_rep = T)
 data.table::setnames(xu, 1, "a")
 stopifnot(identical(c("a", "y"), colnames(xu)))
 data.table::setnames(xu, 2, "b")
@@ -189,3 +190,36 @@ gc()
 #   rm(g2, gb2)
 #   gc()
 # }
+
+print("https://github.com/traversc/qs/issues/6")
+RiskModel <- R6Class(
+  classname = "RiskModel",
+  public = list(
+  name = NULL,
+  covMat = NULL, ## N * N
+  initialize = function(name, covMat = NULL) {
+    self$covMat <- covMat
+    self$name <- name
+  }
+  ),
+  private = NULL,
+  active = NULL,
+  inherit = NULL,
+  lock_objects = TRUE,
+  class = TRUE,
+  portable = TRUE,
+  lock_class = FALSE,
+  cloneable = TRUE,
+  parent_env = parent.frame()
+)
+
+for(i in 1:5) {
+  x <- RiskModel$new("x", matrix(runif(10000^2,10000,10000)))
+  qsave_rand(x, myfile)
+  y <- qread_rand(myfile)
+  stopifnot(identical(x$name, y$name))
+  stopifnot(identical(x$covMat, y$covMat))
+  print("ok")
+  rm(x, y)
+  gc()
+}

@@ -1,7 +1,7 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.20.1
+Version: 0.20.2
 Date: 2019-12-1
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
