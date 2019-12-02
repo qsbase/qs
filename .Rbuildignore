@@ -11,3 +11,4 @@ rticle
 src/ZSTD/LICENSCE.txt
 aclocal.m4
 Makefile
+^.vscode
