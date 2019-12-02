@@ -4,6 +4,7 @@ suppressMessages(library(data.table))
 suppressMessages(library(qs))
 suppressMessages(library(ggplot2))
 suppressMessages(library(sf))
+suppressMessages(library(nanotime))
 options(warn=1)
 
 if (Sys.info()[['sysname']] != "Windows") {
@@ -112,16 +113,26 @@ for(i in 1:10) {
 rm(g1, g2, gb1, gb2)
 gc()
 
-# test 1: alt rep implementation
-# https://github.com/traversc/qs/issues/9
 print("github.com/traversc/qs/issues/9")
 x <- data.table(x = 1:26, y = letters)
 qsave_rand(x, file=myfile)
-xu <- qread(myfile, use_alt_rep = T)
+xu <- qread_rand(myfile, use_alt_rep = T)
 data.table::setnames(xu, 1, "a")
 stopifnot(identical(c("a", "y"), colnames(xu)))
 data.table::setnames(xu, 2, "b")
 stopifnot(identical(c("a", "b"), colnames(xu)))
+
+print("github.com/traversc/qs/issues/23")
+for(i in 1:10) {
+  z <- data.table(x=nanotime(runif(1e6)*1e18))
+  qsave_rand(z, file=myfile)
+  zu <- qread_rand(myfile)
+  print(zu$x[1])
+  stopifnot(identical(z$x, zu$x))
+}
+rm(z, zu)
+gc()
+
 
 # large S4 objects
 # https://github.com/traversc/qs/issues/14

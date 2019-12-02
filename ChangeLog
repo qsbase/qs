@@ -1,4 +1,4 @@
-Version 0.20.1 (2019-10-27)
+Version 0.20.1 (2019-12-1)
    * More efficient serialization of S4 objects, environments and other complex types (DOTSXP, PROMSXP, CLOSXP)
    * Better support for S4 objects
       * S4 object flags are now correctly serialized and de-serialized (previously, the flag was ignored)
