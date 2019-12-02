@@ -1,3 +1,9 @@
+Version 0.20.1 (2019-10-27)
+   * More efficient serialization of S4 objects, environments and other complex types (DOTSXP, PROMSXP, CLOSXP)
+   * Better support for S4 objects
+      * S4 object flags are now correctly serialized and de-serialized (previously, the flag was ignored)
+      * S4SXP (non-simple S4 objects with slots) are efficiently serialized, instead of previously relying on R serialization
+
 Version 0.19.1 (2019-9-2)
    * Exposed C++ API for use in other Rcpp packages and Rcpp scripts (https://github.com/traversc/qs/issues/18)
 

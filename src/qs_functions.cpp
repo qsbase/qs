@@ -67,35 +67,35 @@ double c_qsave(SEXP const x, const std::string & file, const std::string & prese
   if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
     ZSTD_streamWrite<std::ofstream> sw(myFile, qm);
     CompressBufferStream<ZSTD_streamWrite<std::ofstream>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     sw.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
     clength = sw.bytes_written;
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
     uncompressed_streamWrite<std::ofstream> sw(myFile, qm);
     CompressBufferStream<uncompressed_streamWrite<std::ofstream>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
     clength = sw.bytes_written;
   } else {
     if(nthreads <= 1) {
       if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
         CompressBuffer<std::ofstream, zstd_compress_env> vbuf(myFile, qm);
-        vbuf.pushObj(x);
+        writeObject(&vbuf, x);
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
         clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
         CompressBuffer<std::ofstream, lz4_compress_env> vbuf(myFile, qm);
-        vbuf.pushObj(x);
+        writeObject(&vbuf, x);
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
         clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
         CompressBuffer<std::ofstream, lz4hc_compress_env> vbuf(myFile, qm);
-        vbuf.pushObj(x);
+        writeObject(&vbuf, x);
         vbuf.flush();
         // std::cout << vbuf.xenv.digest() << std::endl;
         if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
@@ -106,21 +106,21 @@ double c_qsave(SEXP const x, const std::string & file, const std::string & prese
     } else {
       if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
         CompressBuffer_MT<zstd_compress_env> vbuf(&myFile, qm, nthreads);
-        vbuf.pushObj(x);
+        writeObject(&vbuf, x);
         vbuf.flush();
         vbuf.ctc.finish();
         if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
         clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
         CompressBuffer_MT<lz4_compress_env> vbuf(&myFile, qm, nthreads);
-        vbuf.pushObj(x);
+        writeObject(&vbuf, x);
         vbuf.flush();
         vbuf.ctc.finish();
         if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
         clength = vbuf.number_of_blocks;
       } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
         CompressBuffer_MT<lz4hc_compress_env> vbuf(&myFile, qm, nthreads);
-        vbuf.pushObj(x);
+        writeObject(&vbuf, x);
         vbuf.flush();
         vbuf.ctc.finish();
         if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
@@ -146,27 +146,27 @@ double c_qsave_fd(SEXP const x, const int fd, const std::string & preset, const 
   if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
     ZSTD_streamWrite<fd_wrapper> sw(myFile, qm);
     CompressBufferStream<ZSTD_streamWrite<fd_wrapper>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     sw.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
     uncompressed_streamWrite<fd_wrapper> sw(myFile, qm);
     CompressBufferStream<uncompressed_streamWrite<fd_wrapper>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
     CompressBuffer<fd_wrapper, zstd_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
     CompressBuffer<fd_wrapper, lz4_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
     CompressBuffer<fd_wrapper, lz4hc_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
   } else {
@@ -188,27 +188,27 @@ double c_qsave_handle(SEXP const x, SEXP const handle, const std::string & prese
   if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
     ZSTD_streamWrite<handle_wrapper> sw(myFile, qm);
     CompressBufferStream<ZSTD_streamWrite<handle_wrapper>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     sw.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
     uncompressed_streamWrite<handle_wrapper> sw(myFile, qm);
     CompressBufferStream<uncompressed_streamWrite<handle_wrapper>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
     CompressBuffer<handle_wrapper, zstd_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
     CompressBuffer<handle_wrapper, lz4_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
     CompressBuffer<handle_wrapper, lz4hc_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
   } else {
@@ -232,31 +232,31 @@ RawVector c_qserialize(SEXP const x, const std::string & preset, const std::stri
   if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd_stream)) {
     ZSTD_streamWrite<vec_wrapper> sw(myFile, qm);
     CompressBufferStream<ZSTD_streamWrite<vec_wrapper>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     sw.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
     clength = sw.bytes_written;
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::uncompressed)) {
     uncompressed_streamWrite<vec_wrapper> sw(myFile, qm);
     CompressBufferStream<uncompressed_streamWrite<vec_wrapper>> vbuf(sw, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     if(qm.check_hash) writeSize4(myFile, vbuf.sobj.xenv.digest());
     clength = sw.bytes_written;
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::zstd)) {
     CompressBuffer<vec_wrapper, zstd_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
     clength = vbuf.number_of_blocks;
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4)) {
     CompressBuffer<vec_wrapper, lz4_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
     clength = vbuf.number_of_blocks;
   } else if(qm.compress_algorithm == static_cast<unsigned char>(compalg::lz4hc)) {
     CompressBuffer<vec_wrapper, lz4hc_compress_env> vbuf(myFile, qm);
-    vbuf.pushObj(x);
+    writeObject(&vbuf, x);
     vbuf.flush();
     if(qm.check_hash) writeSize4(myFile, vbuf.xenv.digest());
     clength = vbuf.number_of_blocks;
@@ -279,25 +279,25 @@ SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict
   if(qm.compress_algorithm == 3) { // zstd_stream
     ZSTD_streamRead<std::ifstream> sr(myFile, qm);
     Data_Context_Stream<ZSTD_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 4) { // uncompressed
     uncompressed_streamRead<std::ifstream> sr(myFile, qm);
     Data_Context_Stream<uncompressed_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else {
     if(nthreads <= 1 || qm.clength == 0) {
       if(qm.compress_algorithm == 0) {
         Data_Context<std::ifstream, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
-        SEXP ret = PROTECT(dc.processBlock()); pt++;
+        SEXP ret = PROTECT(processBlock(&dc)); pt++;
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context<std::ifstream, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
-        SEXP ret = PROTECT(dc.processBlock()); pt++;
+        SEXP ret = PROTECT(processBlock(&dc)); pt++;
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
         return ret;
       } else {
@@ -306,13 +306,13 @@ SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict
     } else {
       if(qm.compress_algorithm == 0) {
         Data_Context_MT<zstd_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
-        SEXP ret = PROTECT(dc.processBlock()); pt++;
+        SEXP ret = PROTECT(processBlock(&dc)); pt++;
         dc.dtc.finish();
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
-        SEXP ret = PROTECT(dc.processBlock()); pt++;
+        SEXP ret = PROTECT(processBlock(&dc)); pt++;
         dc.dtc.finish();
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
         return ret;
@@ -331,23 +331,23 @@ SEXP c_qread_fd(const int fd, const bool use_alt_rep, const bool strict) {
   if(qm.compress_algorithm == 3) { // zstd_stream
     ZSTD_streamRead<fd_wrapper> sr(myFile, qm);
     Data_Context_Stream<ZSTD_streamRead<fd_wrapper>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 4) { // uncompressed
     uncompressed_streamRead<fd_wrapper> sr(myFile, qm);
     Data_Context_Stream<uncompressed_streamRead<fd_wrapper>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 0) {
     Data_Context<fd_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     Data_Context<fd_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else {
@@ -365,23 +365,23 @@ SEXP c_qread_handle(SEXP const handle, const bool use_alt_rep, const bool strict
   if(qm.compress_algorithm == 3) { // zstd_stream
     ZSTD_streamRead<handle_wrapper> sr(myFile, qm);
     Data_Context_Stream<ZSTD_streamRead<handle_wrapper>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 4) { // uncompressed
     uncompressed_streamRead<handle_wrapper> sr(myFile, qm);
     Data_Context_Stream<uncompressed_streamRead<handle_wrapper>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 0) {
     Data_Context<handle_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     Data_Context<handle_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else {
@@ -401,23 +401,23 @@ SEXP c_qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep
   if(qm.compress_algorithm == 3) { // zstd_stream
     ZSTD_streamRead<mem_wrapper> sr(myFile, qm);
     Data_Context_Stream<ZSTD_streamRead<mem_wrapper>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 4) { // uncompressed
     uncompressed_streamRead<mem_wrapper> sr(myFile, qm);
     Data_Context_Stream<uncompressed_streamRead<mem_wrapper>> dc(sr, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 0) {
     Data_Context<mem_wrapper, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
     Data_Context<mem_wrapper, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
-    SEXP ret = PROTECT(dc.processBlock()); pt++;
+    SEXP ret = PROTECT(processBlock(&dc)); pt++;
     validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
     return ret;
   } else {
@@ -445,7 +445,7 @@ SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
 //   writeSizeToCon8(con, 0); // this is just zero, we can't seek back to beginning of stream
 //   fd_streamWrite sw(con, qm);
 //   CompressBufferStream<fd_streamWrite> vbuf(sw, qm);
-//   vbuf.pushObj(x);
+//   writeObject(&vbuf, x);
 //   if(qm.check_hash) writeSizeToCon4(con, vbuf.sobj.xenv.digest());
 // }
 
@@ -460,7 +460,7 @@ SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
 //   readSizeFromCon8(con); // zero since it's a stream
 //   fd_streamRead sr(con, qm);
 //   Data_Context_Stream<fd_streamRead> dc(sr, qm, use_alt_rep);
-//   SEXP ret = PROTECT(dc.processBlock()); pt++;
+//   SEXP ret = PROTECT(processBlock(&dc)); pt++;
 //   sr.validate_hash(strict);
 //   return ret;
 // }
@@ -928,5 +928,7 @@ bool closeWinMapView(SEXP const pointer) {
 // }
 //   BrotliDecoderDestroyInstance(state);
 //   return retdata;
+// }
+// }eturn retdata;
 // }
 // }

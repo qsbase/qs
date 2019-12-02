@@ -18,7 +18,7 @@ build:
 	chmod 755 cleanup
 	chmod 755 configure
 	find src/ -type f -exec chmod 644 {} \;
-	chmod 644 ChangeLog DESCRIPTION Makefile NAMESPACE README.md 
+	chmod 644 ChangeLog DESCRIPTION Makefile NAMESPACE README.md
 	./configure
 	./cleanup
 	Rscript -e "library(Rcpp); compileAttributes('.');"
@@ -33,7 +33,7 @@ install:
 	chmod 755 cleanup
 	chmod 755 configure
 	find src/ -type f -exec chmod 644 {} \;
-	chmod 644 ChangeLog DESCRIPTION Makefile NAMESPACE README.md 
+	chmod 644 ChangeLog DESCRIPTION Makefile NAMESPACE README.md
 	./configure
 	./cleanup
 	Rscript -e "library(Rcpp); compileAttributes('.');"
@@ -48,12 +48,15 @@ vignette:
 	Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_format='all')"
 	mv vignettes/vignette.md README.md
 	sed -r -i 's/\((.+)\.png/\(vignettes\/\1\.png/' README.md
-	
+
 test:
 	Rscript tests/correctness_testing.R memory
 	Rscript tests/correctness_testing.R fd
 	Rscript tests/correctness_testing.R filestream
 	Rscript tests/regression_testing.R
-	
+
+testext:
+	Rscript tests/correctness_testing_extended.R
+
 bench:
 	Rscript tests/benchmark_testing.R

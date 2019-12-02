@@ -5,7 +5,9 @@ if(F) {
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.19.1.tar.gz", "qs191") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  
   
   # Earlier version cannot read zstd_stream from 0.17.1+ due to additional checksum at end of file
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions
@@ -18,6 +20,7 @@ if(F) {
   library(qs161)
   library(qs173)
   library(qs183) # v 0.18.3
+  library(qs191) # v 0.18.3
   library(qs) # v 0.19.1
 }
 
@@ -80,27 +83,34 @@ qs191_zstd_stream_save <- function(x) qs::qsave(x, file, preset = "custom", algo
 qs191_zstd_stream_save_nohash <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream", check_hash = F)
 qs191_no_shuffle <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd", shuffle_control = 0)
 
+print("qs12 save"); test_compatability(qs12_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs131 save"); test_compatability(qs131_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs141 lz4 save"); test_compatability(qs141_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs141 zstd save"); test_compatability(qs141_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs151 lz4 save"); test_compatability(qs151_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs151 zstd save"); test_compatability(qs151_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs161 lz4 save"); test_compatability(qs161_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs161 zstd save"); test_compatability(qs161_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
 
-print("qs12 save"); test_compatability(qs12_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs131 save"); test_compatability(qs131_save, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs141 lz4 save"); test_compatability(qs141_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs141 zstd save"); test_compatability(qs141_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs151 lz4 save"); test_compatability(qs151_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs151 zstd save"); test_compatability(qs151_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs161 lz4 save"); test_compatability(qs161_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs161 zstd save"); test_compatability(qs161_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
+print("qs161 zstd stream save"); test_compatability(qs161_zstd_stream_save, list(qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs173 lz4 save"); test_compatability(qs173_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs173 zstd save"); test_compatability(qs173_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs173 zstd stream save"); test_compatability(qs173_zstd_stream_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs173 zstd stream save no hash"); test_compatability(qs173_zstd_stream_save_nohash, list(qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
+print("qs173 no shuffle save"); test_compatability(qs173_no_shuffle, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs191::qread, qs::qread))
 
-print("qs161 zstd stream save"); test_compatability(qs161_zstd_stream_save, list(qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs173 lz4 save"); test_compatability(qs173_lz4_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs173 zstd save"); test_compatability(qs173_zstd_save, list(qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs173 zstd stream save"); test_compatability(qs173_zstd_stream_save, list(qs183::qread, qs::qread))
-print("qs173 zstd stream save no hash"); test_compatability(qs173_zstd_stream_save_nohash, list(qs161::qread, qs173::qread, qs183::qread, qs::qread))
-print("qs173 no shuffle save"); test_compatability(qs173_no_shuffle, list(qs12::qread, qs131::qread, qs141::qread, qs151::qread, qs161::qread, qs173::qread, qs183::qread, qs::qread))
+print("qs183 lz4 save"); test_compatability(qs183_lz4_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs183 zstd save"); test_compatability(qs183_zstd_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs183 zstd stream save"); test_compatability(qs183_zstd_stream_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs183 zstd stream save no hash"); test_compatability(qs183_zstd_stream_save_nohash, list(qs183::qread, qs191::qread, qs::qread))
+print("qs183 no shuffle save"); test_compatability(qs183_no_shuffle, list(qs183::qread, qs191::qread, qs::qread))
 
-print("qs183 lz4 save"); test_compatability(qs183_lz4_save, list(qs183::qread, qs::qread))
-print("qs183 zstd save"); test_compatability(qs183_zstd_save, list(qs183::qread, qs::qread))
-print("qs183 zstd stream save"); test_compatability(qs183_zstd_stream_save, list(qs183::qread, qs::qread))
-print("qs183 zstd stream save no hash"); test_compatability(qs183_zstd_stream_save_nohash, list(qs183::qread, qs::qread))
-print("qs183 no shuffle save"); test_compatability(qs183_no_shuffle, list(qs183::qread, qs::qread))
+# restart from 0.20 on -- we don't have to test all the way back in time indefinitely
+
+print("qs191 lz4 save"); test_compatability(qs191_lz4_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs191 zstd save"); test_compatability(qs191_zstd_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs191 zstd stream save"); test_compatability(qs191_zstd_stream_save, list(qs183::qread, qs191::qread, qs::qread))
+print("qs191 zstd stream save no hash"); test_compatability(qs191_zstd_stream_save_nohash, list(qs183::qread, qs191::qread, qs::qread))
+print("qs191 no shuffle save"); test_compatability(qs191_no_shuffle, list(qs183::qread, qs191::qread, qs::qread))
 
 

@@ -42,13 +42,15 @@ https://github.com/traversc/qs
 
 // platform specific headers
 #ifdef _WIN32
-#define TRUE WINTRUE // TRUE is defined in one of these headers as 1; conflicts with #define in R headers
+#define TRUE WINTRUE // TRUE and FALSE is defined in one of these headers as 1 and 0; conflicts with #define in R headers
+#define FALSE WINFALSE
 #include <sys/stat.h> // _S_IWRITE
 #include <Fileapi.h>
 #include <WinDef.h>
 #include <Winbase.h>
 #include <Handleapi.h>
 #undef TRUE
+#undef FALSE
 #else
 #include <sys/mman.h> // mmap
 #endif
@@ -293,6 +295,9 @@ bool is_big_endian();
 inline constexpr unsigned char operator "" _u8(unsigned long long arg) noexcept {
   return static_cast<uint8_t>(arg);
 }
+inline constexpr unsigned char operator "" _u16(unsigned long long arg) noexcept {
+  return static_cast<uint16_t>(arg);
+}
 
 static constexpr uint64_t BLOCKRESERVE = 64ULL;
 static constexpr uint32_t NA_STRING_LENGTH = 4294967295UL; // 2^32-1 -- length used to signify NA value; note maximum string size is defined by `int` in mkCharLen, so this value is safe
@@ -331,6 +336,7 @@ static constexpr uint8_t raw_header_32 = 0x17_u8;
 static constexpr uint8_t raw_header_64 = 0x18_u8;
 
 static constexpr uint8_t null_header = 0x00_u8; 
+static constexpr uint8_t sym_header = 0x1D_u8; 
 
 static constexpr uint8_t character_header_5 = 0xA0_u8; 
 static constexpr uint8_t character_header_8 = 0x11_u8;
@@ -349,18 +355,63 @@ static constexpr uint8_t string_enc_utf8 = 0x40_u8;
 static constexpr uint8_t string_enc_latin1 = 0x80_u8;
 static constexpr uint8_t string_enc_bytes = 0xC0_u8;
 
+static constexpr uint8_t complex_header_32 = 0x15_u8;
+static constexpr uint8_t complex_header_64 = 0x16_u8;
+
 static constexpr uint8_t attribute_header_5 = 0xE0_u8;
 static constexpr uint8_t attribute_header_8 = 0x1E_u8;
 static constexpr uint8_t attribute_header_32 = 0x1F_u8;
 
-static constexpr uint8_t complex_header_32 = 0x15_u8;
-static constexpr uint8_t complex_header_64 = 0x16_u8;
+// static constexpr uint8_t unused1 = 0x1A_u8; // not in use
+// static constexpr uint8_t unused2 = 0x1B_u8; // not in use
 
-static constexpr uint8_t nstype_header_32 = 0x19_u8;
+static constexpr uint8_t nstype_header_32 = 0x19_u8; // other (rare) types of objects are serialized via R_serialize
 static constexpr uint8_t nstype_header_64 = 0x1A_u8;
 
-static const std::set<SEXPTYPE> stypes = {REALSXP, INTSXP, LGLSXP, STRSXP, CHARSXP, NILSXP, VECSXP, CPLXSXP, RAWSXP};
+// since we might run out of headers in 8 bits, use 16 bits
+static constexpr uint8_t extension_header = 0x1C_u8;
 
+// header combined with extension is useful for writing
+static constexpr uint8_t s4_header = 0x01_u8;
+static constexpr uint8_t s4flag_header = 0x02_u8;
+static constexpr uint8_t pairlist_header = 0x03_u8;
+static constexpr uint8_t lang_header = 0x04_u8;
+static constexpr uint8_t clos_header = 0x05_u8;
+static constexpr uint8_t prom_header = 0x06_u8;
+static constexpr uint8_t dot_header = 0x07_u8;
+
+// environment headers
+static constexpr uint8_t unlocked_env_header = 0x08_u8;
+static constexpr uint8_t locked_env_header = 0x09_u8;
+static constexpr uint8_t reference_object_header = 0x10_u8;
+
+// static constexpr std::array<uint8_t,2> s4_header_with_ext {{ extension_header, s4_header }};
+// static constexpr std::array<uint8_t,2> s4flag_header_with_ext {{ extension_header, s4flag_header }};
+// static constexpr std::array<uint8_t,2> pairlist_header_with_ext {{ extension_header, pairlist_header }};
+// static constexpr std::array<uint8_t,2> lang_header_with_ext {{ extension_header, lang_header }};
+// static constexpr std::array<uint8_t,2> clos_header_with_ext {{ extension_header, clos_header }};
+// static constexpr std::array<uint8_t,2> prom_header_with_ext {{ extension_header, prom_header }};
+// static constexpr std::array<uint8_t,2> dot_headerr_with_ext {{ extension_header, dot_header }};
+
+// static constexpr std::array<uint8_t,2> unlocked_env_header_with_ext {{ extension_header, unlocked_env_header }};
+// static constexpr std::array<uint8_t,2> locked_env_header_with_ext {{ extension_header, locked_env_header }}; 
+// static constexpr std::array<uint8_t,2> reference_object_header_with_ext {{ extension_header, reference_object_header }}; 
+
+// can package env or global env etc lock status be changed?  
+// Technically yes, but even R serialization doesn't capture that information
+// They are captured by a special hook and contents are not serialized
+// static constexpr uint8_t package_env_header_32 = 0x06_u8;
+// static constexpr uint16_t package_env_header_with_ext_32 = 0x1C06_u16;
+// static constexpr uint8_t global_env_header = 0x07_u8;
+// static constexpr uint16_t global_env_header_with_ext = 0x1C07_u16;
+// static constexpr uint8_t base_env_header = 0x08_u8;
+// static constexpr uint16_t base_env_header_with_ext = 0x1C08_u16;
+// static constexpr uint8_t empty_env_header = 0x09_u8;
+// static constexpr uint16_t empty_env_header_with_ext = 0x1C09_u16;
+
+enum class qstype {NUMERIC, INTEGER, LOGICAL, CHARACTER, NIL, LIST, COMPLEX, RAW, PAIRLIST, LANG, CLOS, PROM, DOT, SYM,
+                   S4, S4FLAG, LOCKED_ENV, UNLOCKED_ENV, REFERENCE,
+                   ATTRIBUTE, RSERIALIZED};
 
 ///////////////////////////////////////////////////////
 // There are three types of output input streams -- std::ifstream/ofstream, file descriptor, windows handle
@@ -778,18 +829,20 @@ enum class compalg : uint8_t {
   zstd = 0, lz4 = 1, lz4hc = 2, zstd_stream = 3, uncompressed = 4
 };
 // qs reserve header details
-// reserve[0] unused
+// reserve[0] format version (start writing and checking in qs 0.20.1)
 // reserve[1] (low byte) 1 = hash of serialized object written to last 4 bytes of file -- before 16.3, no hash check was performed
 // reserve[1] (high byte) unused
 // reserve[2] (low byte) shuffle control: 0x01 = logical shuffle, 0x02 = integer shuffle, 0x04 = double shuffle
 // reserve[2] (high byte) algorithm: 0x01 = lz4, 0x00 = zstd, 0x02 = "lz4hc", 0x03 = zstd_stream
 // reserve[3] endian: 1 = big endian, 0 = little endian
+static constexpr int CURRENT_FORMAT_VER = 3;
 struct QsMetadata {
   uint64_t clength; // compressed length -- for comparing bytes_read / blocks_read with recorded # ..
   bool check_hash;
   uint8_t endian;
   uint8_t compress_algorithm;
   int compress_level;
+  int format_version;
   bool lgl_shuffle;
   bool int_shuffle;
   bool real_shuffle;
@@ -849,6 +902,7 @@ struct QsMetadata {
     int_shuffle = shuffle_control & 0x02;
     real_shuffle = shuffle_control & 0x04;
     cplx_shuffle = shuffle_control & 0x08;
+    format_version = CURRENT_FORMAT_VER;
   }
   
   // 0x0B0E0A0C
@@ -865,12 +919,13 @@ struct QsMetadata {
              const uint8_t endian,
              const uint8_t compress_algorithm,
              const int compress_level,
+             const int format_version,
              const bool lgl_shuffle,
              const bool int_shuffle,
              const bool real_shuffle,
              const bool cplx_shuffle) : 
     clength(clength), check_hash(check_hash), endian(endian), compress_algorithm(compress_algorithm), 
-    compress_level(compress_level), lgl_shuffle(lgl_shuffle), int_shuffle(int_shuffle), 
+    compress_level(compress_level), format_version(format_version), lgl_shuffle(lgl_shuffle), int_shuffle(int_shuffle), 
     real_shuffle(real_shuffle), cplx_shuffle(cplx_shuffle) {}
   
   // constructor from q_read
@@ -882,11 +937,12 @@ struct QsMetadata {
     if(reserve_bits[0] != 0) {
       std::array<uint8_t,4> reserve_bits2;
       if(!checkMagicNumber(reserve_bits)) throw std::runtime_error("QS format not detected");
-      read_check(myFile, reinterpret_cast<char*>(reserve_bits2.data()),4); // empty reserve bits
+      read_check(myFile, reinterpret_cast<char*>(reserve_bits2.data()),4); // empty reserve bits for now
       read_check(myFile, reinterpret_cast<char*>(reserve_bits.data()),4);
     }
     uint8_t sys_endian = is_big_endian() ? 0x01 : 0x00;
     if(reserve_bits[3] != sys_endian) throw std::runtime_error("Endian of system doesn't match file endian");
+    if(reserve_bits[0] > CURRENT_FORMAT_VER) Rcerr << "File format may be newer; please update qs to latest version";
     uint8_t compress_algorithm = reserve_bits[2] >> 4;
     int compress_level = 1;
     bool lgl_shuffle = reserve_bits[2] & 0x01;
@@ -895,12 +951,14 @@ struct QsMetadata {
     bool cplx_shuffle = reserve_bits[2] & 0x08;
     bool check_hash = reserve_bits[1];
     uint8_t endian = reserve_bits[3];
+    int format_version = reserve_bits[0];
     uint64_t clength = readSize8(myFile);
     return {clength,
             check_hash,
             endian,
             compress_algorithm,
             compress_level,
+            format_version,
             lgl_shuffle,
             int_shuffle,
             real_shuffle,
@@ -913,6 +971,7 @@ struct QsMetadata {
     write_check(myFile, reinterpret_cast<const char*>(magic_bits.data()), 4);
     write_check(myFile, reinterpret_cast<const char*>(empty_bits.data()),4);
     std::array<uint8_t,4> reserve_bits = {0,0,0,0};
+    reserve_bits[0] = static_cast<uint8_t>(format_version);
     reserve_bits[1] = check_hash;
     reserve_bits[2] += compress_algorithm << 4;
     reserve_bits[3] = is_big_endian() ? 0x01 : 0x00;
@@ -967,169 +1026,6 @@ unsigned LZ4_isError_fun(size_t retval) {
   }
 }
 
-
-////////////////////////////////////////////////////////////////
-// common utility functions for serialization
-////////////////////////////////////////////////////////////////
-
-template <class T>
-void writeHeader_common(const SEXPTYPE object_type, const uint64_t length, T * const sobj) {
-  switch(object_type) {
-  case REALSXP:
-    if(length < 32) {
-      sobj->push_pod_noncontiguous( static_cast<uint8_t>(numeric_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&numeric_header_8), 1);
-      sobj->push_pod_contiguous( static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&numeric_header_16), 1);
-      sobj->push_pod_contiguous( static_cast<uint16_t>(length) );
-    } else if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&numeric_header_32), 1);
-      sobj->push_pod_contiguous( static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&numeric_header_64), 1);
-      sobj->push_pod_contiguous(length);
-    }
-    return;
-  case VECSXP:
-    if(length < 32) {
-      sobj->push_pod_noncontiguous( static_cast<uint8_t>(list_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&list_header_8), 1);
-      sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&list_header_16), 1);
-      sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
-    } else if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&list_header_32), 1);
-      sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&list_header_64), 1);
-      sobj->push_pod_contiguous(length);
-    }
-    return;
-  case INTSXP:
-    if(length < 32) {
-      sobj->push_pod_noncontiguous( static_cast<uint8_t>(integer_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&integer_header_8), 1);
-      sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&integer_header_16), 1);
-      sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
-    } else if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&integer_header_32), 1);
-      sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&integer_header_64), 1);
-      sobj->push_pod_contiguous(static_cast<uint64_t>(length) );
-    }
-    return;
-  case LGLSXP:
-    if(length < 32) {
-      sobj->push_pod_noncontiguous( static_cast<uint8_t>(logical_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&logical_header_8), 1);
-      sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&logical_header_16), 1);
-      sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
-    } else if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&logical_header_32), 1);
-      sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&logical_header_64), 1);
-      sobj->push_pod_contiguous(length);
-    }
-    return;
-  case RAWSXP:
-    if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&raw_header_32), 1);
-      sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&raw_header_64), 1);
-      sobj->push_pod_contiguous(length);
-    }
-    return;
-  case STRSXP:
-    if(length < 32) {
-      sobj->push_pod_noncontiguous( static_cast<uint8_t>(character_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&character_header_8), 1);
-      sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&character_header_16), 1);
-      sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
-    } else if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&character_header_32), 1);
-      sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&character_header_64), 1);
-      sobj->push_pod_contiguous(static_cast<uint64_t>(length) );
-    }
-    return;
-  case CPLXSXP:
-    if(length < 4294967296) {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&complex_header_32), 1);
-      sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    } else {
-      sobj->push_noncontiguous(reinterpret_cast<const char * const>(&complex_header_64), 1);
-      sobj->push_pod_contiguous(length);
-    }
-    return;
-  case NILSXP:
-    sobj->push_noncontiguous(reinterpret_cast<const char * const>(&null_header), 1);
-    return;
-  default:
-    throw std::runtime_error("something went wrong writing object header");  // should never reach here
-  }
-}
-template <class T>
-void writeAttributeHeader_common(uint64_t length, T * sobj) {
-  if(length < 32) {
-    sobj->push_pod_noncontiguous( static_cast<uint8_t>(attribute_header_5 | static_cast<uint8_t>(length)) );
-  } else if(length < 256) {
-    sobj->push_noncontiguous(reinterpret_cast<const char * const>(&attribute_header_8), 1);
-    sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-  } else {
-    sobj->push_noncontiguous(reinterpret_cast<const char * const>(&attribute_header_32), 1);
-    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-  }
-}
-
-template <class T>
-void writeStringHeader_common(const uint64_t length, const cetype_t ce_enc, T * const sobj) {
-  uint8_t enc;
-  switch(ce_enc) {
-  case CE_NATIVE:
-    enc = string_enc_native; break;
-  case CE_UTF8:
-    enc = string_enc_utf8; break;
-  case CE_LATIN1:
-    enc = string_enc_latin1; break;
-  case CE_BYTES:
-    enc = string_enc_bytes; break;
-  default:
-    enc = string_enc_native;
-  }
-  if(length < 32) {
-    sobj->push_pod_noncontiguous( static_cast<uint8_t>(string_header_5 | enc | static_cast<uint8_t>(length)) );
-  } else if(length < 256) {
-    sobj->push_pod_noncontiguous( static_cast<uint8_t>(string_header_8 | static_cast<uint8_t>(enc)) );
-    sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-  } else if(length < 65536) {
-    sobj->push_pod_noncontiguous( static_cast<uint8_t>(string_header_16 | static_cast<uint8_t>(enc)) );
-    sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
-  } else {
-    sobj->push_pod_noncontiguous( static_cast<uint8_t>(string_header_32 | static_cast<uint8_t>(enc)) );
-    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-  }
-}
-
-////////////////////////////////////////////////////////////////
-// common utility functions for deserialization
-////////////////////////////////////////////////////////////////
 template <class stream_reader>
 uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint32_t recorded_hash, 
                        const uint32_t computed_hash, const uint64_t computed_length, const bool strict) {
@@ -1186,233 +1082,6 @@ struct Protect_Tracker {
     n++;
   }
 };
-
-inline void readHeader_common(SEXPTYPE & object_type, uint64_t & r_array_len, uint64_t & data_offset, const char * const header) {
-  uint8_t h5 = reinterpret_cast<const uint8_t *>(header)[data_offset] & 0xE0;
-  switch(h5) {
-  case numeric_header_5:
-    r_array_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    object_type = REALSXP;
-    return;
-  case list_header_5:
-    r_array_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    object_type = VECSXP;
-    return;
-  case integer_header_5:
-    r_array_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    object_type = INTSXP;
-    return;
-  case logical_header_5:
-    r_array_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    object_type = LGLSXP;
-    return;
-  case character_header_5:
-    r_array_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    object_type = STRSXP;
-    return;
-  case attribute_header_5:
-    r_array_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    object_type = ANYSXP;
-    return;
-  }
-  uint8_t hd = reinterpret_cast<const uint8_t*>(header)[data_offset];
-  switch(hd) {
-  case numeric_header_8:
-    r_array_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-    data_offset += 2;
-    object_type = REALSXP;
-    return;
-  case numeric_header_16:
-    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
-    data_offset += 3;
-    object_type = REALSXP;
-    return;
-  case numeric_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = REALSXP;
-    return;
-  case numeric_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = REALSXP;
-    return;
-  case list_header_8:
-    r_array_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-    data_offset += 2;
-    object_type = VECSXP;
-    return;
-  case list_header_16:
-    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
-    data_offset += 3;
-    object_type = VECSXP;
-    return;
-  case list_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = VECSXP;
-    return;
-  case list_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = VECSXP;
-    return;
-  case integer_header_8:
-    r_array_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-    data_offset += 2;
-    object_type = INTSXP;
-    return;
-  case integer_header_16:
-    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
-    data_offset += 3;
-    object_type = INTSXP;
-    return;
-  case integer_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = INTSXP;
-    return;
-  case integer_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = INTSXP;
-    return;
-  case logical_header_8:
-    r_array_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-    data_offset += 2;
-    object_type = LGLSXP;
-    return;
-  case logical_header_16:
-    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
-    data_offset += 3;
-    object_type = LGLSXP;
-    return;
-  case logical_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = LGLSXP;
-    return;
-  case logical_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = LGLSXP;
-    return;
-  case raw_header_32:
-    r_array_len = unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = RAWSXP;
-    return;
-  case raw_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = RAWSXP;
-    return;
-  case character_header_8:
-    r_array_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-    data_offset += 2;
-    object_type = STRSXP;
-    return;
-  case character_header_16:
-    r_array_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
-    data_offset += 3;
-    object_type = STRSXP;
-    return;
-  case character_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = STRSXP;
-    return;
-  case character_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = STRSXP;
-    return;
-  case complex_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = CPLXSXP;
-    return;
-  case complex_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = CPLXSXP;
-    return;
-  case null_header:
-    r_array_len =  0;
-    data_offset += 1;
-    object_type = NILSXP;
-    return;
-  case attribute_header_8:
-    r_array_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-    data_offset += 2;
-    object_type = ANYSXP;
-    return;
-  case attribute_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = ANYSXP;
-    return;
-  case nstype_header_32:
-    r_array_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-    data_offset += 5;
-    object_type = S4SXP;
-    return;
-  case nstype_header_64:
-    r_array_len =  unaligned_cast<uint64_t>(header, data_offset+1) ;
-    data_offset += 9;
-    object_type = S4SXP;
-    return;
-  }
-  // additional types
-  throw std::runtime_error("something went wrong (reading object header)");
-}
-
-inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, uint64_t & data_offset, const char * const header) {
-  uint8_t enc = reinterpret_cast<const uint8_t*>(header)[data_offset] & 0xC0;
-  switch(enc) {
-  case string_enc_native:
-    ce_enc = CE_NATIVE; break;
-  case string_enc_utf8:
-    ce_enc = CE_UTF8; break;
-  case string_enc_latin1:
-    ce_enc = CE_LATIN1; break;
-  case string_enc_bytes:
-    ce_enc = CE_BYTES; break;
-  }
-  
-  if((reinterpret_cast<const uint8_t*>(header)[data_offset] & 0x20) == string_header_5) {
-    r_string_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
-    data_offset += 1;
-    return;
-  } else {
-    uint8_t hd = reinterpret_cast<const uint8_t*>(header)[data_offset] & 0x1F;
-    switch(hd) {
-    case string_header_8:
-      r_string_len =  *reinterpret_cast<const uint8_t*>(header+data_offset+1) ;
-      data_offset += 2;
-      return;
-    case string_header_16:
-      r_string_len = unaligned_cast<uint16_t>(header, data_offset+1) ;
-      data_offset += 3;
-      return;
-    case string_header_32:
-      r_string_len =  unaligned_cast<uint32_t>(header, data_offset+1) ;
-      data_offset += 5;
-      return;
-    case string_header_NA:
-      r_string_len = NA_STRING_LENGTH;
-      data_offset += 1;
-      return;
-    }
-  } 
-  throw std::runtime_error("something went wrong (reading string header)");
-}
 
 ////////////////////////////////////////////////////////////////
 // Compress and decompress templates
@@ -1579,13 +1248,14 @@ void dumpMetadata(List & output, const QsMetadata & qm) {
     output["compress_algorithm"] = "unknown";
     break;
   }
-  output["compress_level"] = qm.compress_level;
+  // output["compress_level"] = qm.compress_level; // decompress doesn't know compression level
   output["lgl_shuffle"] = qm.lgl_shuffle;
   output["int_shuffle"] = qm.int_shuffle;
   output["real_shuffle"] = qm.real_shuffle;
   output["cplx_shuffle"] = qm.cplx_shuffle;
   output["endian"] = static_cast<int>(qm.endian);
   output["check_hash"] = qm.check_hash;
+  output["format_version"] = qm.format_version;
 }
 
 // simple decompress stream context
@@ -1628,5 +1298,44 @@ struct zstd_decompress_stream_simple {
     ZSTD_freeDStream(zds);
   }
 };
+
+// from serialize.c // memory.c -- unclear what this does, but might be necessary.  Not available in R 3.6
+/* 
+void R_expand_binding_value(SEXP b)
+{
+#if BOXED_BINDING_CELLS
+    SET_BNDCELL_TAG(b, 0);
+#else
+    int typetag = BNDCELL_TAG(b);
+    if (typetag) {
+	union {
+	    SEXP sxpval;
+	    double dval;
+	    int ival;
+	} vv;
+	SEXP val;
+	vv.sxpval = CAR0(b);
+	switch (typetag) {
+	case REALSXP:
+	    val = ScalarReal(vv.dval);
+	    SET_BNDCELL(b, val);
+	    INCREMENT_NAMED(val);
+	    break;
+	case INTSXP:
+	    val = ScalarInteger(vv.ival);
+	    SET_BNDCELL(b, val);
+	    INCREMENT_NAMED(val);
+	    break;
+	case LGLSXP:
+	    val = ScalarLogical(vv.ival);
+	    SET_BNDCELL(b, val);
+	    INCREMENT_NAMED(val);
+	    break;
+	}
+    }
+#endif
+}
+*/
+
 
 #endif

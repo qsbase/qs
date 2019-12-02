@@ -5,7 +5,8 @@ library(qs151)
 library(qs161)
 library(qs173)
 library(qs183)
-library(qs) #  # v 0.19.1
+library(qs191)
+library(qs)  #  # v 0.20.1
 library(dplyr)
 
 
@@ -23,7 +24,7 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-grid <- expand.grid(ver = c(14:19), data = c("list", "dataframe"), 
+grid <- expand.grid(ver = c(14:20), data = c("list", "dataframe"), 
                     preset = c("uncompressed", "fast", "balanced", "high", "archive"), 
                     reps=1:10, stringsAsFactors = F) %>% sample_frac(1)
 
@@ -52,6 +53,9 @@ for(i in 1:nrow(grid)) {
     save <- function(...) qs183::qsave(..., check_hash = F)
     read <- qs183::qread
   } else if(grid$ver[i] == 19) {
+    save <- function(...) qs191::qsave(..., check_hash = F)
+    read <- qs::qread
+  } else if(grid$ver[i] == 20) {
     save <- function(...) qs::qsave(..., check_hash = F)
     read <- qs::qread
   }

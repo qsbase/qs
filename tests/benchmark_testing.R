@@ -27,6 +27,7 @@ grid <- expand.grid(data = c("list", "dataframe"),
 write_time <- numeric(nrow(grid))
 read_time <- numeric(nrow(grid))
 for(i in 1:nrow(grid)) {
+  print(i)
   if(grid$data[i] == "list") {
     x <- listGen()
   } else if(grid$data[i] == "dataframe") {

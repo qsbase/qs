@@ -1,0 +1,180 @@
+suppressMessages(library(Rcpp))
+suppressMessages(library(dplyr))
+suppressMessages(library(data.table))
+suppressMessages(library(qs))
+suppressMessages(library(ggplot2))
+suppressMessages(library(sf))
+options(warn=1)
+
+if (Sys.info()[['sysname']] != "Windows") {
+  myfile <- "~/N/temp/ctest.z"
+} else {
+  myfile <- "N:/temp/ctest.z"
+}
+
+printCarriage <- function(x) {
+  cat(x, "\r")
+}
+
+# since we can't directly test identity of complex objects, at least check objects print out the same
+ggplot_bin <- function(g1) {
+  png(myfile, width=500, height=500)
+  plot(g1)
+  dev.off()
+  readBin(myfile, n=1e9, what="raw")
+}
+
+# we can test out environments with no special flags
+serialize_identical <- function(x1, x2) {
+  identical(serialize(x1, NULL), serialize(x2, NULL))
+}
+################################################################################################
+
+qsave_rand <- function(x, file) {
+  alg <- sample(c("lz4", "zstd", "lz4hc", "zstd_stream", "uncompressed"), 1)
+  nt <- sample(5,1)
+  sc <- sample(0:15,1)
+  cl <- sample(10,1)
+  ch <- sample(c(T,F),1)
+  # cat(alg, nt, sc, cl, ch, "\n")
+  qsave(x, file=file, preset = "custom", algorithm = alg,
+      compress_level=cl, shuffle_control = sc, nthreads=nt, check_hash = ch)
+}
+
+qread_rand <- function(file) {
+  ar <- sample(c(T,F),1)
+  nt <- sample(5,1)
+  # cat(ar, nt, "\n")
+  x <- qread(file, use_alt_rep=ar, nthreads=nt, strict=T)
+  return(x)
+}
+
+################################################################################################
+
+# check parent env recursion
+print("check recursive environments, promises and closures")
+for(i in 1:10) {
+  l1 <- round(exp(runif(1,0,log(1e6))))
+  l2 <- round(exp(runif(1,0,log(1e7))))
+  x0 <- new.env(parent = baseenv())
+  x0$data <- rnorm(l1)
+  x1 <- new.env(parent = x0)
+  x1$a <- 1
+  x1$f <- function() return(1)
+  x1$data <- runif(l2)
+  environment(x1$f) <- x1
+  parent.env(x0) <- x1
+  delayedAssign("v", c(not_a_variable, runif(1e100)), assign.env=x0, eval.env=x1)
+  delayedAssign("w", c(v, rnorm(1e100)), assign.env=x1, eval.env=x0)
+  qsave_rand(x1, myfile)
+  x1r <- qread_rand(myfile)
+  stopifnot(serialize_identical(x1, x1r))
+  print("ok")
+  gc()
+}
+rm(l1, l2, x0, x1, x1r)
+gc()
+
+print("mtcars ggplot example")
+for(i in 1:10) {
+  df <- mtcars %>% sample_n(1e5, replace=T)
+  vars <- c("hp", "drat", "wt", "qsec")
+  var <- sample(vars, 1)
+  g1 <- ggplot(df, aes(x = mpg, y = !!as.symbol(var), color = factor(cyl))) + 
+    geom_smooth(formula = y ~ x + x^2 + x^3, method="lm") + 
+    geom_point(data=df %>% sample_n(1000)) + 
+    scale_color_viridis_d()
+  qsave_rand(g1, myfile)
+  g2 <- qread_rand(myfile)
+  gb1 <- ggplot_bin(g1)
+  gb2 <- ggplot_bin(g2)
+  stopifnot(identical(gb1, gb2))
+  print("ok")
+  gc()
+}
+rm(df, g1, g2, gb1, gb2)
+gc()
+
+print("starmap ggplot")
+g1 <- ggplot(starnames, 
+       aes(x = `RA(J2000)`, y=`Dec(J2000)`, 
+           color = `Const.`)) + geom_point(show.legend=F) + 
+  geom_text(aes(label = `IAU Name`), show.legend=F)
+for(i in 1:10) {
+  qsave_rand(g1, myfile)
+  g2 <- qread_rand(myfile)
+  gb1 <- ggplot_bin(g1)
+  gb2 <- ggplot_bin(g2)
+  stopifnot(identical(gb1, gb2))
+  print("ok")
+  gc()
+}
+rm(g1, g2, gb1, gb2)
+gc()
+
+# test 1: alt rep implementation
+# https://github.com/traversc/qs/issues/9
+print("github.com/traversc/qs/issues/9")
+x <- data.table(x = 1:26, y = letters)
+qsave_rand(x, file=myfile)
+xu <- qread(myfile, use_alt_rep = T)
+data.table::setnames(xu, 1, "a")
+stopifnot(identical(c("a", "y"), colnames(xu)))
+data.table::setnames(xu, 2, "b")
+stopifnot(identical(c("a", "b"), colnames(xu)))
+
+# large S4 objects
+# https://github.com/traversc/qs/issues/14
+# Data is private, so not uploaded online
+print("github.com/traversc/qs/issues/14")
+if (Sys.info()[['sysname']] != "Windows") {
+  r <- readRDS("~/N/issue_14_data.rds")
+} else {
+  r <- readRDS("N:/issue_14_data.rds")
+}
+qsave(r, myfile)
+ru <- qread(myfile)
+stopifnot(identical(r, ru))
+rm(r, ru)
+gc()
+
+# for(i in 1:5) {
+#   qsave_rand(r, myfile)
+#   ru <- qread_rand(myfile)
+#   stopifnot(identical(r, ru))
+#   print("ok")
+#   gc()
+# }
+# rm(r, ru)
+# gc()
+
+# Efficient serialization of ggplot objects
+# https://github.com/traversc/qs/issues/21
+# Data is private, so not uploaded online
+print("github.com/traversc/qs/issues/21")
+print("reading in initial data")
+if (Sys.info()[['sysname']] != "Windows") {
+  g1 <- readRDS("~/N/issue_21_data.rds")
+} else {
+  g1 <- readRDS("N:/issue_21_data.rds")
+}
+print("plotting data")
+gb1 <- ggplot_bin(g1)
+print("qs serialization")
+qsave(g1, myfile)
+print("qs deserialization")
+g2 <- qread(myfile)
+print("plotting data")
+gb2 <- ggplot_bin(g2)
+stopifnot(identical(gb1, gb2))
+rm(g1, gb1, g2, gb2)
+gc()
+# for(i in 1:5) {
+#   qsave_rand(g1, myfile)
+#   g2 <- qread_rand(myfile)
+#   gb2 <- ggplot_bin(g2)
+#   stopifnot(identical(gb1, gb2))
+#   print("ok")
+#   rm(g2, gb2)
+#   gc()
+# }

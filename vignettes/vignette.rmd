@@ -65,8 +65,9 @@ The table below compares the features of different serialization approaches in R
 
 * For character vectors, qs also has the option of using the new alt-rep system (R version 3.5+) to quickly read in string data.
 * For numerical data (numeric, integer, logical and complex vectors) `qs` implements byte shuffling filters (adopted from the Blosc meta-compression library).  These filters utilize extended CPU instruction sets (either SSE2 or AVX2).
+* Starting from version 0.20.1, `qs` efficiently serializes S4 objects, environments, and other complex objects.  
 
-Both of these features have the possibility of additionally increasing performance by orders of magnitude, for certain types of data.  See sections below for more details.  
+These features have the possibility of additionally increasing performance by orders of magnitude, for certain types of data.  See sections below for more details.  
 
 ## Summary Benchmarks
 

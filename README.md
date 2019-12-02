@@ -76,8 +76,10 @@ approaches in R.
     `qs` implements byte shuffling filters (adopted from the Blosc
     meta-compression library). These filters utilize extended CPU
     instruction sets (either SSE2 or AVX2).
+  - Starting from version 0.20.1, `qs` efficiently serializes S4
+    objects, environments, and other complex objects.
 
-Both of these features have the possibility of additionally increasing
+These features have the possibility of additionally increasing
 performance by orders of magnitude, for certain types of data. See
 sections below for more details.
 

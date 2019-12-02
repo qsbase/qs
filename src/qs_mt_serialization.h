@@ -19,6 +19,7 @@
  */
 
 #include "qs_common.h"
+#include "qs_serialize_common.h"
 
 #include <iostream>
 #include <sstream>
@@ -206,6 +207,7 @@ struct CompressBuffer_MT {
   std::ofstream * myFile;
   xxhash_env xenv;
   Compress_Thread_Context<compress_env> ctc;
+  CountToObjectMap object_ref_hash;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
   // shuffle_endblock is tracking when shuffleblock is finished processing
@@ -276,6 +278,13 @@ struct CompressBuffer_MT {
   inline void push_pod_noncontiguous(const POD pod) {
     push_noncontiguous(reinterpret_cast<const char * const>(&pod), sizeof(pod));
   }
+  template<typename POD>
+  inline void push_pod_noncontiguous(const POD pod1, const POD pod2) {
+    std::array<char, sizeof(POD)*2> pdata = {};
+    std::memcpy(pdata.data(), reinterpret_cast<const char*>(&pod1), sizeof(POD));
+    std::memcpy(pdata.data() + sizeof(POD), reinterpret_cast<const char*>(&pod2), sizeof(POD));
+    push_noncontiguous(pdata.data(), sizeof(POD)*2);
+  }
   void shuffle_push(const char * const data, const uint64_t len, const uint64_t bytesoftype) {
     if(len > MIN_SHUFFLE_ELEMENTS) {
       // blocks_written = number of blocks file written
@@ -293,100 +302,6 @@ struct CompressBuffer_MT {
       push_contiguous(reinterpret_cast<char*>(shuffleblock.data()), len);
     } else if(len > 0) {
       push_contiguous(data, len);
-    }
-  }
-  
-  void pushObj(SEXP const x, bool attributes_processed = false) {
-    if(!attributes_processed && stypes.find(TYPEOF(x)) != stypes.end()) {
-      std::vector<SEXP> anames;
-      std::vector<SEXP> attrs;
-      SEXP alist = ATTRIB(x);
-      while(alist != R_NilValue) {
-        anames.push_back(PRINTNAME(TAG(alist)));
-        attrs.push_back(CAR(alist));
-        alist = CDR(alist);
-      }
-      if(anames.size() != 0) {
-        writeAttributeHeader_common(anames.size(), this);
-        pushObj(x, true);
-        for(uint64_t i=0; i<anames.size(); i++) {
-          uint64_t alen = strlen(CHAR(anames[i]));
-          writeStringHeader_common(alen,CE_NATIVE, this);
-          push_contiguous(CHAR(anames[i]), alen);
-          pushObj(attrs[i]);
-        }
-      } else {
-        pushObj(x, true);
-      }
-    } else if(TYPEOF(x) == STRSXP) {
-      uint64_t dl = Rf_xlength(x);
-      writeHeader_common(STRSXP, dl, this);
-      for(uint64_t i=0; i<dl; i++) {
-        SEXP xi = STRING_ELT(x, i);
-        if(xi == NA_STRING) {
-          push_noncontiguous(reinterpret_cast<char*>(const_cast<uint8_t*>(&string_header_NA)), 1);
-        } else {
-          uint64_t dl = LENGTH(xi);
-          writeStringHeader_common(dl, Rf_getCharCE(xi), this);
-          push_contiguous(CHAR(xi), dl);
-        }
-      }
-    } else if(stypes.find(TYPEOF(x)) != stypes.end()) {
-      uint64_t dl = Rf_xlength(x);
-      writeHeader_common(TYPEOF(x), dl, this);
-      if(TYPEOF(x) == VECSXP) {
-        for(uint64_t i=0; i<dl; i++) {
-          SEXP xi = VECTOR_ELT(x, i);
-          pushObj(xi);
-        }
-      } else {
-        switch(TYPEOF(x)) {
-        case REALSXP:
-          if(qm.real_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(REAL(x)), dl*8, 8);
-          } else {
-            push_contiguous(reinterpret_cast<char*>(REAL(x)), dl*8); 
-          }
-          break;
-        case INTSXP:
-          if(qm.int_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(INTEGER(x)), dl*4, 4); break;
-          } else {
-            push_contiguous(reinterpret_cast<char*>(INTEGER(x)), dl*4); 
-          }
-          break;
-        case LGLSXP:
-          if(qm.lgl_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(LOGICAL(x)), dl*4, 4); break;
-          } else {
-            push_contiguous(reinterpret_cast<char*>(LOGICAL(x)), dl*4); 
-          }
-          break;
-        case RAWSXP:
-          push_contiguous(reinterpret_cast<char*>(RAW(x)), dl); 
-          break;
-        case CPLXSXP:
-          if(qm.cplx_shuffle) {
-            shuffle_push(reinterpret_cast<char*>(COMPLEX(x)), dl*16, 8); break;
-          } else {
-            push_contiguous(reinterpret_cast<char*>(COMPLEX(x)), dl*16); 
-          }
-          break;
-        case NILSXP:
-          break;
-        }
-      }
-    } else { // other non-supported SEXPTYPEs use the built in R serialization method
-      SEXP xserialized = serializeToRaw(x);
-      uint64_t xs_size = Rf_xlength(xserialized);
-      if(xs_size < 4294967296) {
-        push_noncontiguous(reinterpret_cast<char*>(const_cast<uint8_t*>(&nstype_header_32)), 1);
-        push_pod_contiguous(static_cast<uint32_t>(xs_size) );
-      } else {
-        push_noncontiguous(reinterpret_cast<char*>(const_cast<uint8_t*>(&nstype_header_64)), 1);
-        push_pod_contiguous(static_cast<uint64_t>(xs_size) );
-      }
-      push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);
     }
   }
 };
