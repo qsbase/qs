@@ -123,11 +123,11 @@ struct CompressBufferStream {
   inline void push_pod_noncontiguous(const POD pod) {
     sobj.push(reinterpret_cast<const char * const>(&pod), sizeof(pod));
   }
-    template<typename POD>
-  inline void push_pod_noncontiguous(const POD pod1, const POD pod2) {
-    sobj.push(reinterpret_cast<const char * const>(&pod1), sizeof(pod1)); 
-    sobj.push(reinterpret_cast<const char * const>(&pod2), sizeof(pod2));
-  }
+  // template<typename POD>
+  // inline void push_pod_noncontiguous(const POD pod1, const POD pod2) {
+  //   sobj.push(reinterpret_cast<const char * const>(&pod1), sizeof(pod1)); 
+  //   sobj.push(reinterpret_cast<const char * const>(&pod2), sizeof(pod2));
+  // }
   void shuffle_push(const char * const data, const uint64_t len, const uint64_t bytesoftype) {
     if(len > MIN_SHUFFLE_ELEMENTS) {
       if(len > shuffleblock.size()) shuffleblock.resize(len);

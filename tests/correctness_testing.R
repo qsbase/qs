@@ -25,6 +25,16 @@ cppFunction("CharacterVector splitstr(std::string x, std::vector<double> cuts){
             return ret;
             }")
 
+cppFunction('
+  int setlev(SEXP x, int i) {
+    return SETLEVELS(x,i);
+  }')
+
+cppFunction('
+void setobj(SEXP x, int i) {
+  return SET_OBJECT(x, i);
+}')
+
 # https://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
 cppFunction('List generateList(std::vector<int> list_elements){
             auto randchar = []() -> char
@@ -67,8 +77,17 @@ set_obj_size <- function(x) {
   # printCarriage(get_obj_size());
   return(get_obj_size());
 }
-random_object_generator <- function(N) { # additional input: global obj_size, max_size
-  ret <- as.list(1:N)
+random_object_generator <- function(N, with_envs = FALSE) { # additional input: global obj_size, max_size
+  if(sample(3,1) == 1) {
+    ret <- as.list(1:N)
+  } else if(sample(2,1) == 1) {
+    ret <- as.pairlist(1:N)
+  } else {
+    ret <- as.pairlist(1:N)
+    setlev(ret, sample(2L^12L,1L) - 1L)
+    setobj(ret,1L)
+  }
+
   for(i in 1:N) {
     if(get_obj_size() > get("max_size", envir=globalenv())) break;
     otype <- sample(12, size=1)
@@ -81,7 +100,9 @@ random_object_generator <- function(N) { # additional input: global obj_size, ma
     else if(otype == 5) { z <- replicate(sample(1e4,size=1), {rep(letters, length.out=sample(10, size=1)) %>% paste(collapse="")}); set_obj_size(z); }
     else if(otype == 6) { z <- rep(letters, length.out=sample(1e4, size=1)) %>% paste(collapse=""); set_obj_size(z); }
     else if(otype == 7) { z <- as.formula("y ~ a + b + c : d", env=globalenv()); attr(z, "blah") <-sample(1e4)-5e2; set_obj_size(z); }
-    else { z <- random_object_generator(N) }
+    else if(with_envs && otype %in% c(8,9)) { z <- function(x) {x + runif(1)} }
+    # else if(with_envs && otype %in% c(10,11)) { z <- new.env(); z$x <- random_object_generator(N, with_envs); makeActiveBinding("y", function() runif(1), z) }
+    else { z <- random_object_generator(N, with_envs) }
     if(is_attribute) {
       attr(ret[[i-1]], runif(1) %>% as.character()) <- z
     } else {
@@ -124,6 +145,10 @@ if (Sys.info()[['sysname']] != "Windows") {
 
 printCarriage <- function(x) {
   cat(x, "\r")
+}
+
+serialize_identical <- function(x1, x2) {
+  identical(serialize(x1, NULL), serialize(x2, NULL))
 }
 ################################################################################################
 # some one off tests
@@ -217,6 +242,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("strings: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   # Character vectors
   time <- vector("numeric", length=3)
@@ -236,6 +262,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   # Integers
   time <- vector("numeric", length=3)
@@ -252,6 +279,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("Integers: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   # Doubles
   time <- vector("numeric", length=3)
@@ -268,6 +296,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("Numeric: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   # Logical
   time <- vector("numeric", length=3)
@@ -284,6 +313,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("Logical: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   # List
   time <- vector("numeric", length=3)
@@ -299,6 +329,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("List: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   for(i in 1:3) {
     x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
@@ -308,7 +339,8 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  printCarriage("Data.frame test")
+  cat("Data.frame test")
+  cat("\n")
   
   for(i in 1:3) {
     x1 <- rep( replicate(1000, { rep(letters, length.out=2^7+sample(10, size=1)) %>% paste(collapse="") }), length.out=1e6 )
@@ -318,7 +350,8 @@ for(q in 1:reps) {
     gc()
     stopifnot(all(z==x1))
   }
-  printCarriage("Data.table test")
+  cat("Data.table test")
+  cat("\n")
   
   for(i in 1:3) {
     
@@ -329,7 +362,8 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  printCarriage("Tibble test")
+  cat("Tibble test")
+  cat("\n")
   
   # Encoding test
   if (Sys.info()[['sysname']] != "Windows") {
@@ -351,6 +385,7 @@ for(q in 1:reps) {
   } else {
     printCarriage("(Encoding test not run on windows)")
   }
+  cat("\n")
   
   # complex vectors
   time <- vector("numeric", length=3)
@@ -370,6 +405,7 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("Complex: %s, %s s",tp, signif(mean(time),4)))
   }
+  cat("\n")
   
   # factors
   for(tp in test_points) {
@@ -385,7 +421,8 @@ for(q in 1:reps) {
     }
     printCarriage(sprintf("Factors: %s, %s s",tp, signif(mean(time),4)))
   }
-  
+  cat("\n")
+
   # nested lists
   time <- vector("numeric", length=8)
   for(i in 1:8) {
@@ -401,6 +438,7 @@ for(q in 1:reps) {
     stopifnot(identical(z, x1))
   }
   printCarriage(sprintf("Nested list/attributes: %s s", signif(mean(time),4)))
+  cat("\n")
   
   # nested attributes
   time <- vector("numeric", length=3)
@@ -418,6 +456,7 @@ for(q in 1:reps) {
     stopifnot(identical(z, x1))
   }
   printCarriage(sprintf("Nested attributes: %s s", signif(mean(time),4)))
+  cat("\n")
   
   # alt-rep -- should serialize the unpacked object
   time <- vector("numeric", length=3)
@@ -431,6 +470,7 @@ for(q in 1:reps) {
     stopifnot(identical(z, x1))
   }
   printCarriage(sprintf("Alt rep integer: %s s", signif(mean(time),4)))
+  cat("\n")
   
   
   # Environment test
@@ -450,6 +490,7 @@ for(q in 1:reps) {
     gc()
   }
   printCarriage(sprintf("Environment test: %s s", signif(mean(time),4)))
+  cat("\n")
   
   time <- vector("numeric", length=3)
   for(i in 1:3) {
@@ -462,9 +503,10 @@ for(q in 1:reps) {
     gc()
   }
   printCarriage(sprintf("nested tibble test: %s s", signif(mean(time),4)))
+  cat("\n")
 }
 
-printCarriage("tests done")
+cat("tests done")
 rm(list=ls())
 gc()
 

@@ -56,6 +56,11 @@ struct Data_Context {
     char* header = block.data();
     readStringHeader_common(r_string_len, ce_enc, data_offset, header);
   }
+  void readFlags(int & packed_flags) {
+    if(data_offset >= block_size) decompress_block();
+    char* header = block.data();
+    readFlags_common(packed_flags, data_offset, header);
+  }
   void decompress_direct(char* bpointer) {
     blocks_read++;
     std::array<char, 4> zsize_ar;

@@ -6,11 +6,9 @@ library(qs161)
 library(qs173)
 library(qs183)
 library(qs191)
-library(qs)  #  # v 0.20.1
+library(qs202)
+library(qs)
 library(dplyr)
-
-
-file <- "/tmp/test.z"
 
 dataframeGen <- function() {
   nr <- 1e6
@@ -24,7 +22,7 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-grid <- expand.grid(ver = c(14:20), data = c("list", "dataframe"), 
+grid <- expand.grid(ver = c(14:21), data = c("list", "dataframe"), 
                     preset = c("uncompressed", "fast", "balanced", "high", "archive"), 
                     reps=1:10, stringsAsFactors = F) %>% sample_frac(1)
 
@@ -54,11 +52,15 @@ for(i in 1:nrow(grid)) {
     read <- qs183::qread
   } else if(grid$ver[i] == 19) {
     save <- function(...) qs191::qsave(..., check_hash = F)
-    read <- qs::qread
+    read <- qs191::qread
   } else if(grid$ver[i] == 20) {
+    save <- function(...) qs202::qsave(..., check_hash = F)
+    read <- qs202::qread
+  } else if(grid$ver[i] == 21) {
     save <- function(...) qs::qsave(..., check_hash = F)
     read <- qs::qread
   }
+  file <- tempfile()
   write_time[i] <- if(grid$preset[i] == "archive") {
     if(grid$ver[i] <= 15) next;
     time <- as.numeric(Sys.time())
@@ -87,6 +89,7 @@ for(i in 1:nrow(grid)) {
   x <- read(file)
   read_time[i] <- 1000 * (as.numeric(Sys.time()) - time)
   rm(x); gc()
+  unlink(file)
 }
 
 grid$write_time <- write_time

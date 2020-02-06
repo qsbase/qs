@@ -23,19 +23,64 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
     sobj->push_pod_noncontiguous(sym_header);
     return;
   case qstype::S4:
-    sobj->push_pod_noncontiguous(extension_header, s4_header);
+    // sobj->push_pod_noncontiguous(extension_header, s4_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(s4_header);
+    return;
+  case qstype::PAIRLIST:
+    // sobj->push_pod_noncontiguous(extension_header, pairlist_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(pairlist_header);
+    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
     return;
   case qstype::CLOS:
-    sobj->push_pod_noncontiguous(extension_header, clos_header);
+    // sobj->push_pod_noncontiguous(extension_header, clos_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(clos_header);
     return;
   case qstype::LANG:
-    sobj->push_pod_noncontiguous(extension_header, lang_header);
+    // sobj->push_pod_noncontiguous(extension_header, lang_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(lang_header);
     return;
   case qstype::PROM:
-    sobj->push_pod_noncontiguous(extension_header, prom_header);
+    // sobj->push_pod_noncontiguous(extension_header, prom_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(prom_header);
     return;
   case qstype::DOT:
-    sobj->push_pod_noncontiguous(extension_header, dot_header);
+    // sobj->push_pod_noncontiguous(extension_header, dot_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(dot_header);
+    return;
+  case qstype::PAIRLIST_WF:
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(pairlist_wf_header);
+    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
+    return;
+  case qstype::CLOS_WF:
+    // sobj->push_pod_noncontiguous(extension_header, clos_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(clos_wf_header);
+    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
+    return;
+  case qstype::LANG_WF:
+    // sobj->push_pod_noncontiguous(extension_header, lang_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(lang_wf_header);
+    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
+    return;
+  case qstype::PROM_WF:
+    // sobj->push_pod_noncontiguous(extension_header, prom_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(prom_wf_header);
+    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
+    return;
+  case qstype::DOT_WF:
+    // sobj->push_pod_noncontiguous(extension_header, dot_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(dot_wf_header);
+    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
     return;
   case qstype::NUMERIC:
     if(length < 32) {
@@ -140,16 +185,16 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
       sobj->push_pod_contiguous(length);
     }
     return;
-  case qstype::PAIRLIST:
-    sobj->push_pod_noncontiguous(extension_header, pairlist_header);
-    sobj->push_pod_contiguous(static_cast<uint32_t>(length) );
-    return;
   case qstype::LOCKED_ENV:
-    sobj->push_pod_noncontiguous(extension_header, locked_env_header);
+    // sobj->push_pod_noncontiguous(extension_header, locked_env_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(locked_env_header);
     sobj->push_pod_contiguous(static_cast<uint32_t>(length) ); // not really a length, but an index to hash position, allowing a reference
     return;
   case qstype::UNLOCKED_ENV:
-    sobj->push_pod_noncontiguous(extension_header, unlocked_env_header);
+    // sobj->push_pod_noncontiguous(extension_header, unlocked_env_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(unlocked_env_header);
     sobj->push_pod_contiguous(static_cast<uint32_t>(length) ); // not really a length, but an index to hash position, allowing a reference
     return;
   // case qstype::PACKAGE_ENV:
@@ -166,7 +211,9 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
   //   sobj->push_pod_noncontiguous(empty_env_header_with_ext), 2);
   //   return;
   case qstype::REFERENCE:
-    sobj->push_pod_noncontiguous(extension_header, reference_object_header);
+    // sobj->push_pod_noncontiguous(extension_header, reference_object_header);
+    sobj->push_pod_noncontiguous(extension_header);
+    sobj->push_pod_contiguous(reference_object_header);
     sobj->push_pod_contiguous(static_cast<uint32_t>(length) ); // not really a length, but a pointer to the hash reference
     return;
   case qstype::RSERIALIZED:
@@ -188,7 +235,9 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
 
 template <class T>
 void writeS4Flag_common(T * sobj) {
-  sobj->push_pod_noncontiguous(extension_header, s4flag_header);
+  // sobj->push_pod_noncontiguous(extension_header, s4flag_header);
+  sobj->push_pod_noncontiguous(extension_header);
+  sobj->push_pod_contiguous(s4flag_header);
 }
 
 template <class T>
@@ -277,7 +326,7 @@ void writeObject(T * const sobj, SEXP x) {
     for(uint64_t i=0; i<dl; i++) {
       SEXP xi = STRING_ELT(x, i);
       if(xi == NA_STRING) {
-        sobj->push_pod_contiguous(string_header_NA);
+        sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
       } else {
         uint32_t dl = LENGTH(xi);
         writeStringHeader_common(dl, Rf_getCharCE(xi), sobj);
@@ -326,23 +375,47 @@ void writeObject(T * const sobj, SEXP x) {
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
     std::vector<SEXP> cars;
     std::vector<SEXP> tags;
+    std::vector<int> flags;
     SEXP xt = x;
+    bool has_flags = false;
     while(xt != R_NilValue) {
+      int f = packFlags(xt);
+      if(f != 0) has_flags = true;
+      flags.push_back(f);
       cars.push_back(CAR(xt));
       tags.push_back(TAG(xt));
       xt = CDR(xt);
     }
-    writeHeader_common(qstype::PAIRLIST, cars.size(), sobj);
-    for(uint64_t i=0; i<cars.size(); i++) {
-      if(tags[i] == R_NilValue) {
-        sobj->push_pod_contiguous(string_header_NA);
-      } else {
-        const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
-        uint32_t alen = strlen(tag_chars);
-        writeStringHeader_common(alen, CE_NATIVE, sobj);
-        sobj->push_contiguous(tag_chars, alen);
+    if(has_flags) {
+      // int flags = packFlags(x);
+      // auto arr = pack_pods( flags, static_cast<uint32_t>(cars.size()) );
+      // uint64_t mlen = unaligned_cast<uint64_t>(arr.data(), 0);
+      writeHeader_common(qstype::PAIRLIST_WF, cars.size(), sobj);
+      for(uint64_t i=0; i<cars.size(); i++) {
+        sobj->push_pod_noncontiguous(flags[i]);
+        if(tags[i] == R_NilValue) {
+          sobj->push_pod_noncontiguous(string_header_NA);
+        } else {
+          const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
+          uint32_t alen = strlen(tag_chars);
+          writeStringHeader_common(alen, CE_NATIVE, sobj);
+          sobj->push_contiguous(tag_chars, alen);
+        }
+        writeObject(sobj, cars[i]);
       }
-      writeObject(sobj, cars[i]);
+    } else {
+      writeHeader_common(qstype::PAIRLIST, cars.size(), sobj);
+      for(uint64_t i=0; i<cars.size(); i++) {
+        if(tags[i] == R_NilValue) {
+          sobj->push_pod_noncontiguous(string_header_NA);
+        } else {
+          const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
+          uint32_t alen = strlen(tag_chars);
+          writeStringHeader_common(alen, CE_NATIVE, sobj);
+          sobj->push_contiguous(tag_chars, alen);
+        }
+        writeObject(sobj, cars[i]);
+      }
     }
     writeAttributes(sobj, attrs, anames);
     return;
@@ -354,7 +427,24 @@ void writeObject(T * const sobj, SEXP x) {
     {
     getAttributes(x, attrs, anames);
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
-    switch(xtype) {
+    if(LEVELS(x) != 0 || OBJECT(x) != 0) {
+      int flags = packFlags(x);
+      switch(xtype) {
+      case LANGSXP:
+        writeHeader_common(qstype::LANG_WF, flags, sobj);
+        break;
+      case CLOSXP:
+        writeHeader_common(qstype::CLOS_WF, flags, sobj);
+        break;
+      case PROMSXP:
+        writeHeader_common(qstype::PROM_WF, flags, sobj);
+        break;
+      case DOTSXP:
+        writeHeader_common(qstype::DOT_WF, flags, sobj);
+        break;
+      }
+    } else {
+      switch(xtype) {
       case LANGSXP:
         writeHeader_common(qstype::LANG, 0, sobj);
         break;
@@ -367,6 +457,7 @@ void writeObject(T * const sobj, SEXP x) {
       case DOTSXP:
         writeHeader_common(qstype::DOT, 0, sobj);
         break;
+      }
     }
     /*
     if (BNDCELL_TAG(x)) { // may be necessary, see serialize.c in r source code

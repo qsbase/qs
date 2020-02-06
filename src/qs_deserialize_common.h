@@ -43,6 +43,31 @@ inline void readHeader_common(qstype & object_type, uint64_t & r_array_len, uint
       data_offset += 2;
       object_type = qstype::DOT;
       return;
+    case pairlist_wf_header:
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      data_offset += 6;
+      object_type = qstype::PAIRLIST_WF;
+      return;
+    case clos_wf_header:
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      data_offset += 6;
+      object_type = qstype::CLOS_WF;
+      return;
+    case lang_wf_header:
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      data_offset += 6;
+      object_type = qstype::LANG_WF;
+      return;
+    case prom_wf_header:
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      data_offset += 6;
+      object_type = qstype::PROM_WF;
+      return;
+    case dot_wf_header:
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      data_offset += 6;
+      object_type = qstype::DOT_WF;
+      return;
     case unlocked_env_header:
       r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
       data_offset += 6;
@@ -286,6 +311,10 @@ inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, 
   } 
   throw std::runtime_error("something went wrong (reading string header)");
 }
+inline void readFlags_common(int & packed_flags, uint64_t & data_offset, const char * const header) {
+  packed_flags = unaligned_cast<int>(header, data_offset);
+  data_offset += 4;
+}
 
 template <class T>
 SEXP processBlock(T * const sobj) {
@@ -325,7 +354,7 @@ SEXP processBlock(T * const sobj) {
       obj_i = CDR(obj_i);
     }
   }
-  break;
+    break;
   case qstype::LANG:
   case qstype::CLOS:
   case qstype::PROM:
@@ -356,7 +385,62 @@ SEXP processBlock(T * const sobj) {
       SET_PRENV(obj, R_BaseEnv);
     }
   }
-  break;
+    break;
+  case qstype::PAIRLIST_WF:
+  {
+    // unpack_pods(reinterpret_cast<char*>(&r_array_len), flags, mlen);
+    obj = PROTECT(Rf_allocList(r_array_len)); pt++;
+    SEXP obj_i = obj;
+    std::string temp_tag_string;
+    for(uint64_t i=0; i<r_array_len; i++) {
+      int packed_flags;
+      sobj->readFlags(packed_flags);
+      uint32_t r_string_len;
+      cetype_t string_encoding;
+      sobj->readStringHeader(r_string_len, string_encoding);
+      if(r_string_len != NA_STRING_LENGTH) {
+        temp_tag_string.resize(r_string_len);
+        sobj->getBlockData(&temp_tag_string[0], r_string_len);
+        SET_TAG(obj_i, Rf_install(temp_tag_string.c_str()));
+      }
+      SETCAR(obj_i, processBlock(sobj));
+      unpackFlags(obj_i, packed_flags);
+      obj_i = CDR(obj_i);
+    }
+  }
+    break;
+  case qstype::LANG_WF:
+  case qstype::CLOS_WF:
+  case qstype::PROM_WF:
+  case qstype::DOT_WF:
+  {
+    switch(obj_type) {
+    case qstype::LANG_WF:
+      PROTECT(obj = Rf_allocSExp(LANGSXP)); pt++;
+      break;
+    case qstype::CLOS_WF:
+      PROTECT(obj = Rf_allocSExp(CLOSXP)); pt++;
+      break;
+    case qstype::PROM_WF:
+      PROTECT(obj = Rf_allocSExp(PROMSXP)); pt++;
+      break;
+    case qstype::DOT_WF:
+      PROTECT(obj = Rf_allocSExp(DOTSXP)); pt++;
+      break;
+    default:
+      throw std::runtime_error("."); // add default to hush compiler warnings
+    }
+    SET_TAG(obj, processBlock(sobj));
+    SETCAR(obj, processBlock(sobj));
+    SETCDR(obj, processBlock(sobj));
+    if(obj_type == qstype::CLOS && CLOENV(obj) == R_NilValue) {
+      SET_CLOENV(obj, R_BaseEnv);
+    } else if(obj_type == qstype::PROM && PRENV(obj) == R_NilValue) {
+      SET_PRENV(obj, R_BaseEnv);
+    }
+    unpackFlags(obj, static_cast<int>(r_array_len));
+  }
+    break;
   case qstype::UNLOCKED_ENV:
   case qstype::LOCKED_ENV:
     obj = PROTECT(Rf_allocSExp(ENVSXP)); pt++;
@@ -498,16 +582,31 @@ SEXP processBlock(T * const sobj) {
     return obj;
   }
   if(number_of_attributes > 0) {
+    SEXP attrib_pairlist = PROTECT(Rf_allocList(number_of_attributes)); pt++;
+    SEXP aptr = attrib_pairlist;
+    std::string temp_attribute_string;
     for(uint64_t i=0; i<number_of_attributes; i++) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
-      std::string temp_attribute_string;
       temp_attribute_string.resize(r_string_len);
       sobj->getBlockData(&temp_attribute_string[0], r_string_len);
-      SEXP attrib_obj = PROTECT(processBlock(sobj)); pt++; // Rf_install may allocate
-      Rf_setAttrib(obj, Rf_install(temp_attribute_string.c_str()), attrib_obj);
+      // Is protect needed here?  
+      // I believe it is not, since SET_TAG/SETCAR shouldn't allocate and serialize.c doesn't protect either
+      // What about IS_CHARACTER?
+      SET_TAG(aptr, Rf_install(temp_attribute_string.c_str()));
+      if(temp_attribute_string == "class") {
+        SEXP aobj = PROTECT(processBlock(sobj)); pt++;
+        if((IS_CHARACTER(aobj)) & (Rf_xlength(aobj) >= 1)) {
+          SET_OBJECT(obj, 1);
+        }
+        SETCAR(aptr, aobj);
+      } else {
+        SETCAR(aptr, processBlock(sobj));
+      }
+      aptr = CDR(aptr);
     }
+    SET_ATTRIB(obj, attrib_pairlist);
   }
   if(s4_flag) {
     SET_S4_OBJECT(obj);

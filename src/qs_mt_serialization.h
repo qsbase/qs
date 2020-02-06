@@ -278,13 +278,13 @@ struct CompressBuffer_MT {
   inline void push_pod_noncontiguous(const POD pod) {
     push_noncontiguous(reinterpret_cast<const char * const>(&pod), sizeof(pod));
   }
-  template<typename POD>
-  inline void push_pod_noncontiguous(const POD pod1, const POD pod2) {
-    std::array<char, sizeof(POD)*2> pdata = {};
-    std::memcpy(pdata.data(), reinterpret_cast<const char*>(&pod1), sizeof(POD));
-    std::memcpy(pdata.data() + sizeof(POD), reinterpret_cast<const char*>(&pod2), sizeof(POD));
-    push_noncontiguous(pdata.data(), sizeof(POD)*2);
-  }
+  // template<typename POD>
+  // inline void push_pod_noncontiguous(const POD pod1, const POD pod2) {
+  //   std::array<char, sizeof(POD)*2> pdata = {};
+  //   std::memcpy(pdata.data(), reinterpret_cast<const char*>(&pod1), sizeof(POD));
+  //   std::memcpy(pdata.data() + sizeof(POD), reinterpret_cast<const char*>(&pod2), sizeof(POD));
+  //   push_noncontiguous(pdata.data(), sizeof(POD)*2);
+  // }
   void shuffle_push(const char * const data, const uint64_t len, const uint64_t bytesoftype) {
     if(len > MIN_SHUFFLE_ELEMENTS) {
       // blocks_written = number of blocks file written

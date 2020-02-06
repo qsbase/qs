@@ -203,6 +203,11 @@ struct Data_Context_MT {
     char* header = block_data;
     readStringHeader_common(r_string_len, ce_enc, data_offset, header);
   }
+  void readFlags(int & packed_flags) {
+    if(data_offset >= block_size) decompress_block();
+    char* header = block_data;
+    readFlags_common(packed_flags, data_offset, header);
+  }
   void decompress_direct(char* bpointer) {
     dtc.decompress_data_direct(bpointer);
     if(qm.check_hash) xenv.update(bpointer, BLOCKSIZE);

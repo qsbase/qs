@@ -362,7 +362,6 @@ static constexpr uint8_t attribute_header_5 = 0xE0_u8;
 static constexpr uint8_t attribute_header_8 = 0x1E_u8;
 static constexpr uint8_t attribute_header_32 = 0x1F_u8;
 
-// static constexpr uint8_t unused1 = 0x1A_u8; // not in use
 // static constexpr uint8_t unused2 = 0x1B_u8; // not in use
 
 static constexpr uint8_t nstype_header_32 = 0x19_u8; // other (rare) types of objects are serialized via R_serialize
@@ -381,9 +380,18 @@ static constexpr uint8_t prom_header = 0x06_u8;
 static constexpr uint8_t dot_header = 0x07_u8;
 
 // environment headers
-static constexpr uint8_t unlocked_env_header = 0x08_u8;
-static constexpr uint8_t locked_env_header = 0x09_u8;
+static constexpr uint8_t unlocked_env_header = 0x08_u8; // deprecated but still supported
+static constexpr uint8_t locked_env_header = 0x09_u8; // deprecated but still supported
 static constexpr uint8_t reference_object_header = 0x10_u8;
+
+// with flags
+static constexpr uint8_t pairlist_wf_header = 0x11_u8;
+static constexpr uint8_t lang_wf_header = 0x12_u8;
+static constexpr uint8_t clos_wf_header = 0x13_u8;
+static constexpr uint8_t prom_wf_header = 0x14_u8;
+static constexpr uint8_t dot_wf_header = 0x15_u8;
+
+
 
 // static constexpr std::array<uint8_t,2> s4_header_with_ext {{ extension_header, s4_header }};
 // static constexpr std::array<uint8_t,2> s4flag_header_with_ext {{ extension_header, s4flag_header }};
@@ -410,6 +418,7 @@ static constexpr uint8_t reference_object_header = 0x10_u8;
 // static constexpr uint16_t empty_env_header_with_ext = 0x1C09_u16;
 
 enum class qstype {NUMERIC, INTEGER, LOGICAL, CHARACTER, NIL, LIST, COMPLEX, RAW, PAIRLIST, LANG, CLOS, PROM, DOT, SYM,
+                   PAIRLIST_WF, LANG_WF, CLOS_WF, PROM_WF, DOT_WF, // with flags
                    S4, S4FLAG, LOCKED_ENV, UNLOCKED_ENV, REFERENCE,
                    ATTRIBUTE, RSERIALIZED};
 
@@ -1299,6 +1308,70 @@ struct zstd_decompress_stream_simple {
   }
 };
 
+template <typename POD1, typename POD2, typename POD3>
+std::array<char, sizeof(POD1) + sizeof(POD2) + sizeof(POD3)> pack_pods(POD1 a, POD2 b, POD3 c) {
+  std::array<char, sizeof(POD1) + sizeof(POD2) + sizeof(POD3)> pdata;
+  char * pt = pdata.data();
+  std::memcpy(pt, &a, sizeof(a));
+  pt += sizeof(a);
+  std::memcpy(pt, &b, sizeof(b));
+  pt += sizeof(b);
+  std::memcpy(pt, &c, sizeof(c));
+  return pdata;
+}
+
+template <typename POD1, typename POD2>
+std::array<char, sizeof(POD1) + sizeof(POD2)> pack_pods(POD1 a, POD2 b) {
+  std::array<char, sizeof(POD1) + sizeof(POD2)> pdata;
+  char * pt = pdata.data();
+  std::memcpy(pt, &a, sizeof(a));
+  pt += sizeof(a);
+  std::memcpy(pt, &b, sizeof(b));
+  return pdata;
+}
+
+// must check pt array is big enough
+template <typename POD1, typename POD2>
+void unpack_pods(char * pt, POD1 & a, POD2 & b) {
+  std::memcpy(&a, pt, sizeof(a));
+  pt += sizeof(a);
+  std::memcpy(&b, pt, sizeof(b));
+}
+
+template <typename POD1, typename POD2, typename POD3>
+void unpack_pods(char * pt, POD1 & a, POD2 & b, POD3 & c) {
+  std::memcpy(&a, pt, sizeof(a));
+  pt += sizeof(a);
+  std::memcpy(&b, pt, sizeof(b));
+  pt += sizeof(b);
+  std::memcpy(&c, pt, sizeof(c));
+}
+
+
+// see also: flag packing https://github.com/wch/r-source/blob/trunk/src/main/serialize.c
+// we don't need type, attributes and tags, since they're encoded elsewhere
+// #define IS_OBJECT_BIT_MASK (1 << 8)
+// #define HAS_ATTR_BIT_MASK (1 << 9)
+// #define HAS_TAG_BIT_MASK (1 << 10)
+// #define ENCODE_LEVELS(v) ((v) << 12)
+// #define DECODE_LEVELS(v) ((v) >> 12)
+// #define DECODE_TYPE(v) ((v) & 255)
+#define IS_OBJECT_BIT_MASK (1 << 16)
+#define DECODE_LEVELS(v) ((v) % (1 << 16))
+
+int packFlags(SEXP obj) {
+  int flags = LEVELS(obj);
+  if (OBJECT(obj)) flags |= IS_OBJECT_BIT_MASK;
+  return flags;
+}
+
+void unpackFlags(SEXP obj, int flags) {
+  int levs = DECODE_LEVELS(flags);
+  int isobj = flags & IS_OBJECT_BIT_MASK ? 1 : 0;
+  SETLEVELS(obj, levs);
+  SET_OBJECT(obj, isobj);
+}
+
 // from serialize.c // memory.c -- unclear what this does, but might be necessary.  Not available in R 3.6
 /* 
 void R_expand_binding_value(SEXP b)
@@ -1336,6 +1409,5 @@ void R_expand_binding_value(SEXP b)
 #endif
 }
 */
-
 
 #endif

@@ -6,6 +6,7 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(sf))
 suppressMessages(library(nanotime))
 suppressMessages(library(R6))
+suppressMessages(library(raster))
 options(warn=1)
 
 if (Sys.info()[['sysname']] != "Windows") {
@@ -223,3 +224,22 @@ for(i in 1:5) {
   rm(x, y)
   gc()
 }
+
+print("https://github.com/traversc/qs/issues/27")
+nx <- ny <- 2
+N <- nx * ny
+template <- raster(nrows = ny, ncols = nx, xmn = -nx / 2, xmx = nx / 2,
+                   ymn = -ny / 2, ymx = ny / 2)
+
+DEM <- raster(template)
+DEM[] <- runif(N)
+qsave(DEM, file = myfile)
+DEM2 <- qread(myfile)
+all.equal(DEM@legend@names, DEM2@legend@names)
+
+print("https://github.com/traversc/qs/issues/29")
+XClass <- R6Class( "XClass", active = list(r=function() runif(1)) )
+x <- XClass$new()
+qsave(x, file=myfile)
+x2 <- qread(myfile)
+stopifnot(is.numeric(x2$r))

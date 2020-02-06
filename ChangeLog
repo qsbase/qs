@@ -1,3 +1,8 @@
+Version 0.21.1 (2020-2-6)
+   * Fix for active bindings in R6/environments (https://github.com/traversc/qs/issues/29)
+   * Correct several documentation errors (https://github.com/traversc/qs/issues/28) 
+   * Fix for incorrect serialization of "names" attribute in S4 Raster class (https://github.com/traversc/qs/issues/27)
+
 Version 0.20.2 (2019-12-1)
    * Fix to minor bug involving serialization of locked environments
 

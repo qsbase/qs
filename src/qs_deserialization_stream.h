@@ -339,6 +339,10 @@ struct Data_Context_Stream {
     if(data_offset + BLOCKRESERVE >= block_size) getBlock();
     readStringHeader_common(r_string_len, ce_enc, data_offset, data_ptr);
   }
+  void readFlags(int & packed_flags) {
+    if(data_offset + BLOCKRESERVE >= block_size) getBlock();
+    readFlags_common(packed_flags, data_offset, data_ptr);
+  }
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {
     // std::cout << data_size << " get shuffle block\n";
     if(data_size >= MIN_SHUFFLE_ELEMENTS) {

@@ -29,7 +29,7 @@
 #' @param preset One of "fast", "high" (default), "high", "archive", "uncompressed" or "custom".  See details.  
 #' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
-#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
+#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
 #' @param nthreads Number of threads to use.  Default 1.  
 #' @return The total number of bytes written to the file (returned invisibly)
@@ -134,7 +134,7 @@ qread <- function(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1) {
 #' @param preset One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom".  See details.  
 #' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
-#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
+#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
 #' @return the number of bytes serialized (returned invisibly)
 #' @details 
@@ -172,7 +172,7 @@ qread_fd <- function(fd, use_alt_rep=FALSE, strict=FALSE) {
 #' @param preset One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom".  See details.  
 #' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
-#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
+#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
 #' @return the number of bytes serialized (returned invisibly)
 #' @details 
@@ -210,7 +210,7 @@ qread_handle <- function(handle, use_alt_rep=FALSE, strict=FALSE) {
 #' @param preset One of "fast", "balanced", "high" (default), "archive", "uncompressed" or "custom".  See details.  
 #' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
-#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 3).  See details.  
+#' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
 #'c @details 
 #' This function serializes and compresses an R object to a raw vctor
