@@ -35,11 +35,9 @@ dataframeGen <- function() {
              c=sample(qs::starnames[["IAU Name"]],nr,T), 
              d=factor(sample(state.name,nr,T)), stringsAsFactors = F)
 }
-
 listGen <- function() {
   as.list(sample(1e6))
 }
-
 test_compatability <- function(save, read_funs) {
   x <- dataframeGen()
   save(x)
@@ -54,6 +52,19 @@ test_compatability <- function(save, read_funs) {
     cat(i)
     xu <- read_funs[[i]](file)
     stopifnot(identical(x, xu))
+  }
+  cat("\n")
+}
+
+test_ext_compatability <- function(save, read_funs) {
+  x <- new.env()
+  x$a <- function(a) {a + 1}
+  environment(x$a) <- globalenv()
+  save(x)
+  for(i in 1:length(read_funs)) {
+    cat(i)
+    xu <- read_funs[[i]](file)
+    stopifnot(identical(x$a, xu$a))
   }
   cat("\n")
 }
@@ -123,10 +134,21 @@ print("qs191 zstd stream save"); test_compatability(qs191_zstd_stream_save, list
 print("qs191 zstd stream save no hash"); test_compatability(qs191_zstd_stream_save_nohash, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
 print("qs191 no shuffle save"); test_compatability(qs191_no_shuffle, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
 
-print("qs202 lz4 save"); test_compatability(qs191_lz4_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
-print("qs202 zstd save"); test_compatability(qs191_zstd_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
-print("qs202 zstd stream save"); test_compatability(qs191_zstd_stream_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
-print("qs202 zstd stream save no hash"); test_compatability(qs191_zstd_stream_save_nohash, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
-print("qs202 no shuffle save"); test_compatability(qs191_no_shuffle, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
+print("qs202 lz4 save"); test_compatability(qs202_lz4_save, list(qs::qread))
+print("qs202 zstd save"); test_compatability(qs202_zstd_save, list(qs::qread))
+print("qs202 zstd stream save"); test_compatability(qs202_zstd_stream_save, list(qs::qread))
+print("qs202 zstd stream save no hash"); test_compatability(qs202_zstd_stream_save_nohash, list(qs::qread))
+print("qs202 no shuffle save"); test_compatability(qs202_no_shuffle, list(qs::qread))
 
+# Efficient DOTSXP, PROMSXP, CLOSXP, envs etc came in at v 0.20.x
+print("qs191 lz4 ext save"); test_ext_compatability(qs191_lz4_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
+print("qs191 zstd ext save"); test_ext_compatability(qs191_zstd_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
+print("qs191 zstd stream ext save"); test_ext_compatability(qs191_zstd_stream_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
+print("qs191 zstd stream save ext no hash"); test_ext_compatability(qs191_zstd_stream_save_nohash, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
+print("qs191 no shuffle ext save"); test_ext_compatability(qs191_no_shuffle, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
 
+print("ext qs202 lz4 save"); test_ext_compatability(qs202_lz4_save, list(qs::qread))
+print("ext qs202 zstd save"); test_ext_compatability(qs202_zstd_save, list(qs::qread))
+print("ext qs202 zstd stream save"); test_ext_compatability(qs202_zstd_stream_save, list(qs::qread))
+print("ext qs202 zstd stream save no hash"); test_ext_compatability(qs202_zstd_stream_save_nohash, list(qs::qread))
+print("ext qs202 no shuffle save"); test_ext_compatability(qs202_no_shuffle, list(qs::qread))
