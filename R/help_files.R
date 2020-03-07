@@ -120,6 +120,7 @@ qsave <- function(x, file, preset="high", algorithm="zstd", compress_level=4L, s
 #' identical(w, w2) # returns true
 #' @export
 qread <- function(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1) {
+  if(!file.exists(file)) stop(paste0('File not found at [ ', file, ' ].'))
   c_qread(file, use_alt_rep, strict, nthreads)
 }
 
