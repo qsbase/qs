@@ -212,7 +212,7 @@ qread_handle <- function(handle, use_alt_rep=FALSE, strict=FALSE) {
 #' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
 #' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
-#'c @details 
+#' @details 
 #' This function serializes and compresses an R object to a raw vctor
 #' If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.   
 #' @export
@@ -441,3 +441,60 @@ NULL
 #' @examples
 #' data(starnames)
 "starnames"
+
+#' catquo
+#' 
+#' Prints a string with single quotes on a new line
+#' @usage catquo(...)
+#' @param ... Arguments passed to `cat` function
+catquo <- function(...) {
+  cat("'", ..., "'\n", sep = "")
+}
+
+#' basE91 Encoding
+#' 
+#' Encodes binary data (a raw vector) as ascii text using basE91 encoding format
+#' @usage base91_encode(rawdata)
+#' @param rawdata A raw vector
+#' @details 
+#' basE91 (capital E for stylization) is a binary to ascii encoding format created by Joachim Henke in 2005. 
+#' The encoding has a dictionary using 91 out of 94 printable ASCII characters; excludes - (dash), \ (backslash) and ' (single quote).
+#' The overhead (extra bytes used relative to binary) is 22.97\% on average. In comparison, base 64 encoding has an overhead of 33.33\%.  
+#' Because the dictionary includes double quotes, basE91 encoded data must be single quoted when stored as a string in R.  
+#' @references http://base91.sourceforge.net/
+#' @name base91_encode
+NULL
+
+#' basE91 Decoding
+#' 
+#' Decodes a basE91 encoded string back to binary
+#' @usage base91_decode(encoded_string)
+#' @param encoded_string A string
+#' @name base91_decode
+NULL
+
+#' Z85 Encoding
+#' 
+#' Encodes binary data (a raw vector) as ascii text using Z85 encoding format
+#' @usage base85_encode(rawdata)
+#' @param rawdata A raw vector
+#' @details 
+#' Z85 is a binary to ascii encoding format created by Pieter Hintjens in 2010 and is part of the ZeroMQ RFC. 
+#' The encoding has a dictionary using 85 out of 94 printable ASCII characters. 
+#' There are other base 85 encoding schemes, including Ascii85, which is popularized and used by Adobe. 
+#' Z85 is distinguished by its choice of dictionary, which is suitable for easier inclusion into source code for many programming languages. 
+#' The dictionary excludes all quote marks and other control characters, and requires no special treatment in R and most other languages. 
+#' Note: although the official specification restricts input length to multiples of four bytes, the implementation here works with any input length.  
+#' The overhead (extra bytes used relative to binary) is 25\%. In comparison, base 64 encoding has an overhead of 33.33\%. 
+
+#' @references https://rfc.zeromq.org/spec/32/
+#' @name base85_encode
+NULL
+
+#' Z85 Decoding
+#' 
+#' Decodes a Z85 encoded string back to binary
+#' @usage base85_decode(encoded_string)
+#' @param encoded_string A string
+#' @name base85_decode
+NULL

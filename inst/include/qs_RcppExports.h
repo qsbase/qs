@@ -24,226 +24,6 @@ namespace qs {
         }
     }
 
-    inline bool is_big_endian() {
-        typedef SEXP(*Ptr_is_big_endian)();
-        static Ptr_is_big_endian p_is_big_endian = NULL;
-        if (p_is_big_endian == NULL) {
-            validateSignature("bool(*is_big_endian)()");
-            p_is_big_endian = (Ptr_is_big_endian)R_GetCCallable("qs", "_qs_is_big_endian");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_is_big_endian();
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<bool >(rcpp_result_gen);
-    }
-
-    inline double c_qsave(SEXP const x, const std::string& file, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
-        typedef SEXP(*Ptr_c_qsave)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
-        static Ptr_c_qsave p_c_qsave = NULL;
-        if (p_c_qsave == NULL) {
-            validateSignature("double(*c_qsave)(SEXP const,const std::string&,const std::string&,const std::string&,const int,const int,const bool,const int)");
-            p_c_qsave = (Ptr_c_qsave)R_GetCCallable("qs", "_qs_c_qsave");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qsave(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(file)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)), Shield<SEXP>(Rcpp::wrap(nthreads)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<double >(rcpp_result_gen);
-    }
-
-    inline double c_qsave_fd(SEXP const x, const int fd, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
-        typedef SEXP(*Ptr_c_qsave_fd)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
-        static Ptr_c_qsave_fd p_c_qsave_fd = NULL;
-        if (p_c_qsave_fd == NULL) {
-            validateSignature("double(*c_qsave_fd)(SEXP const,const int,const std::string&,const std::string&,const int,const int,const bool)");
-            p_c_qsave_fd = (Ptr_c_qsave_fd)R_GetCCallable("qs", "_qs_c_qsave_fd");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qsave_fd(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(fd)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<double >(rcpp_result_gen);
-    }
-
-    inline double c_qsave_handle(SEXP const x, SEXP const handle, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
-        typedef SEXP(*Ptr_c_qsave_handle)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
-        static Ptr_c_qsave_handle p_c_qsave_handle = NULL;
-        if (p_c_qsave_handle == NULL) {
-            validateSignature("double(*c_qsave_handle)(SEXP const,SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
-            p_c_qsave_handle = (Ptr_c_qsave_handle)R_GetCCallable("qs", "_qs_c_qsave_handle");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qsave_handle(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(handle)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<double >(rcpp_result_gen);
-    }
-
-    inline RawVector c_qserialize(SEXP const x, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
-        typedef SEXP(*Ptr_c_qserialize)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
-        static Ptr_c_qserialize p_c_qserialize = NULL;
-        if (p_c_qserialize == NULL) {
-            validateSignature("RawVector(*c_qserialize)(SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
-            p_c_qserialize = (Ptr_c_qserialize)R_GetCCallable("qs", "_qs_c_qserialize");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qserialize(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<RawVector >(rcpp_result_gen);
-    }
-
-    inline SEXP c_qread(const std::string& file, const bool use_alt_rep, const bool strict, const int nthreads) {
-        typedef SEXP(*Ptr_c_qread)(SEXP,SEXP,SEXP,SEXP);
-        static Ptr_c_qread p_c_qread = NULL;
-        if (p_c_qread == NULL) {
-            validateSignature("SEXP(*c_qread)(const std::string&,const bool,const bool,const int)");
-            p_c_qread = (Ptr_c_qread)R_GetCCallable("qs", "_qs_c_qread");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qread(Shield<SEXP>(Rcpp::wrap(file)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)), Shield<SEXP>(Rcpp::wrap(nthreads)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<SEXP >(rcpp_result_gen);
-    }
-
-    inline SEXP c_qread_fd(const int fd, const bool use_alt_rep, const bool strict) {
-        typedef SEXP(*Ptr_c_qread_fd)(SEXP,SEXP,SEXP);
-        static Ptr_c_qread_fd p_c_qread_fd = NULL;
-        if (p_c_qread_fd == NULL) {
-            validateSignature("SEXP(*c_qread_fd)(const int,const bool,const bool)");
-            p_c_qread_fd = (Ptr_c_qread_fd)R_GetCCallable("qs", "_qs_c_qread_fd");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qread_fd(Shield<SEXP>(Rcpp::wrap(fd)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<SEXP >(rcpp_result_gen);
-    }
-
-    inline SEXP c_qread_handle(SEXP const handle, const bool use_alt_rep, const bool strict) {
-        typedef SEXP(*Ptr_c_qread_handle)(SEXP,SEXP,SEXP);
-        static Ptr_c_qread_handle p_c_qread_handle = NULL;
-        if (p_c_qread_handle == NULL) {
-            validateSignature("SEXP(*c_qread_handle)(SEXP const,const bool,const bool)");
-            p_c_qread_handle = (Ptr_c_qread_handle)R_GetCCallable("qs", "_qs_c_qread_handle");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qread_handle(Shield<SEXP>(Rcpp::wrap(handle)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<SEXP >(rcpp_result_gen);
-    }
-
-    inline SEXP c_qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep, const bool strict) {
-        typedef SEXP(*Ptr_c_qread_ptr)(SEXP,SEXP,SEXP,SEXP);
-        static Ptr_c_qread_ptr p_c_qread_ptr = NULL;
-        if (p_c_qread_ptr == NULL) {
-            validateSignature("SEXP(*c_qread_ptr)(SEXP const,const double,const bool,const bool)");
-            p_c_qread_ptr = (Ptr_c_qread_ptr)R_GetCCallable("qs", "_qs_c_qread_ptr");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qread_ptr(Shield<SEXP>(Rcpp::wrap(pointer)), Shield<SEXP>(Rcpp::wrap(length)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<SEXP >(rcpp_result_gen);
-    }
-
-    inline SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
-        typedef SEXP(*Ptr_c_qdeserialize)(SEXP,SEXP,SEXP);
-        static Ptr_c_qdeserialize p_c_qdeserialize = NULL;
-        if (p_c_qdeserialize == NULL) {
-            validateSignature("SEXP(*c_qdeserialize)(SEXP const,const bool,const bool)");
-            p_c_qdeserialize = (Ptr_c_qdeserialize)R_GetCCallable("qs", "_qs_c_qdeserialize");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qdeserialize(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<SEXP >(rcpp_result_gen);
-    }
-
-    inline RObject c_qdump(const std::string& file) {
-        typedef SEXP(*Ptr_c_qdump)(SEXP);
-        static Ptr_c_qdump p_c_qdump = NULL;
-        if (p_c_qdump == NULL) {
-            validateSignature("RObject(*c_qdump)(const std::string&)");
-            p_c_qdump = (Ptr_c_qdump)R_GetCCallable("qs", "_qs_c_qdump");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_c_qdump(Shield<SEXP>(Rcpp::wrap(file)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<RObject >(rcpp_result_gen);
-    }
-
     inline std::vector<std::string> randomStrings(const int N, const int string_size = 50) {
         typedef SEXP(*Ptr_randomStrings)(SEXP,SEXP);
         static Ptr_randomStrings p_randomStrings = NULL;
@@ -463,6 +243,306 @@ namespace qs {
         if (rcpp_result_gen.inherits("try-error"))
             throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
         return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
+    inline std::string base85_encode(const RawVector& rawdata) {
+        typedef SEXP(*Ptr_base85_encode)(SEXP);
+        static Ptr_base85_encode p_base85_encode = NULL;
+        if (p_base85_encode == NULL) {
+            validateSignature("std::string(*base85_encode)(const RawVector&)");
+            p_base85_encode = (Ptr_base85_encode)R_GetCCallable("qs", "_qs_base85_encode");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_base85_encode(Shield<SEXP>(Rcpp::wrap(rawdata)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<std::string >(rcpp_result_gen);
+    }
+
+    inline RawVector base85_decode(const std::string& encoded_string) {
+        typedef SEXP(*Ptr_base85_decode)(SEXP);
+        static Ptr_base85_decode p_base85_decode = NULL;
+        if (p_base85_decode == NULL) {
+            validateSignature("RawVector(*base85_decode)(const std::string&)");
+            p_base85_decode = (Ptr_base85_decode)R_GetCCallable("qs", "_qs_base85_decode");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_base85_decode(Shield<SEXP>(Rcpp::wrap(encoded_string)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<RawVector >(rcpp_result_gen);
+    }
+
+    inline std::string base91_encode(const RawVector& rawdata) {
+        typedef SEXP(*Ptr_base91_encode)(SEXP);
+        static Ptr_base91_encode p_base91_encode = NULL;
+        if (p_base91_encode == NULL) {
+            validateSignature("std::string(*base91_encode)(const RawVector&)");
+            p_base91_encode = (Ptr_base91_encode)R_GetCCallable("qs", "_qs_base91_encode");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_base91_encode(Shield<SEXP>(Rcpp::wrap(rawdata)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<std::string >(rcpp_result_gen);
+    }
+
+    inline RawVector base91_decode(const std::string& encoded_string) {
+        typedef SEXP(*Ptr_base91_decode)(SEXP);
+        static Ptr_base91_decode p_base91_decode = NULL;
+        if (p_base91_decode == NULL) {
+            validateSignature("RawVector(*base91_decode)(const std::string&)");
+            p_base91_decode = (Ptr_base91_decode)R_GetCCallable("qs", "_qs_base91_decode");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_base91_decode(Shield<SEXP>(Rcpp::wrap(encoded_string)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<RawVector >(rcpp_result_gen);
+    }
+
+    inline bool is_big_endian() {
+        typedef SEXP(*Ptr_is_big_endian)();
+        static Ptr_is_big_endian p_is_big_endian = NULL;
+        if (p_is_big_endian == NULL) {
+            validateSignature("bool(*is_big_endian)()");
+            p_is_big_endian = (Ptr_is_big_endian)R_GetCCallable("qs", "_qs_is_big_endian");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_is_big_endian();
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<bool >(rcpp_result_gen);
+    }
+
+    inline double c_qsave(SEXP const x, const std::string& file, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
+        typedef SEXP(*Ptr_c_qsave)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qsave p_c_qsave = NULL;
+        if (p_c_qsave == NULL) {
+            validateSignature("double(*c_qsave)(SEXP const,const std::string&,const std::string&,const std::string&,const int,const int,const bool,const int)");
+            p_c_qsave = (Ptr_c_qsave)R_GetCCallable("qs", "_qs_c_qsave");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qsave(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(file)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)), Shield<SEXP>(Rcpp::wrap(nthreads)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<double >(rcpp_result_gen);
+    }
+
+    inline double c_qsave_fd(SEXP const x, const int fd, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
+        typedef SEXP(*Ptr_c_qsave_fd)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qsave_fd p_c_qsave_fd = NULL;
+        if (p_c_qsave_fd == NULL) {
+            validateSignature("double(*c_qsave_fd)(SEXP const,const int,const std::string&,const std::string&,const int,const int,const bool)");
+            p_c_qsave_fd = (Ptr_c_qsave_fd)R_GetCCallable("qs", "_qs_c_qsave_fd");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qsave_fd(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(fd)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<double >(rcpp_result_gen);
+    }
+
+    inline double c_qsave_handle(SEXP const x, SEXP const handle, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
+        typedef SEXP(*Ptr_c_qsave_handle)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qsave_handle p_c_qsave_handle = NULL;
+        if (p_c_qsave_handle == NULL) {
+            validateSignature("double(*c_qsave_handle)(SEXP const,SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
+            p_c_qsave_handle = (Ptr_c_qsave_handle)R_GetCCallable("qs", "_qs_c_qsave_handle");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qsave_handle(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(handle)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<double >(rcpp_result_gen);
+    }
+
+    inline RawVector c_qserialize(SEXP const x, const std::string& preset, const std::string& algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
+        typedef SEXP(*Ptr_c_qserialize)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qserialize p_c_qserialize = NULL;
+        if (p_c_qserialize == NULL) {
+            validateSignature("RawVector(*c_qserialize)(SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
+            p_c_qserialize = (Ptr_c_qserialize)R_GetCCallable("qs", "_qs_c_qserialize");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qserialize(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(preset)), Shield<SEXP>(Rcpp::wrap(algorithm)), Shield<SEXP>(Rcpp::wrap(compress_level)), Shield<SEXP>(Rcpp::wrap(shuffle_control)), Shield<SEXP>(Rcpp::wrap(check_hash)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<RawVector >(rcpp_result_gen);
+    }
+
+    inline SEXP c_qread(const std::string& file, const bool use_alt_rep, const bool strict, const int nthreads) {
+        typedef SEXP(*Ptr_c_qread)(SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qread p_c_qread = NULL;
+        if (p_c_qread == NULL) {
+            validateSignature("SEXP(*c_qread)(const std::string&,const bool,const bool,const int)");
+            p_c_qread = (Ptr_c_qread)R_GetCCallable("qs", "_qs_c_qread");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qread(Shield<SEXP>(Rcpp::wrap(file)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)), Shield<SEXP>(Rcpp::wrap(nthreads)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
+    inline SEXP c_qread_fd(const int fd, const bool use_alt_rep, const bool strict) {
+        typedef SEXP(*Ptr_c_qread_fd)(SEXP,SEXP,SEXP);
+        static Ptr_c_qread_fd p_c_qread_fd = NULL;
+        if (p_c_qread_fd == NULL) {
+            validateSignature("SEXP(*c_qread_fd)(const int,const bool,const bool)");
+            p_c_qread_fd = (Ptr_c_qread_fd)R_GetCCallable("qs", "_qs_c_qread_fd");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qread_fd(Shield<SEXP>(Rcpp::wrap(fd)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
+    inline SEXP c_qread_handle(SEXP const handle, const bool use_alt_rep, const bool strict) {
+        typedef SEXP(*Ptr_c_qread_handle)(SEXP,SEXP,SEXP);
+        static Ptr_c_qread_handle p_c_qread_handle = NULL;
+        if (p_c_qread_handle == NULL) {
+            validateSignature("SEXP(*c_qread_handle)(SEXP const,const bool,const bool)");
+            p_c_qread_handle = (Ptr_c_qread_handle)R_GetCCallable("qs", "_qs_c_qread_handle");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qread_handle(Shield<SEXP>(Rcpp::wrap(handle)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
+    inline SEXP c_qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep, const bool strict) {
+        typedef SEXP(*Ptr_c_qread_ptr)(SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qread_ptr p_c_qread_ptr = NULL;
+        if (p_c_qread_ptr == NULL) {
+            validateSignature("SEXP(*c_qread_ptr)(SEXP const,const double,const bool,const bool)");
+            p_c_qread_ptr = (Ptr_c_qread_ptr)R_GetCCallable("qs", "_qs_c_qread_ptr");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qread_ptr(Shield<SEXP>(Rcpp::wrap(pointer)), Shield<SEXP>(Rcpp::wrap(length)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
+    inline SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
+        typedef SEXP(*Ptr_c_qdeserialize)(SEXP,SEXP,SEXP);
+        static Ptr_c_qdeserialize p_c_qdeserialize = NULL;
+        if (p_c_qdeserialize == NULL) {
+            validateSignature("SEXP(*c_qdeserialize)(SEXP const,const bool,const bool)");
+            p_c_qdeserialize = (Ptr_c_qdeserialize)R_GetCCallable("qs", "_qs_c_qdeserialize");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qdeserialize(Shield<SEXP>(Rcpp::wrap(x)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
+    inline RObject c_qdump(const std::string& file) {
+        typedef SEXP(*Ptr_c_qdump)(SEXP);
+        static Ptr_c_qdump p_c_qdump = NULL;
+        if (p_c_qdump == NULL) {
+            validateSignature("RObject(*c_qdump)(const std::string&)");
+            p_c_qdump = (Ptr_c_qdump)R_GetCCallable("qs", "_qs_c_qdump");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qdump(Shield<SEXP>(Rcpp::wrap(file)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<RObject >(rcpp_result_gen);
     }
 
     inline int openFd(const std::string& file, const std::string& mode) {

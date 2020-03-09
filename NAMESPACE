@@ -21,4 +21,9 @@ export("qsave",
        "randomStrings", 
        "convertToAlt", 
        "blosc_shuffle_raw", 
-       "blosc_unshuffle_raw")
+       "blosc_unshuffle_raw",
+       "base85_encode", 
+       "base85_decode",
+       "base91_encode", 
+       "base91_decode",
+       "catquo")

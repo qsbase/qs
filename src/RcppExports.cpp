@@ -8,6 +8,507 @@
 
 using namespace Rcpp;
 
+// randomStrings
+std::vector<std::string> randomStrings(const int N, const int string_size);
+static SEXP _qs_randomStrings_try(SEXP NSEXP, SEXP string_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const int >::type string_size(string_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(randomStrings(N, string_size));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_randomStrings(SEXP NSEXP, SEXP string_sizeSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        Rcpp::RNGScope rcpp_rngScope_gen;
+        rcpp_result_gen = PROTECT(_qs_randomStrings_try(NSEXP, string_sizeSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// zstd_compress_bound
+int zstd_compress_bound(const int size);
+static SEXP _qs_zstd_compress_bound_try(SEXP sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const int >::type size(sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(zstd_compress_bound(size));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_zstd_compress_bound(SEXP sizeSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_zstd_compress_bound_try(sizeSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// lz4_compress_bound
+int lz4_compress_bound(const int size);
+static SEXP _qs_lz4_compress_bound_try(SEXP sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const int >::type size(sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(lz4_compress_bound(size));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_lz4_compress_bound(SEXP sizeSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_lz4_compress_bound_try(sizeSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// zstd_compress_raw
+std::vector<unsigned char> zstd_compress_raw(SEXP const x, const int compress_level);
+static SEXP _qs_zstd_compress_raw_try(SEXP xSEXP, SEXP compress_levelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int >::type compress_level(compress_levelSEXP);
+    rcpp_result_gen = Rcpp::wrap(zstd_compress_raw(x, compress_level));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_zstd_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_zstd_compress_raw_try(xSEXP, compress_levelSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// zstd_decompress_raw
+RawVector zstd_decompress_raw(SEXP const x);
+static SEXP _qs_zstd_decompress_raw_try(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(zstd_decompress_raw(x));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_zstd_decompress_raw(SEXP xSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_zstd_decompress_raw_try(xSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// lz4_compress_raw
+std::vector<unsigned char> lz4_compress_raw(SEXP const x, const int compress_level);
+static SEXP _qs_lz4_compress_raw_try(SEXP xSEXP, SEXP compress_levelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const int >::type compress_level(compress_levelSEXP);
+    rcpp_result_gen = Rcpp::wrap(lz4_compress_raw(x, compress_level));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_lz4_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_lz4_compress_raw_try(xSEXP, compress_levelSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// lz4_decompress_raw
+std::vector<unsigned char> lz4_decompress_raw(SEXP const x);
+static SEXP _qs_lz4_decompress_raw_try(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(lz4_decompress_raw(x));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_lz4_decompress_raw(SEXP xSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_lz4_decompress_raw_try(xSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// blosc_shuffle_raw
+std::vector<unsigned char> blosc_shuffle_raw(SEXP const x, int bytesofsize);
+static SEXP _qs_blosc_shuffle_raw_try(SEXP xSEXP, SEXP bytesofsizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(blosc_shuffle_raw(x, bytesofsize));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_blosc_shuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_blosc_shuffle_raw_try(xSEXP, bytesofsizeSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// blosc_unshuffle_raw
+std::vector<unsigned char> blosc_unshuffle_raw(SEXP const x, int bytesofsize);
+static SEXP _qs_blosc_unshuffle_raw_try(SEXP xSEXP, SEXP bytesofsizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(blosc_unshuffle_raw(x, bytesofsize));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_blosc_unshuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_blosc_unshuffle_raw_try(xSEXP, bytesofsizeSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// xxhash_raw
+std::string xxhash_raw(SEXP const x);
+static SEXP _qs_xxhash_raw_try(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(xxhash_raw(x));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_xxhash_raw(SEXP xSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_xxhash_raw_try(xSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// convertToAlt
+SEXP convertToAlt(const CharacterVector& x);
+static SEXP _qs_convertToAlt_try(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const CharacterVector& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(convertToAlt(x));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_convertToAlt_try(xSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// base85_encode
+std::string base85_encode(const RawVector& rawdata);
+static SEXP _qs_base85_encode_try(SEXP rawdataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const RawVector& >::type rawdata(rawdataSEXP);
+    rcpp_result_gen = Rcpp::wrap(base85_encode(rawdata));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_base85_encode(SEXP rawdataSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_base85_encode_try(rawdataSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// base85_decode
+RawVector base85_decode(const std::string& encoded_string);
+static SEXP _qs_base85_decode_try(SEXP encoded_stringSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type encoded_string(encoded_stringSEXP);
+    rcpp_result_gen = Rcpp::wrap(base85_decode(encoded_string));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_base85_decode(SEXP encoded_stringSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_base85_decode_try(encoded_stringSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// base91_encode
+std::string base91_encode(const RawVector& rawdata);
+static SEXP _qs_base91_encode_try(SEXP rawdataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const RawVector& >::type rawdata(rawdataSEXP);
+    rcpp_result_gen = Rcpp::wrap(base91_encode(rawdata));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_base91_encode(SEXP rawdataSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_base91_encode_try(rawdataSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// base91_decode
+RawVector base91_decode(const std::string& encoded_string);
+static SEXP _qs_base91_decode_try(SEXP encoded_stringSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type encoded_string(encoded_stringSEXP);
+    rcpp_result_gen = Rcpp::wrap(base91_decode(encoded_string));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_base91_decode(SEXP encoded_stringSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_base91_decode_try(encoded_stringSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 // is_big_endian
 bool is_big_endian();
 static SEXP _qs_is_big_endian_try() {
@@ -406,375 +907,6 @@ RcppExport SEXP _qs_c_qdump(SEXP fileSEXP) {
     UNPROTECT(1);
     return rcpp_result_gen;
 }
-// randomStrings
-std::vector<std::string> randomStrings(const int N, const int string_size);
-static SEXP _qs_randomStrings_try(SEXP NSEXP, SEXP string_sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< const int >::type string_size(string_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(randomStrings(N, string_size));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_randomStrings(SEXP NSEXP, SEXP string_sizeSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        Rcpp::RNGScope rcpp_rngScope_gen;
-        rcpp_result_gen = PROTECT(_qs_randomStrings_try(NSEXP, string_sizeSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// zstd_compress_bound
-int zstd_compress_bound(const int size);
-static SEXP _qs_zstd_compress_bound_try(SEXP sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const int >::type size(sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(zstd_compress_bound(size));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_zstd_compress_bound(SEXP sizeSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_zstd_compress_bound_try(sizeSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// lz4_compress_bound
-int lz4_compress_bound(const int size);
-static SEXP _qs_lz4_compress_bound_try(SEXP sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const int >::type size(sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(lz4_compress_bound(size));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_lz4_compress_bound(SEXP sizeSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_lz4_compress_bound_try(sizeSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// zstd_compress_raw
-std::vector<unsigned char> zstd_compress_raw(SEXP const x, const int compress_level);
-static SEXP _qs_zstd_compress_raw_try(SEXP xSEXP, SEXP compress_levelSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const int >::type compress_level(compress_levelSEXP);
-    rcpp_result_gen = Rcpp::wrap(zstd_compress_raw(x, compress_level));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_zstd_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_zstd_compress_raw_try(xSEXP, compress_levelSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// zstd_decompress_raw
-RawVector zstd_decompress_raw(SEXP const x);
-static SEXP _qs_zstd_decompress_raw_try(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(zstd_decompress_raw(x));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_zstd_decompress_raw(SEXP xSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_zstd_decompress_raw_try(xSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// lz4_compress_raw
-std::vector<unsigned char> lz4_compress_raw(SEXP const x, const int compress_level);
-static SEXP _qs_lz4_compress_raw_try(SEXP xSEXP, SEXP compress_levelSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const int >::type compress_level(compress_levelSEXP);
-    rcpp_result_gen = Rcpp::wrap(lz4_compress_raw(x, compress_level));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_lz4_compress_raw(SEXP xSEXP, SEXP compress_levelSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_lz4_compress_raw_try(xSEXP, compress_levelSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// lz4_decompress_raw
-std::vector<unsigned char> lz4_decompress_raw(SEXP const x);
-static SEXP _qs_lz4_decompress_raw_try(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(lz4_decompress_raw(x));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_lz4_decompress_raw(SEXP xSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_lz4_decompress_raw_try(xSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// blosc_shuffle_raw
-std::vector<unsigned char> blosc_shuffle_raw(SEXP const x, int bytesofsize);
-static SEXP _qs_blosc_shuffle_raw_try(SEXP xSEXP, SEXP bytesofsizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(blosc_shuffle_raw(x, bytesofsize));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_blosc_shuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_blosc_shuffle_raw_try(xSEXP, bytesofsizeSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// blosc_unshuffle_raw
-std::vector<unsigned char> blosc_unshuffle_raw(SEXP const x, int bytesofsize);
-static SEXP _qs_blosc_unshuffle_raw_try(SEXP xSEXP, SEXP bytesofsizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    Rcpp::traits::input_parameter< int >::type bytesofsize(bytesofsizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(blosc_unshuffle_raw(x, bytesofsize));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_blosc_unshuffle_raw(SEXP xSEXP, SEXP bytesofsizeSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_blosc_unshuffle_raw_try(xSEXP, bytesofsizeSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// xxhash_raw
-std::string xxhash_raw(SEXP const x);
-static SEXP _qs_xxhash_raw_try(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(xxhash_raw(x));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_xxhash_raw(SEXP xSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_xxhash_raw_try(xSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// convertToAlt
-SEXP convertToAlt(const CharacterVector& x);
-static SEXP _qs_convertToAlt_try(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const CharacterVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(convertToAlt(x));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_convertToAlt_try(xSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
 // openFd
 int openFd(const std::string& file, const std::string& mode);
 static SEXP _qs_openFd_try(SEXP fileSEXP, SEXP modeSEXP) {
@@ -1117,17 +1249,6 @@ RcppExport SEXP _qs_closeWinMapView(SEXP pointerSEXP) {
 static int _qs_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
-        signatures.insert("bool(*is_big_endian)()");
-        signatures.insert("double(*c_qsave)(SEXP const,const std::string&,const std::string&,const std::string&,const int,const int,const bool,const int)");
-        signatures.insert("double(*c_qsave_fd)(SEXP const,const int,const std::string&,const std::string&,const int,const int,const bool)");
-        signatures.insert("double(*c_qsave_handle)(SEXP const,SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
-        signatures.insert("RawVector(*c_qserialize)(SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
-        signatures.insert("SEXP(*c_qread)(const std::string&,const bool,const bool,const int)");
-        signatures.insert("SEXP(*c_qread_fd)(const int,const bool,const bool)");
-        signatures.insert("SEXP(*c_qread_handle)(SEXP const,const bool,const bool)");
-        signatures.insert("SEXP(*c_qread_ptr)(SEXP const,const double,const bool,const bool)");
-        signatures.insert("SEXP(*c_qdeserialize)(SEXP const,const bool,const bool)");
-        signatures.insert("RObject(*c_qdump)(const std::string&)");
         signatures.insert("std::vector<std::string>(*randomStrings)(const int,const int)");
         signatures.insert("int(*zstd_compress_bound)(const int)");
         signatures.insert("int(*lz4_compress_bound)(const int)");
@@ -1139,6 +1260,21 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("std::vector<unsigned char>(*blosc_unshuffle_raw)(SEXP const,int)");
         signatures.insert("std::string(*xxhash_raw)(SEXP const)");
         signatures.insert("SEXP(*convertToAlt)(const CharacterVector&)");
+        signatures.insert("std::string(*base85_encode)(const RawVector&)");
+        signatures.insert("RawVector(*base85_decode)(const std::string&)");
+        signatures.insert("std::string(*base91_encode)(const RawVector&)");
+        signatures.insert("RawVector(*base91_decode)(const std::string&)");
+        signatures.insert("bool(*is_big_endian)()");
+        signatures.insert("double(*c_qsave)(SEXP const,const std::string&,const std::string&,const std::string&,const int,const int,const bool,const int)");
+        signatures.insert("double(*c_qsave_fd)(SEXP const,const int,const std::string&,const std::string&,const int,const int,const bool)");
+        signatures.insert("double(*c_qsave_handle)(SEXP const,SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
+        signatures.insert("RawVector(*c_qserialize)(SEXP const,const std::string&,const std::string&,const int,const int,const bool)");
+        signatures.insert("SEXP(*c_qread)(const std::string&,const bool,const bool,const int)");
+        signatures.insert("SEXP(*c_qread_fd)(const int,const bool,const bool)");
+        signatures.insert("SEXP(*c_qread_handle)(SEXP const,const bool,const bool)");
+        signatures.insert("SEXP(*c_qread_ptr)(SEXP const,const double,const bool,const bool)");
+        signatures.insert("SEXP(*c_qdeserialize)(SEXP const,const bool,const bool)");
+        signatures.insert("RObject(*c_qdump)(const std::string&)");
         signatures.insert("int(*openFd)(const std::string&,const std::string&)");
         signatures.insert("SEXP(*readFdDirect)(const int,const int)");
         signatures.insert("int(*closeFd)(const int)");
@@ -1155,17 +1291,6 @@ static int _qs_RcppExport_validate(const char* sig) {
 
 // registerCCallable (register entry points for exported C++ functions)
 RcppExport SEXP _qs_RcppExport_registerCCallable() { 
-    R_RegisterCCallable("qs", "_qs_is_big_endian", (DL_FUNC)_qs_is_big_endian_try);
-    R_RegisterCCallable("qs", "_qs_c_qsave", (DL_FUNC)_qs_c_qsave_try);
-    R_RegisterCCallable("qs", "_qs_c_qsave_fd", (DL_FUNC)_qs_c_qsave_fd_try);
-    R_RegisterCCallable("qs", "_qs_c_qsave_handle", (DL_FUNC)_qs_c_qsave_handle_try);
-    R_RegisterCCallable("qs", "_qs_c_qserialize", (DL_FUNC)_qs_c_qserialize_try);
-    R_RegisterCCallable("qs", "_qs_c_qread", (DL_FUNC)_qs_c_qread_try);
-    R_RegisterCCallable("qs", "_qs_c_qread_fd", (DL_FUNC)_qs_c_qread_fd_try);
-    R_RegisterCCallable("qs", "_qs_c_qread_handle", (DL_FUNC)_qs_c_qread_handle_try);
-    R_RegisterCCallable("qs", "_qs_c_qread_ptr", (DL_FUNC)_qs_c_qread_ptr_try);
-    R_RegisterCCallable("qs", "_qs_c_qdeserialize", (DL_FUNC)_qs_c_qdeserialize_try);
-    R_RegisterCCallable("qs", "_qs_c_qdump", (DL_FUNC)_qs_c_qdump_try);
     R_RegisterCCallable("qs", "_qs_randomStrings", (DL_FUNC)_qs_randomStrings_try);
     R_RegisterCCallable("qs", "_qs_zstd_compress_bound", (DL_FUNC)_qs_zstd_compress_bound_try);
     R_RegisterCCallable("qs", "_qs_lz4_compress_bound", (DL_FUNC)_qs_lz4_compress_bound_try);
@@ -1177,6 +1302,21 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_blosc_unshuffle_raw", (DL_FUNC)_qs_blosc_unshuffle_raw_try);
     R_RegisterCCallable("qs", "_qs_xxhash_raw", (DL_FUNC)_qs_xxhash_raw_try);
     R_RegisterCCallable("qs", "_qs_convertToAlt", (DL_FUNC)_qs_convertToAlt_try);
+    R_RegisterCCallable("qs", "_qs_base85_encode", (DL_FUNC)_qs_base85_encode_try);
+    R_RegisterCCallable("qs", "_qs_base85_decode", (DL_FUNC)_qs_base85_decode_try);
+    R_RegisterCCallable("qs", "_qs_base91_encode", (DL_FUNC)_qs_base91_encode_try);
+    R_RegisterCCallable("qs", "_qs_base91_decode", (DL_FUNC)_qs_base91_decode_try);
+    R_RegisterCCallable("qs", "_qs_is_big_endian", (DL_FUNC)_qs_is_big_endian_try);
+    R_RegisterCCallable("qs", "_qs_c_qsave", (DL_FUNC)_qs_c_qsave_try);
+    R_RegisterCCallable("qs", "_qs_c_qsave_fd", (DL_FUNC)_qs_c_qsave_fd_try);
+    R_RegisterCCallable("qs", "_qs_c_qsave_handle", (DL_FUNC)_qs_c_qsave_handle_try);
+    R_RegisterCCallable("qs", "_qs_c_qserialize", (DL_FUNC)_qs_c_qserialize_try);
+    R_RegisterCCallable("qs", "_qs_c_qread", (DL_FUNC)_qs_c_qread_try);
+    R_RegisterCCallable("qs", "_qs_c_qread_fd", (DL_FUNC)_qs_c_qread_fd_try);
+    R_RegisterCCallable("qs", "_qs_c_qread_handle", (DL_FUNC)_qs_c_qread_handle_try);
+    R_RegisterCCallable("qs", "_qs_c_qread_ptr", (DL_FUNC)_qs_c_qread_ptr_try);
+    R_RegisterCCallable("qs", "_qs_c_qdeserialize", (DL_FUNC)_qs_c_qdeserialize_try);
+    R_RegisterCCallable("qs", "_qs_c_qdump", (DL_FUNC)_qs_c_qdump_try);
     R_RegisterCCallable("qs", "_qs_openFd", (DL_FUNC)_qs_openFd_try);
     R_RegisterCCallable("qs", "_qs_readFdDirect", (DL_FUNC)_qs_readFdDirect_try);
     R_RegisterCCallable("qs", "_qs_closeFd", (DL_FUNC)_qs_closeFd_try);
@@ -1192,17 +1332,6 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
-    {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
-    {"_qs_c_qsave_fd", (DL_FUNC) &_qs_c_qsave_fd, 7},
-    {"_qs_c_qsave_handle", (DL_FUNC) &_qs_c_qsave_handle, 7},
-    {"_qs_c_qserialize", (DL_FUNC) &_qs_c_qserialize, 6},
-    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
-    {"_qs_c_qread_fd", (DL_FUNC) &_qs_c_qread_fd, 3},
-    {"_qs_c_qread_handle", (DL_FUNC) &_qs_c_qread_handle, 3},
-    {"_qs_c_qread_ptr", (DL_FUNC) &_qs_c_qread_ptr, 4},
-    {"_qs_c_qdeserialize", (DL_FUNC) &_qs_c_qdeserialize, 3},
-    {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
     {"_qs_lz4_compress_bound", (DL_FUNC) &_qs_lz4_compress_bound, 1},
@@ -1214,6 +1343,21 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_blosc_unshuffle_raw", (DL_FUNC) &_qs_blosc_unshuffle_raw, 2},
     {"_qs_xxhash_raw", (DL_FUNC) &_qs_xxhash_raw, 1},
     {"_qs_convertToAlt", (DL_FUNC) &_qs_convertToAlt, 1},
+    {"_qs_base85_encode", (DL_FUNC) &_qs_base85_encode, 1},
+    {"_qs_base85_decode", (DL_FUNC) &_qs_base85_decode, 1},
+    {"_qs_base91_encode", (DL_FUNC) &_qs_base91_encode, 1},
+    {"_qs_base91_decode", (DL_FUNC) &_qs_base91_decode, 1},
+    {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
+    {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
+    {"_qs_c_qsave_fd", (DL_FUNC) &_qs_c_qsave_fd, 7},
+    {"_qs_c_qsave_handle", (DL_FUNC) &_qs_c_qsave_handle, 7},
+    {"_qs_c_qserialize", (DL_FUNC) &_qs_c_qserialize, 6},
+    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
+    {"_qs_c_qread_fd", (DL_FUNC) &_qs_c_qread_fd, 3},
+    {"_qs_c_qread_handle", (DL_FUNC) &_qs_c_qread_handle, 3},
+    {"_qs_c_qread_ptr", (DL_FUNC) &_qs_c_qread_ptr, 4},
+    {"_qs_c_qdeserialize", (DL_FUNC) &_qs_c_qdeserialize, 3},
+    {"_qs_c_qdump", (DL_FUNC) &_qs_c_qdump, 1},
     {"_qs_openFd", (DL_FUNC) &_qs_openFd, 2},
     {"_qs_readFdDirect", (DL_FUNC) &_qs_readFdDirect, 2},
     {"_qs_closeFd", (DL_FUNC) &_qs_closeFd, 1},
@@ -1229,10 +1373,8 @@ static const R_CallMethodDef CallEntries[] = {
 };
 
 void init_stdvec_double(DllInfo* dll);
-void init_stdvec_double(DllInfo* dll);
 RcppExport void R_init_qs(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
-    init_stdvec_double(dll);
     init_stdvec_double(dll);
 }

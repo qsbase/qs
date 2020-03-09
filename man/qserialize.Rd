@@ -19,11 +19,12 @@ shuffle_control = 15L, check_hash=TRUE)
 
 \item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.}
 
-\item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization
-c @details 
-This function serializes and compresses an R object to a raw vctor
-If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.}
+\item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization}
 }
 \description{
 Saves an object to a raw vector
+}
+\details{
+This function serializes and compresses an R object to a raw vctor
+If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.
 }

@@ -1,3 +1,8 @@
+Version 0.21.2 (2020-3-8)
+   * Added implementations of base 85 and base 91 ASCII encoding. See `?base91_encoding` and `?base85_encoding`
+   * Fixed a typo in the benchmarking code (https://github.com/traversc/qs/issues/32) and updated the readme benchmark to the latest version
+   * Added a more descriptive error when trying to read a non-existent file (https://github.com/traversc/qs/pull/34)
+   
 Version 0.21.1 (2020-2-6)
    * Fix for active bindings in R6/environments (https://github.com/traversc/qs/issues/29)
    * Correct several documentation errors (https://github.com/traversc/qs/issues/28) 

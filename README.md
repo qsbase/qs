@@ -76,8 +76,8 @@ approaches in R.
     `qs` implements byte shuffling filters (adopted from the Blosc
     meta-compression library). These filters utilize extended CPU
     instruction sets (either SSE2 or AVX2).
-  - Starting from version 0.20.1, `qs` efficiently serializes S4
-    objects, environments, and other complex objects.
+  - `qs` also efficiently serializes S4 objects, environments, and other
+    complex objects.
 
 These features have the possibility of additionally increasing
 performance by orders of magnitude, for certain types of data. See
@@ -85,15 +85,14 @@ sections below for more details.
 
 ## Summary Benchmarks
 
-The following benchmarks were performed on a Ryzen 2700x desktop using
-various data types (detailed below). `qs` was compared with
-`saveRDS`/`readRDS` in base R and the `fst` package for serializing and
-de-serializing a medium sized `data.frame` with 5 million rows
-(approximately 115 Mb):
+The following benchmarks were performed comparing `qs`, `fst` and
+`saveRDS`/`readRDS` in base R for serializing and de-serializing a
+medium sized `data.frame` with 5 million rows (approximately 115 Mb in
+memory):
 
 ``` r
 data.frame(a=rnorm(5e6), 
-           b=rpois(100,5e6),
+           b=rpois(5e6,100),
            c=sample(starnames$IAU,5e6,T),
            d=sample(state.name,5e6,T),
            stringsAsFactors = F)
@@ -104,29 +103,27 @@ much speed and compression as possible, if desired. For simplicity, `qs`
 comes with 4 presets, which trades speed and compression ratio: “fast”,
 “balanced”, “high” and “archive”.
 
-The tables and plots below summarize the performance of `saveRDS`, `qs`
-and `fst` with various
+The plots below summarize the performance of `saveRDS`, `qs` and `fst`
+with various
 parameters:
 
-### Summary table
+<!-- TO DO: update table with uncompressed saveRDS, qsave for latest version -->
 
-| Algorithm                                | Threads | Write Time (s) | Read Time (s) | File Size (Mb) |
-| :--------------------------------------- | ------: | -------------: | ------------: | -------------: |
-| saveRDS / readRDS                        |       1 |          4.680 |         1.500 |           55.2 |
-| saveRDS / readRDS                        |       4 |          1.370 |         1.050 |           55.0 |
-| fst C=0                                  |       1 |          0.186 |         0.288 |          121.0 |
-| fst C=0                                  |       4 |          0.184 |         0.286 |          121.0 |
-| fst C=50                                 |       1 |          0.188 |         0.300 |           92.0 |
-| fst C=50                                 |       4 |          0.183 |         0.296 |           92.0 |
-| fst C=85                                 |       1 |          0.612 |         0.371 |           70.5 |
-| fst C=85                                 |       4 |          0.463 |         0.332 |           70.5 |
-| qs:lz4 shuffle=0 C=100 (fast)            |       1 |          0.196 |         0.319 |          106.0 |
-| qs:lz4 shuffle=0 C=100                   |       4 |          0.161 |         0.322 |          106.0 |
-| qs:lz4 shuffle=7 C=1 (balanced)          |       1 |          0.262 |         0.363 |           59.4 |
-| qs:lz4 shuffle=7 C=1                     |       4 |          0.194 |         0.365 |           59.4 |
-| qs:zstd shuffle=7 C=4 (high)             |       1 |          0.393 |         0.409 |           50.0 |
-| qs:zstd shuffle=7 C=4                    |       4 |          0.212 |         0.411 |           50.0 |
-| qs:zstd\_stream shuffle=7 C=14 (archive) |       1 |          9.160 |         0.452 |           46.9 |
+<!-- ### Summary table -->
+
+<!-- ```{r echo=FALSE} -->
+
+<!-- df <- read.csv("df_bench_summary.csv", check.names=F, stringsAsFactors=F) -->
+
+<!-- df$`Write Time (s)` <- signif(df$`Write Time (s)`, 3) -->
+
+<!-- df$`Read Time (s)` <- signif(df$`Read Time (s)`, 3) -->
+
+<!-- df$`File Size (Mb)` <- signif(df$`File Size (Mb)`, 3) -->
+
+<!-- knitr::kable(df) -->
+
+<!-- ``` -->
 
 ### Serializing
 
@@ -134,7 +131,8 @@ parameters:
 
 ### De-serializing
 
-![](vignettes/df_bench_read.png "df_bench_read")
+![](vignettes/df_bench_read.png "df_bench_read") *(Benchmarks are based on `qs`
+ver. 0.21.2, `fst` ver. 0.9.0 and R 3.6.1.)*
 
 Benchmarking write and read speed is a bit tricky and depends highly on
 a number of factors, such as operating system, the hardware being run
@@ -150,15 +148,14 @@ through various optimizations (e.g. see “Byte Shuffle” section below).
 ## Byte Shuffle
 
 Byte shuffling (adopted from the Blosc meta-compression library) is a
-way of re-organizing data to be more ammenable to compression. For
-example: an integer contains four bytes and the limits of an integer in
-R are +/- 2^31-1. However, most real data doesn’t use anywhere near the
-range of possible integer values. For example, if the data were
-representing percentages, 0% to 100%, the first three bytes would be
-unused and zero.
+way of re-organizing data to be more ammenable to compression. An
+integer contains four bytes and the limits of an integer in R are +/-
+2^31-1. However, most real data doesn’t use anywhere near the range of
+possible integer values. For example, if the data were representing
+percentages, 0% to 100%, the first three bytes would be unused and zero.
 
 Byte shuffling rearranges the data such that all of the first bytes are
-blocked together, the second bytes are blocked together, etc. This
+blocked together, the second bytes are blocked together, and so on This
 procedure often makes it very easy for compression algorithms to find
 repeated patterns and can often improves compression ratio by orders of
 magnitude. In the example below, shuffle compression achieves a
@@ -223,9 +220,34 @@ qdeserialize(x)
 [1] 1 2 3
 ```
 
+## Serializing objects to ASCII
+
+The `qs` package includes two sets of utility functions for converting
+binary data to ASCII:
+
+  - `base85_encode` and `base85_decode`
+  - `base91_encode` and `base91_decode`
+
+These functions are similar to base64 encoding functions found in
+various packages, but offer greater
+efficiency.
+
+Example:
+
+``` r
+enc <- base91_encode(qserialize(datasets::mtcars, preset = "custom", compress_level = 22))
+dec <- qdeserialize(base91_decode(enc))
+```
+
+(Note: base91 strings contain double quote characters (`"`) and need to
+be single quoted if stored as a string.)
+
+See the help files for additional details and history behind these
+algorithms.
+
 ## Using qs within Rcpp
 
-`qs` functions can be called directly with C++ code via Rcpp.
+`qs` functions can be called directly within C++ code via Rcpp.
 
 Example C++ script:
 
@@ -252,13 +274,14 @@ qread("/tmp/myfile.qs")
 [1] 1 2 3
 ```
 
-The direct C++ functions do not have default parameters; all paramters
-must be specified.
+The C++ functions do not have default parameters; all parameters must be
+specified.
 
 ## Future developments
 
   - Additional compression algorithms
-  - Improved alt-rep string reading support
-  - Improved S4 object serialization
+  - Improved alt-rep support for serialization
+  - Improved alt-rep support for deserialization of string vectors
+  - Re-write of multithreading code
 
 Future versions will be backwards compatible with the current version.

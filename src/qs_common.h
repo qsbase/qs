@@ -252,7 +252,7 @@ struct stdvec_string {
   // -------- initialize the altrep class with the methods above
   
   static void Init(DllInfo* dll){
-    class_t = R_make_altstring_class("stdvec_string", "altrepisode", dll);
+    class_t = R_make_altstring_class("stdvec_string", "qs", dll);
     
     // altrep
     R_set_altrep_Length_method(class_t, Length);
@@ -279,8 +279,8 @@ void init_stdvec_double(DllInfo* dll){
 }
 
 #else
-// [[Rcpp::init]]
-void init_stdvec_double(DllInfo* dll){
+void init_stdvec_double(DllInfo* dll) {
+  // void;
   // do nothing -- need a dummy function becasue of Rcpp attributes
 }
 #endif

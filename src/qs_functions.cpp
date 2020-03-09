@@ -26,16 +26,16 @@
 #include "qs_mt_deserialization.h"
 #include "qs_serialization_stream.h"
 #include "qs_deserialization_stream.h"
+#include "extra_functions.h" // should we try to compile in a seperate unit?  Would probably need to inline everything in qs_common.h
   
 /*
  * headers:
- * qs_common.h -> qs_serialization.h -> qs_functions.cpp
- * qs_common.h -> qs_deserialization.h -> qs_functions.cpp
- * qs_common.h -> qs_mt_serialization.h -> qs_functions.cpp
- * qs_common.h -> qs_mt_deserialization.h -> qs_functions.cpp
- * qs_common.h -> qs_serialization_stream.h -> qs_functions.cpp
- * qs_common.h -> qs_deserialization_stream.h -> qs_functions.cpp
- * qs_common.h is protected with an include guard
+ * qs_common.h -> qs_serialize_common.h -> qs_serialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_deserialize_common.h -> qs_deserialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_serialize_common.h -> qs_mt_serialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_deserialize_common.h -> qs_mt_deserialization.h -> qs_functions.cpp
+ * qs_common.h -> qs_serialize_common.h -> qs_serialization_stream.h -> qs_functions.cpp
+ * qs_common.h -> qs_deserialize_common.h -> qs_deserialization_stream.h -> qs_functions.cpp
  */
 
 // [[Rcpp::interfaces(r, cpp)]]
@@ -56,7 +56,7 @@ double c_qsave(SEXP const x, const std::string & file, const std::string & prese
                const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
   std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error("Failed to open file");
+    throw std::runtime_error("Failed to open " + file + ". Check file path.");
   }
   std::streampos origin = myFile.tellp();
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
@@ -272,7 +272,7 @@ RawVector c_qserialize(SEXP const x, const std::string & preset, const std::stri
 SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict, const int nthreads) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error("Failed to open file");
+    throw std::runtime_error("Failed to open " + file + ". Check file path.");
   }
   Protect_Tracker pt = Protect_Tracker();
   QsMetadata qm = QsMetadata::create(myFile);
@@ -570,188 +570,6 @@ RObject c_qdump(const std::string & file) {
     outvec["error"] = "unknown compression";
   }
   return outvec;
-}
-
-// void qs_use_alt_rep(bool s) {
-//   use_alt_rep_bool = s;
-// }
-
-// [[Rcpp::export]]
-std::vector<std::string> randomStrings(const int N, const int string_size = 50) {
-  std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  std::vector<std::string> ret(N);
-  std::string str(string_size, '0');
-  for(int i=0; i<N; i++) {
-    std::vector<int> r = Rcpp::as< std::vector<int> >(Rcpp::sample(charset.size(), string_size, true, R_NilValue, false));
-    for(int j=0; j<string_size; j++) str[j] = charset[r[j]];
-    ret[i] = str;
-  }
-  return ret;
-}
-
-
-
-////////////////////////////////////////////////////////////////
-// functions for users to investigate compression algorithms
-////////////////////////////////////////////////////////////////
-
-// [[Rcpp::export(rng = false)]]
-int zstd_compress_bound(const int size) {
-  return ZSTD_compressBound(size);
-}
-
-// [[Rcpp::export(rng = false)]]
-int lz4_compress_bound(const int size) {
-  return LZ4_compressBound(size);
-}
-
-// [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> zstd_compress_raw(SEXP const x, const int compress_level) {
-  if(compress_level > 22 || compress_level < -50) throw std::runtime_error("compress_level must be an integer between -50 and 22");
-  uint64_t xsize = Rf_xlength(x);
-  uint64_t zsize = ZSTD_compressBound(xsize);
-  char* xdata = reinterpret_cast<char*>(RAW(x));
-  std::vector<unsigned char> ret(zsize);
-  char* retdata = reinterpret_cast<char*>(ret.data());
-  zsize = ZSTD_compress(retdata, zsize, xdata, xsize, compress_level);
-  ret.resize(zsize);
-  return ret;
-}
-
-// [[Rcpp::export(rng = false)]]
-RawVector zstd_decompress_raw(SEXP const x) {
-  uint64_t zsize = Rf_xlength(x);
-  char* xdata = reinterpret_cast<char*>(RAW(x));
-  uint64_t retsize = ZSTD_getFrameContentSize(xdata, zsize);
-  RawVector ret(retsize);
-  char* retdata = reinterpret_cast<char*>(RAW(ret));
-  ZSTD_decompress(retdata, retsize, xdata, zsize);
-  return ret;
-}
-
-// [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> lz4_compress_raw(SEXP const x, const int compress_level) {
-  if(compress_level < 1) throw std::runtime_error("compress_level must be an integer greater than 1");
-  uint64_t xsize = Rf_xlength(x);
-  uint64_t zsize = LZ4_compressBound(xsize);
-  char* xdata = reinterpret_cast<char*>(RAW(x));
-  std::vector<unsigned char> ret(zsize);
-  char* retdata = reinterpret_cast<char*>(ret.data());
-  zsize = LZ4_compress_fast(xdata, retdata, xsize, zsize, compress_level);
-  ret.resize(zsize);
-  return ret;
-}
-
-// [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> lz4_decompress_raw(SEXP const x) {
-  int zsize = Rf_xlength(x);
-  char* xdata = reinterpret_cast<char*>(RAW(x));
-  std::vector<unsigned char> ret(zsize*3/2);
-  
-  // char* retdata = reinterpret_cast<char*>(ret.data());
-  // int decomp = LZ4_decompress_safe(xdata, retdata, zsize, ret.size());
-  int decomp = -1;
-  while(ret.size() < INT_MAX) {
-    char* retdata = reinterpret_cast<char*>(ret.data());
-    decomp = LZ4_decompress_safe(xdata, retdata, zsize, ret.size());
-    if(decomp < 0) {
-      ret.resize(std::min(ret.size() * 2,  static_cast<size_t>(INT_MAX)));
-    } else {
-      break;
-    }
-  }
-  if(decomp < 0) throw std::runtime_error("lz4 decompression failed");
-  ret.resize(decomp);
-  return ret;
-}
-
-// [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> blosc_shuffle_raw(SEXP const x, int bytesofsize) {
-#if defined (__AVX2__)
-  Rcpp::Rcerr << "AVX2" << std::endl;
-#elif defined (__SSE2__)
-  Rcpp::Rcerr << "SSE2" << std::endl;
-#else
-  Rcpp::Rcerr << "no SIMD" << std::endl;
-#endif
-  if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
-  uint64_t blocksize = Rf_xlength(x);
-  uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
-  std::vector<uint8_t> xshuf(blocksize);
-  blosc_shuffle(xdata, xshuf.data(), blocksize, bytesofsize);
-  uint64_t remainder = blocksize % bytesofsize;
-  uint64_t vectorizablebytes = blocksize - remainder;
-  std::memcpy(xshuf.data() + vectorizablebytes, xdata + vectorizablebytes, remainder);
-  return xshuf;
-}
-
-// [[Rcpp::export(rng = false)]]
-std::vector<unsigned char> blosc_unshuffle_raw(SEXP const x, int bytesofsize) {
-#if defined (__AVX2__)
-  Rcpp::Rcerr << "AVX2" << std::endl;
-#elif defined (__SSE2__)
-  Rcpp::Rcerr << "SSE2" << std::endl;
-#else
-  Rcpp::Rcerr << "no SIMD" << std::endl;
-#endif
-  if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
-  uint64_t blocksize = Rf_xlength(x);
-  uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
-  std::vector<uint8_t> xshuf(blocksize);
-  blosc_unshuffle(xdata, xshuf.data(), blocksize, bytesofsize);
-  uint64_t remainder = blocksize % bytesofsize;
-  uint64_t vectorizablebytes = blocksize - remainder;
-  std::memcpy(xshuf.data() + vectorizablebytes, xdata + vectorizablebytes, remainder);
-  return xshuf;
-}
-
-// [[Rcpp::export(rng = false)]]
-std::string xxhash_raw(SEXP const x) {
-  uint64_t xsize = Rf_xlength(x);
-  uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
-  xxhash_env xenv = xxhash_env();
-  xenv.update(xdata, xsize);
-  return std::to_string(xenv.digest());
-}
-
-// TODO: use SEXP instead of CharacterVector
-// [[Rcpp::export(rng = false)]]
-SEXP convertToAlt(const CharacterVector & x) {
-#ifdef ALTREP_SUPPORTED
-  auto ret = new stdvec_data(x.size());
-  for(int i=0; i < x.size(); i++) {
-    SEXP xi = x[i];
-    if(xi == NA_STRING) {
-      ret->encodings[i] = 5;
-    } else {
-      switch(Rf_getCharCE(xi)) {
-      case CE_NATIVE:
-        ret->encodings[i] = 1;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      case CE_UTF8:
-        ret->encodings[i] = 2;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      case CE_LATIN1:
-        ret->encodings[i] = 3;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      case CE_BYTES:
-        ret->encodings[i] = 4;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      default:
-        ret->encodings[i] = 5;
-      break;
-      }
-    }
-  }
-  return stdvec_string::Make(ret, true);
-#else
-  Rcerr << "this function is not available in R < 3.5.0" << std::endl;
-  return R_NilValue;
-#endif
 }
 
 // [[Rcpp::export(rng = false)]]
