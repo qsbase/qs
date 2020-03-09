@@ -67,7 +67,7 @@ typedef enum { noDictCtx, usingDictCtxHc } dictCtx_directive;
 
 #define LZ4_COMMONDEFS_ONLY
 #ifndef LZ4_SRC_INCLUDED
-#include "lz4.c"   /* LZ4_count, constants, mem */
+#include "lz4.cpp"   /* LZ4_count, constants, mem */
 #endif
 
 /*===   Constants   ===*/
