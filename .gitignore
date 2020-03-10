@@ -24,3 +24,4 @@ autom4te.cache/*
 src/Makevars
 .vscode
 /src/.vscode
+README.html
