@@ -1372,9 +1372,7 @@ static const R_CallMethodDef CallEntries[] = {
     {NULL, NULL, 0}
 };
 
-void init_stdvec_double(DllInfo* dll);
 RcppExport void R_init_qs(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
-    init_stdvec_double(dll);
 }

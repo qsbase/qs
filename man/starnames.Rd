@@ -4,7 +4,9 @@
 \name{starnames}
 \alias{starnames}
 \title{Official list of IAU Star Names}
-\format{A `data.frame` with official IAU star names and several properties, such as coordinates.}
+\format{
+A `data.frame` with official IAU star names and several properties, such as coordinates.
+}
 \source{
 \href{https://www.iau.org/public/themes/naming_stars/}{Naming Stars | International Astronomical Union.}
 }

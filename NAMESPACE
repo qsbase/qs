@@ -1,4 +1,5 @@
 import(RApiSerialize)
+import(stringfish)
 importFrom(Rcpp,sourceCpp)
 useDynLib(qs, .registration = TRUE)
 export("qsave", 
@@ -26,4 +27,7 @@ export("qsave",
        "base85_decode",
        "base91_encode", 
        "base91_decode",
-       "catquo")
+       "catquo",
+       "qsavem",
+       "qreadm",
+       "qload")

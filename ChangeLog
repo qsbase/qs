@@ -1,3 +1,8 @@
+Version 0.22.1 (2020-5-31)
+   * Added `qsavem` and `qload`/`qreadm` functions for saving and reading multiple objects at once. Thanks to Bryce Chamberlain (https://github.com/traversc/qs/pull/36)
+   * `qs` now depends on R 3.5 and later. For earlier versions of R, use `remotes::install_github("traversc/qs@legacy")`
+   * Improved alt-rep string functionality using the stringfish package (https://cran.r-project.org/package=stringfish)
+
 Version 0.21.2 (2020-3-8)
    * Added implementations of base 85 and base 91 ASCII encoding. See `?base91_encoding` and `?base85_encoding`
    * Fixed a typo in the benchmarking code (https://github.com/traversc/qs/issues/32) and updated the readme benchmark to the latest version

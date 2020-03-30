@@ -498,43 +498,28 @@ SEXP processBlock(T * const sobj) {
     if(r_array_len > 0) sobj->getBlockData(reinterpret_cast<char*>(RAW(obj)), r_array_len);
     break;
   case qstype::CHARACTER:
-#ifdef ALTREP_SUPPORTED
     if(sobj->use_alt_rep_bool) {
-      auto ret = new stdvec_data(r_array_len);
+      obj = PROTECT(sf_vector(r_array_len)); pt++;
+      auto & ref = sf_vec_data_ref(obj);
       for(uint64_t i=0; i < r_array_len; i++) {
         uint32_t r_string_len;
         cetype_t string_encoding;
         sobj->readStringHeader(r_string_len, string_encoding);
         if(r_string_len == NA_STRING_LENGTH) {
-          ret->encodings[i] = 5;
-        } else if(r_string_len == 0) {
-          ret->encodings[i] = 1;
-          ret->strings[i] = "";
+          ref[i] = sfstring(NA_STRING);
         } else {
-          switch(string_encoding) {
-          case CE_NATIVE:
-            ret->encodings[i] = 1;
-            break;
-          case CE_UTF8:
-            ret->encodings[i] = 2;
-            break;
-          case CE_LATIN1:
-            ret->encodings[i] = 3;
-            break;
-          case CE_BYTES:
-            ret->encodings[i] = 4;
-            break;
-          default:
-            ret->encodings[i] = 5;
-          break;
+          if(r_string_len == 0) {
+            ref[i] = sfstring();
+          } else {
+            // sobj->temp_string.resize(r_string_len);
+            // sobj->getBlockData(&sobj->temp_string[0], r_string_len);
+            // ref[i] = sfstring::nocheck(sobj->temp_string, string_encoding);
+            ref[i] = sfstring(r_string_len, string_encoding);
+            sobj->getBlockData(&ref[i].sdata[0], r_string_len);
           }
-          ret->strings[i].resize(r_string_len);
-          sobj->getBlockData(&(ret->strings[i])[0], r_string_len);
         }
       }
-      obj = PROTECT(stdvec_string::Make(ret, true)); pt++;
     } else {
-#endif
       obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
       for(uint64_t i=0; i<r_array_len; i++) {
         uint32_t r_string_len;
@@ -552,9 +537,7 @@ SEXP processBlock(T * const sobj) {
           SET_STRING_ELT(obj, i, Rf_mkCharLenCE(sobj->temp_string.data(), r_string_len, string_encoding));
         }
       }
-#ifdef ALTREP_SUPPORTED
     }
-#endif
     break;
   case qstype::SYM:
   {
@@ -616,4 +599,3 @@ SEXP processBlock(T * const sobj) {
 }
 
 #endif
-
