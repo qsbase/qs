@@ -511,13 +511,11 @@ SEXP processBlock(T * const sobj) {
           if(r_string_len == 0) {
             ref[i] = sfstring();
           } else {
-            sobj->temp_string.resize(r_string_len);
-            sobj->getBlockData(&sobj->temp_string[0], r_string_len);
-            ref[i] = sfstring::nocheck(sobj->temp_string, string_encoding);
-            
-            // for next version of stringfish, use this:
-            // ref[i] = sfstring(r_string_len, string_encoding);
-            // sobj->getBlockData(&ref[i].sdata[0], r_string_len);
+            // sobj->temp_string.resize(r_string_len);
+            // sobj->getBlockData(&sobj->temp_string[0], r_string_len);
+            // ref[i] = sfstring::nocheck(sobj->temp_string, string_encoding);
+            ref[i] = sfstring(r_string_len, string_encoding);
+            sobj->getBlockData(&ref[i].sdata[0], r_string_len);
           }
         }
       }

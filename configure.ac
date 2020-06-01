@@ -1,4 +1,4 @@
-AC_INIT(qs, 1.3, traversc@gmail.com)
+AC_INIT(qs, 0.22.1, traversc@gmail.com)
 AC_PATH_PROG([PKGCONF],[pkg-config],[],[$PATH:/usr/local/bin:ext/bin:ext:/sw/bin:/opt/bin:/opt/local/bin])
 
 ########################################################
