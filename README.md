@@ -272,8 +272,6 @@ specified.
 ## Future developments
 
   - Additional compression algorithms
-  - Improved ALTREP support for serialization
-  - Improved ALTREP support for deserialization of string vectors
   - Re-write of multithreading code
 
 Future versions will be backwards compatible with the current version.
