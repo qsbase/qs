@@ -156,10 +156,11 @@ The ALTREP system (new as of R 3.5.0) allows package developers to
 represent R objects using their own custom memory layout. This allows a
 potentially large speedup in processing certain types of data.
 
-In `qs`, `ALTREP` character vectors are used (via the
-[`stringfish`](https://github.com/traversc/stringfish) package). The
-benchmark below shows the time it takes to `qread` random 80 character
-length strings with and without `ALTREP`.
+In `qs`, `ALTREP` character vectors are implemented via the
+[`stringfish`](https://github.com/traversc/stringfish) package and can
+be used by setting `use_alt_rep=TRUE` in the `qread` function. The
+benchmark below shows the time it takes to `qread` several million
+random strings (nchar = 80) with and without `ALTREP`.
 
 ![](vignettes/altrep_bench.png "altrep_bench")
 
@@ -272,6 +273,7 @@ specified.
 ## Future developments
 
   - Additional compression algorithms
+  - Improved ALTREP serialization
   - Re-write of multithreading code
 
 Future versions will be backwards compatible with the current version.
