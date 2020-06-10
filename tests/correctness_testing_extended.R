@@ -141,9 +141,9 @@ gc()
 # Data is private, so not uploaded online
 print("github.com/traversc/qs/issues/14")
 if (Sys.info()[['sysname']] != "Windows") {
-  r <- readRDS("~/N/issue_14_data.rds")
+  r <- readRDS("~/N/qs_extended_tests/issue_14_data.rds")
 } else {
-  r <- readRDS("N:/issue_14_data.rds")
+  r <- readRDS("N:/qs_extended_tests/issue_14_data.rds")
 }
 qsave(r, myfile)
 ru <- qread(myfile)
@@ -167,9 +167,9 @@ gc()
 print("github.com/traversc/qs/issues/21")
 print("reading in initial data")
 if (Sys.info()[['sysname']] != "Windows") {
-  g1 <- readRDS("~/N/issue_21_data.rds")
+  g1 <- readRDS("~/N/qs_extended_tests/issue_21_data.rds")
 } else {
-  g1 <- readRDS("N:/issue_21_data.rds")
+  g1 <- readRDS("N:/qs_extended_tests/issue_21_data.rds")
 }
 print("plotting data")
 gb1 <- ggplot_bin(g1)

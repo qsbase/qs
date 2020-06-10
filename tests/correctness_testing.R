@@ -2,6 +2,7 @@ suppressMessages(library(Rcpp))
 suppressMessages(library(dplyr))
 suppressMessages(library(data.table))
 suppressMessages(library(qs))
+suppressMessages(library(stringfish))
 options(warn=1)
 
 args <- commandArgs(T)
@@ -227,6 +228,7 @@ qread_rand <- function(file) {
 
 for(q in 1:reps) {
   cat(q, "\n")
+  
   # String correctness
   time <- vector("numeric", length=3)
   for(tp in test_points) {
@@ -261,6 +263,28 @@ for(q in 1:reps) {
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time),4)))
+  }
+  cat("\n")
+  
+  # stringfish character vectors
+  # more tests 
+  time <- vector("numeric", length=3)
+  for(tp in test_points) {
+    for(i in 1:3) {
+      # qs_use_alt_rep(F)
+      x1 <- rep(as.raw(sample(255)), length.out = tp*10) %>% rawToChar
+      cuts <- sample(tp*10, tp+1) %>% sort %>% as.numeric
+      x1 <- splitstr(x1, cuts)
+      x1 <- c(NA, "", x1)
+      x1 <- stringfish::convert_to_sf(x1)
+      qsave_rand(x1, file=myfile)
+      time[i] <- Sys.time()
+      z <- qread_rand(file=myfile)
+      time[i] <- Sys.time() - time[i]
+      gc()
+      stopifnot(identical(z, x1))
+    }
+    printCarriage(sprintf("Stringfish: %s, %s s",tp, signif(mean(time),4)))
   }
   cat("\n")
   

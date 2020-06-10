@@ -16,6 +16,16 @@ struct CountToObjectMap {
   }
 };
 
+// should this be defined in the stringfish package instead?
+bool is_unmaterialized_sf_vector(const SEXP obj) {
+  if(!ALTREP(obj)) return false;
+  SEXP pclass = ATTRIB(ALTREP_CLASS(obj));
+  const char * classname = CHAR(PRINTNAME(CAR(pclass)));
+  if(std::strcmp( classname, "__sf_vec__") != 0) return false;
+  if(DATAPTR_OR_NULL(obj) == nullptr) return false;
+  return true;
+}
+
 template <class T>
 void writeHeader_common(const qstype object_type, const uint64_t length, T * const sobj) {
   switch(object_type) {
@@ -323,16 +333,30 @@ void writeObject(T * const sobj, SEXP x) {
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
     uint64_t dl = Rf_xlength(x);
     writeHeader_common(qstype::CHARACTER, dl, sobj);
-    for(uint64_t i=0; i<dl; i++) {
-      SEXP xi = STRING_ELT(x, i);
-      if(xi == NA_STRING) {
-        sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
-      } else {
-        uint32_t dl = LENGTH(xi);
-        writeStringHeader_common(dl, Rf_getCharCE(xi), sobj);
-        sobj->push_contiguous(CHAR(xi), dl);
+    if(is_unmaterialized_sf_vector(x)) {
+      auto & ref = sf_vec_data_ref(x);
+      for(uint64_t i=0; i<dl; i++) {
+        if(ref[i].encoding == cetype_t_ext::CE_NA) {
+          sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
+        } else {
+          uint32_t di = ref[i].sdata.size();
+          writeStringHeader_common(di, static_cast<cetype_t>(ref[i].encoding), sobj);
+          sobj->push_contiguous(ref[i].sdata.c_str(), di);
+        }
+      }
+    } else {
+      for(uint64_t i=0; i<dl; i++) {
+        SEXP xi = STRING_ELT(x, i);
+        if(xi == NA_STRING) {
+          sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
+        } else {
+          uint32_t di = LENGTH(xi);
+          writeStringHeader_common(di, Rf_getCharCE(xi), sobj);
+          sobj->push_contiguous(CHAR(xi), di);
+        }
       }
     }
+
     writeAttributes(sobj, attrs, anames);
     return;
   }

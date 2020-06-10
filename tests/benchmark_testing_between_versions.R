@@ -7,6 +7,7 @@ library(qs173)
 library(qs183)
 library(qs191)
 library(qs202)
+library(qs212)
 library(qs)
 library(dplyr)
 
@@ -22,7 +23,7 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-grid <- expand.grid(ver = c(14:21), data = c("list", "dataframe"), 
+grid <- expand.grid(ver = c(14:22), data = c("list", "dataframe"), 
                     preset = c("uncompressed", "fast", "balanced", "high", "archive"), 
                     reps=1:10, stringsAsFactors = F) %>% sample_frac(1)
 
@@ -57,6 +58,9 @@ for(i in 1:nrow(grid)) {
     save <- function(...) qs202::qsave(..., check_hash = F)
     read <- qs202::qread
   } else if(grid$ver[i] == 21) {
+    save <- function(...) qs212::qsave(..., check_hash = F)
+    read <- qs212::qread
+  } else if(grid$ver[i] == 22) {
     save <- function(...) qs::qsave(..., check_hash = F)
     read <- qs::qread
   }
@@ -102,24 +106,25 @@ gs <- grid %>% group_by(data, ver, preset) %>%
             median_write_time = median(write_time)) %>% as.data.frame
 print(gs)
 
-if(F) {
-  library(ggplot2)
-  
-  ggplot(grid, aes(x = preset, fill = as.factor(ver), group=as.factor(ver), y = read_time)) + 
-    geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") + 
-    # geom_point(position = position_dodge(width=0.9), shape=21, fill = NA) + 
-    facet_wrap(~data, scales = "free", ncol=2) + 
-    theme_bw() + theme(legend.position = "bottom") + 
-    guides(fill = guide_legend(nrow = 1)) +
-    trqwe:::gg_rotate_xlabels(angle=45, vjust=1) + 
-    labs(fill = "Version", title = "read benchmarks")
-  
-  ggplot(grid, aes(x = preset, fill = as.factor(ver),  group=as.factor(ver), y = write_time)) + 
-    geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") + 
-    geom_point(position = position_dodge(width=.9), shape=21, fill = NA, alpha=0.5) + 
-    facet_wrap(~data, scales = "free", ncol=2) + 
-    theme_bw() + theme(legend.position = "bottom") + 
-    guides(fill = guide_legend(nrow = 1)) +
-    trqwe:::gg_rotate_xlabels(angle=45, vjust=1) + 
-    labs(fill = "Version", title = "write benchmarks")
-}
+library(patchwork)
+library(ggplot2)
+
+g1 <- ggplot(grid, aes(x = preset, fill = as.factor(ver), group=as.factor(ver), y = read_time)) +
+  geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") +
+  # geom_point(position = position_dodge(width=0.9), shape=21, fill = NA) +
+  facet_wrap(~data, scales = "free", ncol=2) +
+  theme_bw() + theme(legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 1)) +
+  trqwe:::gg_rotate_xlabels(angle=45, vjust=1) +
+  labs(fill = "Version", title = "read benchmarks")
+
+g2 <- ggplot(grid, aes(x = preset, fill = as.factor(ver),  group=as.factor(ver), y = write_time)) +
+  geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") +
+  geom_point(position = position_dodge(width=.9), shape=21, fill = NA, alpha=0.5) +
+  facet_wrap(~data, scales = "free", ncol=2) +
+  theme_bw() + theme(legend.position = "bottom") +
+  guides(fill = guide_legend(nrow = 1)) +
+  trqwe:::gg_rotate_xlabels(angle=45, vjust=1) +
+  labs(fill = "Version", title = "write benchmarks")
+
+g1 + g2 + plot_layout(nrow=2, ncol=1)

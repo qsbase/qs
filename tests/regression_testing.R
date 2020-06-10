@@ -7,8 +7,8 @@ if(F) {
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.19.1.tar.gz", "qs191") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.20.2.tar.gz", "qs202") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.20.2.tar.gz", "qs202") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.21.2.tar.gz", "qs212") # zstd, lz4, lz4hc block compress, zstd_stream compress
   
   # Earlier version cannot read zstd_stream from 0.17.1+ due to additional checksum at end of file
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions
@@ -23,6 +23,7 @@ if(F) {
   library(qs183)
   library(qs191)
   library(qs202)
+  library(qs212)
   library(qs)
 }
 
