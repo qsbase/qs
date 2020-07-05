@@ -8,7 +8,8 @@ if(F) {
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.19.1.tar.gz", "qs191") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.20.2.tar.gz", "qs202") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.21.2.tar.gz", "qs212") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.21.2.tar.gz", "qs212") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.22.1.tar.gz", "qs221") # zstd, lz4, lz4hc block compress, zstd_stream compress
   
   # Earlier version cannot read zstd_stream from 0.17.1+ due to additional checksum at end of file
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions
@@ -24,6 +25,7 @@ if(F) {
   library(qs191)
   library(qs202)
   library(qs212)
+  library(qs221)
   library(qs)
 }
 
@@ -128,7 +130,6 @@ if(F) {
   print("qs183 no shuffle save"); test_compatability(qs183_no_shuffle, list(qs183::qread, qs191::qread, qs::qread))
 }
 # restart from 0.20 on -- we don't have to test all the way back in time indefinitely
-
 print("qs191 lz4 save"); test_compatability(qs191_lz4_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
 print("qs191 zstd save"); test_compatability(qs191_zstd_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))
 print("qs191 zstd stream save"); test_compatability(qs191_zstd_stream_save, list(qs183::qread, qs191::qread, qs202::qread, qs::qread))

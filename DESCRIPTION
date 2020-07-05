@@ -1,11 +1,11 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.22.1
-Date: 2020-6-9
+Version: 0.23.1
+Date: 2020-7-5
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
-    person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd and lz4 code"),
+    person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),
     person("Facebook, Inc.", role = "cph", comment = "Facebook is the copyright holder of the bundled zstd code"),
     person("Reichardt", "Tino", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Skibinski", "Przemyslaw", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
@@ -25,6 +25,6 @@ LinkingTo: Rcpp, RApiSerialize, stringfish
 RoxygenNote: 7.1.0
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
-Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet; the 'lz4' library created by Yann Collet; and code derived from the 'Blosc' library created by Francesc Alted.  
+Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet; the 'lz4' library created and owned by Yann Collet; xxHash library created and owned by Yann Collet; and code derived from the 'Blosc' library created and owned by Francesc Alted.  
 URL: https://github.com/traversc/qs
 BugReports: https://github.com/traversc/qs/issues

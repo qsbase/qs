@@ -1,3 +1,6 @@
+Version 0.23.1 (2020-6-26)
+   * Update xxhash bundled library to v0.7.4
+
 Version 0.22.1 (2020-5-31)
    * Added `qsavem` and `qload`/`qreadm` functions for saving and reading multiple objects at once. Thanks to Bryce Chamberlain (https://github.com/traversc/qs/pull/36)
    * `qs` now depends on R 3.5 and later. For earlier versions of R, use `remotes::install_github("traversc/qs@legacy")`

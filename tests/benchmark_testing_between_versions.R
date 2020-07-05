@@ -23,7 +23,7 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-grid <- expand.grid(ver = c(14:22), data = c("list", "dataframe"), 
+grid <- expand.grid(ver = c(14:23), data = c("list", "dataframe"), 
                     preset = c("uncompressed", "fast", "balanced", "high", "archive"), 
                     reps=1:10, stringsAsFactors = F) %>% sample_frac(1)
 
@@ -61,6 +61,9 @@ for(i in 1:nrow(grid)) {
     save <- function(...) qs212::qsave(..., check_hash = F)
     read <- qs212::qread
   } else if(grid$ver[i] == 22) {
+    save <- function(...) qs221::qsave(..., check_hash = F)
+    read <- qs221::qread
+  } else if(grid$ver[i] == 23) {
     save <- function(...) qs::qsave(..., check_hash = F)
     read <- qs::qread
   }
