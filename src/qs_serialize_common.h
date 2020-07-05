@@ -338,6 +338,10 @@ void writeObject(T * const sobj, SEXP x) {
       for(uint64_t i=0; i<dl; i++) {
         if(ref[i].encoding == cetype_t_ext::CE_NA) {
           sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
+        } else if(ref[i].encoding == cetype_t_ext::CE_ASCII) {
+          uint32_t di = ref[i].sdata.size();
+          writeStringHeader_common(di, CE_NATIVE, sobj);
+          sobj->push_contiguous(ref[i].sdata.c_str(), di);
         } else {
           uint32_t di = ref[i].sdata.size();
           writeStringHeader_common(di, static_cast<cetype_t>(ref[i].encoding), sobj);
