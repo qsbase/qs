@@ -31,3 +31,33 @@ test_that("works as expected: nthreads", {
     expect_equal(x2, mtcars)
   
 })
+
+test_that("issue #39", {
+    
+    file = tempfile()
+    
+    seurat = 1 
+    lineages = 2
+    T.markers = 3
+
+    qsavem(file = file, seurat, lineages, T.markers)
+
+    rm(seurat, lineages, T.markers)
+    qload(file = file)
+    expect_equal(c(seurat, lineages, T.markers), c(1, 2, 3))
+    
+    # alternate synatx
+    qsavem(seurat, lineages, T.markers, file = file)
+    
+    rm(seurat, lineages, T.markers)
+    qload(file = file)    
+    expect_equal(c(seurat, lineages, T.markers), c(1, 2, 3))
+    
+    # alternate synatx
+    qsavem(seurat, lineages, file = file, T.markers)
+    
+    rm(seurat, lineages, T.markers)
+    qload(file = file)    
+    expect_equal(c(seurat, lineages, T.markers), c(1, 2, 3))
+  
+})
