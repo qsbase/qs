@@ -30,18 +30,25 @@ qsavem <- function(file, ...) {
   datalist = list(...)
   
   # get object names from the function call.
-  objnames = trimws(strsplit(gsub('qsavem\\(([^)]+)\\)', '\\1', paste0(deparse(sys.call()))), ",")[[1]])
+  full_call = paste0(deparse(sys.call()), collapse = "")
+  drop_function_name = gsub('qsavem\\(([^)]+)\\)', '\\1', full_call)
+  objnames = trimws(strsplit(drop_function_name, ",")[[1]])
+  
+  # named arguments (file, nthread, etc.) will be passed to qsave.
+  # unnamed will be saved.
+  unnamed = which(!grepl('=', objnames))
+  named = objnames[-unnamed]
+  unnamed = objnames[unnamed]
   
   # save un-named objects as a list.
   savelist = list()
-  unnamed = which(!grepl('=', objnames))
-  for(i in unnamed){
-    savelist[[objnames[i]]] <- datalist[[i]]
+  for(i in 1:length(unnamed)){
+    savelist[[unnamed[i]]] <- datalist[[i]]
   }
-    
+  
   # put the final call together.
   eval(parse(
-    text = paste0('qsave(savelist, ', paste0(objnames[-unnamed], collapse =', '), ')')
+    text = paste0('qsave(savelist,  ', paste0(named, collapse =', '), ')')
   ))
   
 }
