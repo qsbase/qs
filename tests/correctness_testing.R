@@ -518,7 +518,7 @@ for(q in 1:reps) {
   
   time <- vector("numeric", length=3)
   for(i in 1:3) {
-    x1 <- nested_tibble()
+    x1 <- suppressMessages(nested_tibble())
     time[i] <- Sys.time()
     qsave_rand(x1, file=myfile)
     z <- qread_rand(file=myfile)

@@ -2062,7 +2062,7 @@ return 0;  /* unreachable, but some compilers complain without it */
              *  New generation hash designed for speed on small keys and vectorization
              ************************************************************************ */
             
-#include "xxh3.h"
+// #include "xxh3.h"
             
             
 #endif  /* XXH_NO_LONG_LONG */
