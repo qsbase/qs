@@ -88,7 +88,7 @@ qreadm <- function(file, env = parent.frame(), ...) {
   
   if(!is.list(savelist) || is.null(names(savelist))) stop(paste0("Object read from ", file, " is not a named list."))
   
-  list2env(savelist, env)
+  invisible(list2env(savelist, env))
   
 }
 
