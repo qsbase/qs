@@ -22,8 +22,11 @@ bool is_unmaterialized_sf_vector(const SEXP obj) {
   SEXP pclass = ATTRIB(ALTREP_CLASS(obj));
   const char * classname = CHAR(PRINTNAME(CAR(pclass)));
   if(std::strcmp( classname, "__sf_vec__") != 0) return false;
-  if(DATAPTR_OR_NULL(obj) == nullptr) return false;
-  return true;
+  if(DATAPTR_OR_NULL(obj) == nullptr) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 template <class T>
@@ -336,16 +339,18 @@ void writeObject(T * const sobj, SEXP x) {
     if(is_unmaterialized_sf_vector(x)) {
       auto & ref = sf_vec_data_ref(x);
       for(uint64_t i=0; i<dl; i++) {
-        if(ref[i].encoding == cetype_t_ext::CE_NA) {
+        switch(ref[i].encoding) {
+        case cetype_t_ext::CE_NA:
           sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
-        } else if(ref[i].encoding == cetype_t_ext::CE_ASCII) {
-          uint32_t di = ref[i].sdata.size();
-          writeStringHeader_common(di, CE_NATIVE, sobj);
-          sobj->push_contiguous(ref[i].sdata.c_str(), di);
-        } else {
-          uint32_t di = ref[i].sdata.size();
-          writeStringHeader_common(di, static_cast<cetype_t>(ref[i].encoding), sobj);
-          sobj->push_contiguous(ref[i].sdata.c_str(), di);
+          break;
+        case cetype_t_ext::CE_ASCII:
+          writeStringHeader_common(ref[i].sdata.size(), CE_NATIVE, sobj);
+          sobj->push_contiguous(ref[i].sdata.c_str(), ref[i].sdata.size());
+          break;
+        default:
+          writeStringHeader_common(ref[i].sdata.size(), static_cast<cetype_t>(ref[i].encoding), sobj);
+          sobj->push_contiguous(ref[i].sdata.c_str(), ref[i].sdata.size());
+          break;
         }
       }
     } else {
