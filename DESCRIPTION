@@ -21,7 +21,7 @@ Biarch: true
 Depends: R (>= 3.5.0)
 SystemRequirements: C++11
 Imports: 
-    Rcpp, RApiSerialize, stringfish (>= 0.13.3)
+    Rcpp, RApiSerialize, stringfish (>= 0.14.1)
 LinkingTo: Rcpp, RApiSerialize, stringfish
 RoxygenNote: 7.1.0
 Suggests: knitr, rmarkdown
