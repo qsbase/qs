@@ -32,7 +32,7 @@ df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6, replace=T))
 qsave(df1, "myfile.qs")
 df2 <- qread("myfile.qs")
 ```
-## Installation:
+## Installation
 ```{r eval=FALSE}
 # CRAN version
 install.packages("qs")

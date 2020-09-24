@@ -7,6 +7,18 @@
 
 #include <qs_common.h>
 
+#ifdef QS_DEBUG
+std::string qtypestr(qstype x) {
+  const std::string enum_strings[] = { 
+    "NUMERIC", "INTEGER", "LOGICAL", "CHARACTER", "NIL", "LIST", "COMPLEX", "RAW", "PAIRLIST", "LANG", "CLOS", "PROM", "DOT", "SYM",
+    "PAIRLIST_WF", "LANG_WF", "CLOS_WF", "PROM_WF", "DOT_WF",
+    "S4", "S4FLAG", "LOCKED_ENV", "UNLOCKED_ENV", "REFERENCE",
+    "ATTRIBUTE", "RSERIALIZED" };
+  return enum_strings[(int)x];
+}
+#endif
+
+
 inline void readHeader_common(qstype & object_type, uint64_t & r_array_len, uint64_t & data_offset, const char * const header) {
   uint8_t hd = reinterpret_cast<const uint8_t*>(header)[data_offset];
   switch(hd) {
@@ -323,13 +335,22 @@ SEXP processBlock(T * const sobj) {
   uint64_t number_of_attributes = 0;
   bool s4_flag = false;
   sobj->readHeader(obj_type, r_array_len);
+#ifdef QS_DEBUG
+  std::cout << qtypestr(obj_type) << " " << r_array_len << std::endl;
+#endif
   if(obj_type == qstype::S4FLAG) {
     s4_flag = true;
     sobj->readHeader(obj_type, r_array_len);
+#ifdef QS_DEBUG
+    std::cout << qtypestr(obj_type) << " " << r_array_len << std::endl;
+#endif
   }
   if(obj_type == qstype::ATTRIBUTE) {
     number_of_attributes = r_array_len;
     sobj->readHeader(obj_type, r_array_len);
+#ifdef QS_DEBUG
+    std::cout << qtypestr(obj_type) << " " << r_array_len << std::endl;
+#endif
   }
   SEXP obj;
   Protect_Tracker pt = Protect_Tracker();
@@ -344,6 +365,9 @@ SEXP processBlock(T * const sobj) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
+#ifdef QS_DEBUG
+      std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+#endif
       if(r_string_len != NA_STRING_LENGTH) {
         std::string temp_tag_string;
         temp_tag_string.resize(r_string_len);
@@ -398,6 +422,9 @@ SEXP processBlock(T * const sobj) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
+#ifdef QS_DEBUG
+      std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+#endif
       if(r_string_len != NA_STRING_LENGTH) {
         temp_tag_string.resize(r_string_len);
         sobj->getBlockData(&temp_tag_string[0], r_string_len);
@@ -505,6 +532,9 @@ SEXP processBlock(T * const sobj) {
         uint32_t r_string_len;
         cetype_t string_encoding;
         sobj->readStringHeader(r_string_len, string_encoding);
+#ifdef QS_DEBUG
+        std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+#endif
         if(r_string_len == NA_STRING_LENGTH) {
           ref[i] = sfstring(NA_STRING);
         } else {
@@ -523,6 +553,9 @@ SEXP processBlock(T * const sobj) {
         uint32_t r_string_len;
         cetype_t string_encoding;
         sobj->readStringHeader(r_string_len, string_encoding);
+#ifdef QS_DEBUG
+        std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+#endif
         if(r_string_len == NA_STRING_LENGTH) {
           SET_STRING_ELT(obj, i, NA_STRING);
         } else if(r_string_len == 0) {
@@ -542,6 +575,9 @@ SEXP processBlock(T * const sobj) {
     uint32_t r_string_len;
     cetype_t string_encoding;
     sobj->readStringHeader(r_string_len, string_encoding);
+#ifdef QS_DEBUG
+    std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+#endif
     // symbols cannot be NA or zero length
     if(r_string_len > sobj->temp_string.size()) {
       sobj->temp_string.resize(r_string_len);
@@ -570,6 +606,9 @@ SEXP processBlock(T * const sobj) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
+#ifdef QS_DEBUG
+      std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+#endif
       temp_attribute_string.resize(r_string_len);
       sobj->getBlockData(&temp_attribute_string[0], r_string_len);
       // Is protect needed here?  

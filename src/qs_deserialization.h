@@ -73,6 +73,8 @@ struct Data_Context {
   void decompress_block() {
     blocks_read++;
     std::array<char, 4> zsize_ar;
+    // uint64_t bytes_read = read_allow(myFile, zsize_ar.data(), 4);
+    // if(bytes_read == 0) return;
     read_allow(myFile, zsize_ar.data(), 4);
     uint64_t zsize = *reinterpret_cast<uint32_t*>(zsize_ar.data());
     read_allow(myFile, zblock.data(), zsize);
@@ -91,6 +93,7 @@ struct Data_Context {
         if(data_size - bytes_accounted >= BLOCKSIZE) {
           decompress_direct(outp+bytes_accounted);
           bytes_accounted += BLOCKSIZE;
+          data_offset = BLOCKSIZE;
         } else {
           decompress_block();
           std::memcpy(outp + bytes_accounted, block.data(), data_size - bytes_accounted);

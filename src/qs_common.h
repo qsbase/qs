@@ -215,6 +215,7 @@ enum class qstype {NUMERIC, INTEGER, LOGICAL, CHARACTER, NIL, LIST, COMPLEX, RAW
                    S4, S4FLAG, LOCKED_ENV, UNLOCKED_ENV, REFERENCE,
                    ATTRIBUTE, RSERIALIZED};
 
+
 ///////////////////////////////////////////////////////
 // There are three types of output input streams -- std::ifstream/ofstream, file descriptor, windows handle
 // these methods are overloaded and normalized so we can use a common template interface

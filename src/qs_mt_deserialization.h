@@ -232,6 +232,7 @@ struct Data_Context_MT {
         if(data_size - bytes_accounted >= BLOCKSIZE) {
           decompress_direct(outp+bytes_accounted);
           bytes_accounted += BLOCKSIZE;
+          data_offset = BLOCKSIZE;
         } else {
           decompress_block();
           std::memcpy(outp + bytes_accounted, block_data, data_size - bytes_accounted);

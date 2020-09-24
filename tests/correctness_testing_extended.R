@@ -7,10 +7,11 @@ suppressMessages(library(sf))
 suppressMessages(library(nanotime))
 suppressMessages(library(R6))
 suppressMessages(library(raster))
+suppressMessages(library(trqwe))
 options(warn=1)
 
 if (Sys.info()[['sysname']] != "Windows") {
-  myfile <- "~/N/temp/ctest.z"
+  myfile <- tempfile()
 } else {
   myfile <- "N:/temp/ctest.z"
 }
@@ -141,9 +142,10 @@ gc()
 # Data is private, so not uploaded online
 print("github.com/traversc/qs/issues/14")
 if (Sys.info()[['sysname']] != "Windows") {
-  r <- readRDS("~/N/qs_extended_tests/issue_14_data.rds")
+  system("cat ~/N/R_stuff/qs_extended_tests/issue_14_data.rds > /dev/null")
+  r <- mcreadRDS("~/N/R_stuff/qs_extended_tests/issue_14_data.rds")
 } else {
-  r <- readRDS("N:/qs_extended_tests/issue_14_data.rds")
+  r <- readRDS("N:/R_stuff/qs_extended_tests/issue_14_data.rds")
 }
 qsave(r, myfile)
 ru <- qread(myfile)
@@ -165,23 +167,25 @@ gc()
 # https://github.com/traversc/qs/issues/21
 # Data is private, so not uploaded online
 print("github.com/traversc/qs/issues/21")
-print("reading in initial data")
-if (Sys.info()[['sysname']] != "Windows") {
-  g1 <- readRDS("~/N/qs_extended_tests/issue_21_data.rds")
-} else {
-  g1 <- readRDS("N:/qs_extended_tests/issue_21_data.rds")
-}
-print("plotting data")
-gb1 <- ggplot_bin(g1)
-print("qs serialization")
-qsave(g1, myfile)
-print("qs deserialization")
-g2 <- qread(myfile)
-print("plotting data")
-gb2 <- ggplot_bin(g2)
-stopifnot(identical(gb1, gb2))
-rm(g1, gb1, g2, gb2)
-gc()
+print("testing issue 21 no longer works because of deprecated plot object")
+# print("reading in initial data")
+# if (Sys.info()[['sysname']] != "Windows") {
+#   g1 <- readRDS("~/N/R_stuff/qs_extended_tests/issue_21_data.rds")
+# } else {
+#   g1 <- readRDS("N:/R_stuff/qs_extended_tests/issue_21_data.rds")
+# }
+# print("plotting data")
+# gb1 <- ggplot_bin(g1)
+# print("qs serialization")
+# qsave(g1, myfile)
+# print("qs deserialization")
+# g2 <- qread(myfile)
+# print("plotting data")
+# gb2 <- ggplot_bin(g2)
+# stopifnot(identical(gb1, gb2))
+# rm(g1, gb1, g2, gb2)
+# gc()
+
 # for(i in 1:5) {
 #   qsave_rand(g1, myfile)
 #   g2 <- qread_rand(myfile)
@@ -243,3 +247,9 @@ x <- XClass$new()
 qsave(x, file=myfile)
 x2 <- qread(myfile)
 stopifnot(is.numeric(x2$r))
+
+print("https://github.com/traversc/qs/issues/43")
+x <- list(a= '....................................................................', 
+          b= cbind(integer(246722), as.data.frame(matrix(data=0, nrow=246722, ncol=8))))
+x2 <- qs::qdeserialize(qs::qserialize(x))
+stopifnot(identical(x, x2))

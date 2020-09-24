@@ -1,7 +1,7 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.23.2
+Version: 0.23.3
 Date: 2020-7-13
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
@@ -10,7 +10,7 @@ Authors@R: c(
     person("Reichardt", "Tino", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Skibinski", "Przemyslaw", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Mori", "Yuta", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
-    person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for Alt-Rep structures"),
+    person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for ALTREP structures"),
     person("Francesc", "Alted", role = c("ctb", "cph"), comment = "Shuffling routines derived from Blosc library"),
     person("Bryce", "Chamberlain", email = "superchordate@gmail.com", role = c("ctb"), comment = "qsame, qload function contributor"))
 Maintainer: Travers Ching <traversc@gmail.com>
