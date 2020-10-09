@@ -36,11 +36,11 @@ myfile <- tempfile()
 qsavem(x1, x2, file=myfile)
 rm(x1, x2)
 qload(myfile)
-exists(c('x1', 'x2')) # returns true
+exists('x1') && exists('x2') # returns true
 
 # qs support multithreading
 qsavem(x1, x2, file=myfile, nthreads=2)
 rm(x1, x2)
 qload(myfile, nthreads=2)
-exists(c('x1', 'x2')) # returns true
+exists('x1') && exists('x2') # returns true
 }
