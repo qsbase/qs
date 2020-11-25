@@ -2,7 +2,7 @@ Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
 Version: 0.23.4
-Date: 2020-10-8
+Date: 2020-11-25
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),

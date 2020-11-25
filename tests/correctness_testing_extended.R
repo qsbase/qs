@@ -249,7 +249,10 @@ x2 <- qread(myfile)
 stopifnot(is.numeric(x2$r))
 
 print("https://github.com/traversc/qs/issues/43")
-x <- list(a= '....................................................................', 
-          b= cbind(integer(246722), as.data.frame(matrix(data=0, nrow=246722, ncol=8))))
-x2 <- qs::qdeserialize(qs::qserialize(x))
-stopifnot(identical(x, x2))
+for(i in 1:200) {
+  a <- paste0(rep(".", i), collapse = "")
+  x <- list(a = a, # a= '....................................................................', 
+            b= cbind(integer(246722), as.data.frame(matrix(data=0, nrow=246722, ncol=8))))
+  x2 <- qs::qdeserialize(qs::qserialize(x))
+  stopifnot(identical(x, x2))
+}
