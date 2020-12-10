@@ -4,12 +4,10 @@
 \alias{qsavem}
 \title{qsavem}
 \usage{
-qsavem(file, ...)
+qsavem(...)
 }
 \arguments{
-\item{file}{the file name/path.}
-
-\item{...}{objects to serialize. Named arguments will be passed to qsave during saving. Un-named arguments will be saved.}
+\item{...}{objects to serialize. Named arguments will be passed to qsave during saving. Un-named arguments will be saved. A named file argument is required.}
 }
 \description{
 Saves (serializes) multiple objects to disk.

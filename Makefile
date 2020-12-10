@@ -59,5 +59,8 @@ test:
 testext:
 	Rscript tests/correctness_testing_extended.R
 
+testqsavem:
+	Rscript tests/qsavemload_testing.R
+
 bench:
 	Rscript tests/benchmark_testing.R

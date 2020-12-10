@@ -1,4 +1,5 @@
-context("qsavem-load")
+library(testthat)
+library(qs)
 
 test_that("works as expected: defaults", {
     
@@ -60,4 +61,14 @@ test_that("issue #39", {
     qload(file = file)    
     expect_equal(c(seurat, lineages, T.markers), c(1, 2, 3))
   
+})
+
+test_that("issue #46", {
+  test <- function() {
+    result_file <- "test.qs"
+    test1 <- rnorm(100)
+    test2 <- rnorm(100)
+    qsavem(test1, test2, file = result_file)
+  }
+  test()
 })
