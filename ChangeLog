@@ -1,3 +1,6 @@
+Version 0.23.5 (2020-12-9)
+   * Correct issue in `qsavem` function (https://github.com/traversc/qs/issues/46)
+
 Version 0.23.4 (2020-10-8)
    * Correct documentation of `qreadm` and `qsavem` functions (https://github.com/traversc/qs/issues/44)
 
