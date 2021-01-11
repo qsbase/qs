@@ -209,7 +209,7 @@ qread_handle <- function(handle, use_alt_rep=FALSE, strict=FALSE) {
 #' @param x the object to serialize.
 #' @param preset One of "fast", "balanced", "high" (default), "archive", "uncompressed" or "custom".  See details.  
 #' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
-#' @param compress_level The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
+#' @param compress_level The compression level used (Default 4).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).  
 #' @param shuffle_control An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.  
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
 #' @details 
