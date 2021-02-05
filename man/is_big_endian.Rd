@@ -10,8 +10,8 @@ is_big_endian()
 `TRUE` if big endian, `FALSE` if little endian.
 }
 \description{
-Tests system endianness.  Intel and AMD based systems are little endian, and so this function will likely return `FALSE`.  
-The `qs` package is not capable of transferring data between systems of different endianness.  This should not matter for the large majority of use cases.
+Tests system endianness. Intel and AMD based systems are little endian, and so this function will likely return `FALSE`.
+The `qs` package is not capable of transferring data between systems of different endianness. This should not matter for the large majority of use cases.
 }
 \examples{
 is_big_endian() # returns FALSE on Intel/AMD systems

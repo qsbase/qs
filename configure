@@ -1747,11 +1747,12 @@ fi
 ########################################################
 ### Predefined compile strings for different cases
 
-LIBS="-L."
+LIBS=""
 INCLUDE_PATHS="-IZSTD -IZSTD/common -IZSTD/decompress -IZSTD/compress -ILZ4"
 LZ4_ZSTD_COMPILE_STRING='LIBZSTD = ZSTD/common/debug.o ZSTD/common/entropy_common.o ZSTD/common/error_private.o ZSTD/common/fse_decompress.o ZSTD/common/pool.o ZSTD/common/threading.o ZSTD/common/xxhash.o ZSTD/common/zstd_common.o ZSTD/compress/fse_compress.o ZSTD/compress/hist.o ZSTD/compress/huf_compress.o ZSTD/compress/zstd_compress.o ZSTD/compress/zstd_double_fast.o ZSTD/compress/zstd_fast.o ZSTD/compress/zstd_lazy.o ZSTD/compress/zstd_ldm.o ZSTD/compress/zstdmt_compress.o ZSTD/compress/zstd_opt.o ZSTD/decompress/huf_decompress.o ZSTD/decompress/zstd_ddict.o ZSTD/decompress/zstd_decompress_block.o ZSTD/decompress/zstd_decompress.o ZSTD/dictBuilder/cover.o ZSTD/dictBuilder/divsufsort.o ZSTD/dictBuilder/fastcover.o ZSTD/dictBuilder/zdict.o
 LIBLZ4  = LZ4/lz4.o LZ4/lz4hc.o
-$(SHLIB): libQSZSTD.a	libQSLZ4.a
+LIBEXPANDBINDINGVALUE  = expand_binding_value.o
+$(SHLIB): libQSZSTD.a	libQSLZ4.a libEXPANDBINDINGVALUE.a
 
 libQSZSTD.a: $(LIBZSTD)
 	$(AR) rcs libQSZSTD.a $(LIBZSTD)
@@ -1759,26 +1760,46 @@ libQSZSTD.a: $(LIBZSTD)
 libQSLZ4.a: $(LIBLZ4)
 	$(AR) rcs libQSLZ4.a $(LIBLZ4)
 
+libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
+	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
+
 clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a $(LIBLZ4) libQSLZ4.a'
+	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a $(LIBLZ4) libQSLZ4.a $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
 
 ZSTD_COMPILE_STRING='LIBZSTD = ZSTD/common/debug.o ZSTD/common/entropy_common.o ZSTD/common/error_private.o ZSTD/common/fse_decompress.o ZSTD/common/pool.o ZSTD/common/threading.o ZSTD/common/xxhash.o ZSTD/common/zstd_common.o ZSTD/compress/fse_compress.o ZSTD/compress/hist.o ZSTD/compress/huf_compress.o ZSTD/compress/zstd_compress.o ZSTD/compress/zstd_double_fast.o ZSTD/compress/zstd_fast.o ZSTD/compress/zstd_lazy.o ZSTD/compress/zstd_ldm.o ZSTD/compress/zstdmt_compress.o ZSTD/compress/zstd_opt.o ZSTD/decompress/huf_decompress.o ZSTD/decompress/zstd_ddict.o ZSTD/decompress/zstd_decompress_block.o ZSTD/decompress/zstd_decompress.o ZSTD/dictBuilder/cover.o ZSTD/dictBuilder/divsufsort.o ZSTD/dictBuilder/fastcover.o ZSTD/dictBuilder/zdict.o
-$(SHLIB): libQSZSTD.a
+LIBEXPANDBINDINGVALUE  = expand_binding_value.o
+$(SHLIB): libQSZSTD.a libEXPANDBINDINGVALUE.a
 
 libQSZSTD.a: $(LIBZSTD)
 	$(AR) rcs libQSZSTD.a $(LIBZSTD)
 
+libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
+	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
+
 clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a'
+	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
 
 LZ4_COMPILE_STRING='LIBLZ4 = LZ4/lz4.o LZ4/lz4hc.o
-$(SHLIB): libQSLZ4.a
+LIBEXPANDBINDINGVALUE  = expand_binding_value.o
+$(SHLIB): libQSLZ4.a libEXPANDBINDINGVALUE.a
 
 libQSLZ4.a: $(LIBLZ4)
 	$(AR) rcs libQSLZ4.a $(LIBLZ4)
 
+libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
+	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
+
 clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBLZ4) libQSLZ4.a'
+	rm -f $(SHLIB) $(OBJECTS) $(LIBLZ4) libQSLZ4.a $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
+
+BASELINE_COMPILE_STRING='LIBEXPANDBINDINGVALUE  = expand_binding_value.o
+$(SHLIB): libEXPANDBINDINGVALUE.a
+
+libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
+	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS) $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
 
 
 ########################################################
@@ -1930,7 +1951,7 @@ elif test xx$COMPILE_LZ4 = "xxtrue"; then
   COMPILE_STRING=$LZ4_COMPILE_STRING
   LIBS="${LIBS} -lQSLZ4"
 else
-  COMPILE_STRING=""
+  COMPILE_STRING=$BASELINE_COMPILE_STRING
 fi
 
 if test xx$with_simd = "xxAVX2"; then

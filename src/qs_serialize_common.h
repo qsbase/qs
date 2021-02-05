@@ -415,40 +415,27 @@ void writeObject(T * const sobj, SEXP x) {
       int f = packFlags(xt);
       if(f != 0) has_flags = true;
       flags.push_back(f);
+      if(get_bndcell_tag(xt)) R_expand_binding_value(xt);
       cars.push_back(CAR(xt));
       tags.push_back(TAG(xt));
       xt = CDR(xt);
     }
     if(has_flags) {
-      // int flags = packFlags(x);
-      // auto arr = pack_pods( flags, static_cast<uint32_t>(cars.size()) );
-      // uint64_t mlen = unaligned_cast<uint64_t>(arr.data(), 0);
       writeHeader_common(qstype::PAIRLIST_WF, cars.size(), sobj);
-      for(uint64_t i=0; i<cars.size(); i++) {
-        sobj->push_pod_noncontiguous(flags[i]);
-        if(tags[i] == R_NilValue) {
-          sobj->push_pod_noncontiguous(string_header_NA);
-        } else {
-          const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
-          uint32_t alen = strlen(tag_chars);
-          writeStringHeader_common(alen, CE_NATIVE, sobj);
-          sobj->push_contiguous(tag_chars, alen);
-        }
-        writeObject(sobj, cars[i]);
-      }
     } else {
       writeHeader_common(qstype::PAIRLIST, cars.size(), sobj);
-      for(uint64_t i=0; i<cars.size(); i++) {
-        if(tags[i] == R_NilValue) {
-          sobj->push_pod_noncontiguous(string_header_NA);
-        } else {
-          const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
-          uint32_t alen = strlen(tag_chars);
-          writeStringHeader_common(alen, CE_NATIVE, sobj);
-          sobj->push_contiguous(tag_chars, alen);
-        }
-        writeObject(sobj, cars[i]);
+    }
+    for(uint64_t i=0; i<cars.size(); i++) {
+      if(has_flags) sobj->push_pod_noncontiguous(flags[i]);
+      if(tags[i] == R_NilValue) {
+        sobj->push_pod_noncontiguous(string_header_NA);
+      } else {
+        const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
+        uint32_t alen = strlen(tag_chars);
+        writeStringHeader_common(alen, CE_NATIVE, sobj);
+        sobj->push_contiguous(tag_chars, alen);
       }
+      writeObject(sobj, cars[i]);
     }
     writeAttributes(sobj, attrs, anames);
     return;
@@ -492,12 +479,8 @@ void writeObject(T * const sobj, SEXP x) {
         break;
       }
     }
-    /*
-    if (BNDCELL_TAG(x)) { // may be necessary, see serialize.c in r source code
-      R_expand_binding_value(x);
-    }
-    */
     writeObject(sobj, TAG(x));
+    if(xtype != CLOSXP && get_bndcell_tag(x)) R_expand_binding_value(x);
     writeObject(sobj, CAR(x));
     writeObject(sobj, CDR(x)); // TAG/CAR/CDR are just accessors to elements; not real pairlist
     writeAttributes(sobj, attrs, anames);

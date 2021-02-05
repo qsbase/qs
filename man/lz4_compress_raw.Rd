@@ -15,7 +15,7 @@ lz4_compress_raw(x, compress_level)
 The compressed data
 }
 \description{
-Compression of raw vector.  Exports the main lz4 compression function.
+Compression of raw vector. Exports the main lz4 compression function.
 }
 \examples{
 x <- 1:1e6

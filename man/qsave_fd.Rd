@@ -13,13 +13,13 @@ shuffle_control = 15L, check_hash=TRUE)
 
 \item{fd}{A file descriptor}
 
-\item{preset}{One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom".  See details.}
+\item{preset}{One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom". See details.}
 
 \item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".}
 
-\item{compress_level}{The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).}
+\item{compress_level}{The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).}
 
-\item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.}
+\item{shuffle_control}{An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.}
 
 \item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization}
 }
@@ -31,5 +31,5 @@ Saves an object to a file descriptor
 }
 \details{
 This function serializes and compresses an R object to a stream using a file descriptor
-If your data is important, make sure you know what happens on the other side of the pipe.  See examples for usage.
+If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.
 }

@@ -328,3 +328,15 @@ RawVector base91_decode(const std::string & encoded_string) {
   output.resize(nb_decoded);
   return RawVector(output.begin(), output.end());
 }
+
+// [[Rcpp::export(rng = false)]]
+void expand_binding_value(SEXP b) {
+  R_expand_binding_value(b);
+}
+
+// [[Rcpp::export(rng = false)]]
+SEXP make_binding_value(SEXP val) {
+  return R_make_binding_value(val);
+}
+
+

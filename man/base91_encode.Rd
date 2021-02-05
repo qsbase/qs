@@ -13,9 +13,9 @@ base91_encode(rawdata)
 Encodes binary data (a raw vector) as ascii text using basE91 encoding format
 }
 \details{
-basE91 (capital E for stylization) is a binary to ascii encoding format created by Joachim Henke in 2005. 
+basE91 (capital E for stylization) is a binary to ascii encoding format created by Joachim Henke in 2005.
 The encoding has a dictionary using 91 out of 94 printable ASCII characters; excludes - (dash), \ (backslash) and ' (single quote).
-The overhead (extra bytes used relative to binary) is 22.97\% on average. In comparison, base 64 encoding has an overhead of 33.33\%.  
+The overhead (extra bytes used relative to binary) is 22.97\% on average. In comparison, base 64 encoding has an overhead of 33.33\%.
 Because the dictionary includes double quotes, basE91 encoded data must be single quoted when stored as a string in R.
 }
 \references{

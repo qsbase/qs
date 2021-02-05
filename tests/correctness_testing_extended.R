@@ -140,7 +140,7 @@ gc()
 # large S4 objects
 # https://github.com/traversc/qs/issues/14
 # Data is private, so not uploaded online
-print("github.com/traversc/qs/issues/14")
+print("github.com/traversc/qs/issues/14 (this takes a long time)")
 if (Sys.info()[['sysname']] != "Windows") {
   system("cat ~/N/R_stuff/qs_extended_tests/issue_14_data.rds > /dev/null")
   r <- mcreadRDS("~/N/R_stuff/qs_extended_tests/issue_14_data.rds")
@@ -256,3 +256,17 @@ for(i in 1:200) {
   x2 <- qs::qdeserialize(qs::qserialize(x))
   stopifnot(identical(x, x2))
 }
+
+print("https://github.com/traversc/qs/issues/50")
+for(i in 1:200) {
+  x <- qs:::make_binding_value(1L)
+  x2 <- qs::qdeserialize(qs::qserialize(x))
+  stopifnot(identical(x, x2))
+  x <- qs:::make_binding_value(NA)
+  x2 <- qs::qdeserialize(qs::qserialize(x))
+  stopifnot(identical(x, x2))
+  x <- qs:::make_binding_value(1.5)
+  x2 <- qs::qdeserialize(qs::qserialize(x))
+  stopifnot(identical(x, x2))
+}
+

@@ -325,6 +325,45 @@ namespace qs {
         return Rcpp::as<RawVector >(rcpp_result_gen);
     }
 
+    inline void expand_binding_value(SEXP b) {
+        typedef SEXP(*Ptr_expand_binding_value)(SEXP);
+        static Ptr_expand_binding_value p_expand_binding_value = NULL;
+        if (p_expand_binding_value == NULL) {
+            validateSignature("void(*expand_binding_value)(SEXP)");
+            p_expand_binding_value = (Ptr_expand_binding_value)R_GetCCallable("qs", "_qs_expand_binding_value");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_expand_binding_value(Shield<SEXP>(Rcpp::wrap(b)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+    }
+
+    inline SEXP make_binding_value(SEXP val) {
+        typedef SEXP(*Ptr_make_binding_value)(SEXP);
+        static Ptr_make_binding_value p_make_binding_value = NULL;
+        if (p_make_binding_value == NULL) {
+            validateSignature("SEXP(*make_binding_value)(SEXP)");
+            p_make_binding_value = (Ptr_make_binding_value)R_GetCCallable("qs", "_qs_make_binding_value");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_make_binding_value(Shield<SEXP>(Rcpp::wrap(val)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
     inline bool is_big_endian() {
         typedef SEXP(*Ptr_is_big_endian)();
         static Ptr_is_big_endian p_is_big_endian = NULL;

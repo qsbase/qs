@@ -13,7 +13,7 @@ zstd_compress_bound(size)
 maximum compressed size
 }
 \description{
-Exports the compress bound function from the zstd library.  Returns the maximum compressed size of an object of length `size`.
+Exports the compress bound function from the zstd library. Returns the maximum compressed size of an object of length `size`.
 }
 \examples{
 zstd_compress_bound(100000)

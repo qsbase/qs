@@ -509,6 +509,71 @@ RcppExport SEXP _qs_base91_decode(SEXP encoded_stringSEXP) {
     UNPROTECT(1);
     return rcpp_result_gen;
 }
+// expand_binding_value
+void expand_binding_value(SEXP b);
+static SEXP _qs_expand_binding_value_try(SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::traits::input_parameter< SEXP >::type b(bSEXP);
+    expand_binding_value(b);
+    return R_NilValue;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_expand_binding_value(SEXP bSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_expand_binding_value_try(bSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// make_binding_value
+SEXP make_binding_value(SEXP val);
+static SEXP _qs_make_binding_value_try(SEXP valSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type val(valSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_binding_value(val));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_make_binding_value(SEXP valSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_make_binding_value_try(valSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 // is_big_endian
 bool is_big_endian();
 static SEXP _qs_is_big_endian_try() {
@@ -1264,6 +1329,8 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("RawVector(*base85_decode)(const std::string&)");
         signatures.insert("std::string(*base91_encode)(const RawVector&)");
         signatures.insert("RawVector(*base91_decode)(const std::string&)");
+        signatures.insert("void(*expand_binding_value)(SEXP)");
+        signatures.insert("SEXP(*make_binding_value)(SEXP)");
         signatures.insert("bool(*is_big_endian)()");
         signatures.insert("double(*c_qsave)(SEXP const,const std::string&,const std::string&,const std::string&,const int,const int,const bool,const int)");
         signatures.insert("double(*c_qsave_fd)(SEXP const,const int,const std::string&,const std::string&,const int,const int,const bool)");
@@ -1306,6 +1373,8 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_base85_decode", (DL_FUNC)_qs_base85_decode_try);
     R_RegisterCCallable("qs", "_qs_base91_encode", (DL_FUNC)_qs_base91_encode_try);
     R_RegisterCCallable("qs", "_qs_base91_decode", (DL_FUNC)_qs_base91_decode_try);
+    R_RegisterCCallable("qs", "_qs_expand_binding_value", (DL_FUNC)_qs_expand_binding_value_try);
+    R_RegisterCCallable("qs", "_qs_make_binding_value", (DL_FUNC)_qs_make_binding_value_try);
     R_RegisterCCallable("qs", "_qs_is_big_endian", (DL_FUNC)_qs_is_big_endian_try);
     R_RegisterCCallable("qs", "_qs_c_qsave", (DL_FUNC)_qs_c_qsave_try);
     R_RegisterCCallable("qs", "_qs_c_qsave_fd", (DL_FUNC)_qs_c_qsave_fd_try);
@@ -1347,6 +1416,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_base85_decode", (DL_FUNC) &_qs_base85_decode, 1},
     {"_qs_base91_encode", (DL_FUNC) &_qs_base91_encode, 1},
     {"_qs_base91_decode", (DL_FUNC) &_qs_base91_decode, 1},
+    {"_qs_expand_binding_value", (DL_FUNC) &_qs_expand_binding_value, 1},
+    {"_qs_make_binding_value", (DL_FUNC) &_qs_make_binding_value, 1},
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
     {"_qs_c_qsave_fd", (DL_FUNC) &_qs_c_qsave_fd, 7},

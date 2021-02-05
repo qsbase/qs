@@ -61,6 +61,14 @@ base91_decode <- function(encoded_string) {
     .Call(`_qs_base91_decode`, encoded_string)
 }
 
+expand_binding_value <- function(b) {
+    invisible(.Call(`_qs_expand_binding_value`, b))
+}
+
+make_binding_value <- function(val) {
+    .Call(`_qs_make_binding_value`, val)
+}
+
 is_big_endian <- function() {
     .Call(`_qs_is_big_endian`)
 }

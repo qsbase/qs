@@ -9,11 +9,11 @@ qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
 \arguments{
 \item{file}{the file name/path}
 
-\item{use_alt_rep}{Use alt rep when reading in string data.  Default: FALSE.  (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
+\item{use_alt_rep}{Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
 
 \item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
 
-\item{nthreads}{Number of threads to use.  Default 1.}
+\item{nthreads}{Number of threads to use. Default 1.}
 }
 \value{
 The de-serialized object
@@ -23,8 +23,8 @@ Reads an object in a file serialized to disk
 }
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE), 
-                 num = rnorm(1e3), 
-                 char = randomStrings(1e3), stringsAsFactors = FALSE)
+        num = rnorm(1e3), 
+        char = randomStrings(1e3), stringsAsFactors = FALSE)
 myfile <- tempfile()
 qsave(x, myfile)
 x2 <- qread(myfile)

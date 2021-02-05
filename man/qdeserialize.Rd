@@ -9,7 +9,7 @@ qdeserialize(x, use_alt_rep=FALSE, strict=FALSE)
 \arguments{
 \item{x}{a raw vector}
 
-\item{use_alt_rep}{Use alt rep when reading in string data.  Default: FALSE.  (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
+\item{use_alt_rep}{Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
 
 \item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
 }

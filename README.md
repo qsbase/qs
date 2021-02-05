@@ -37,7 +37,7 @@ qsave(df1, "myfile.qs")
 df2 <- qread("myfile.qs")
 ```
 
-## Installation:
+## Installation
 
 ``` r
 # CRAN version
@@ -107,8 +107,7 @@ comes with 4 presets, which trades speed and compression ratio: “fast”,
 “balanced”, “high” and “archive”.
 
 The plots below summarize the performance of `saveRDS`, `qs` and `fst`
-with various
-parameters:
+with various parameters:
 
 <!-- TO DO: update table with uncompressed saveRDS, qsave for latest version -->
 
@@ -222,8 +221,7 @@ binary data to ASCII:
   - `base91_encode` and `base91_decode`
 
 These functions are similar to base64 encoding functions found in
-various packages, but offer greater
-efficiency.
+various packages, but offer greater efficiency.
 
 Example:
 

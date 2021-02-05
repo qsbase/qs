@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.23.5
-Date: 2021-1-5
+Version: 0.23.6
+Date: 2021-2-4
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),
@@ -12,7 +12,11 @@ Authors@R: c(
     person("Mori", "Yuta", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for ALTREP structures"),
     person("Francesc", "Alted", role = c("ctb", "cph"), comment = "Shuffling routines derived from Blosc library"),
-    person("Bryce", "Chamberlain", email = "superchordate@gmail.com", role = c("ctb"), comment = "qsavem and qload functions"))
+    person("Bryce", "Chamberlain", email = "superchordate@gmail.com", role = c("ctb"), comment = "qsavem and qload functions"),
+    person("R Core Team", role = c("ctb"), comment = "R_expand_binding_value function"),
+    person("Gentleman", "Robert", role = c("ctb", "cph"), comment = "R_expand_binding_value function"),
+    person("Ihaka", "Ross", role = c("ctb", "cph"), comment = "R_expand_binding_value function"),
+    person("R Core Team", role = c("ctb", "cph"), comment = "R_expand_binding_value function"))
 Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for quickly writing and reading any R object to and from disk.  
 License: GPL-3 | file LICENSE
@@ -23,7 +27,7 @@ SystemRequirements: C++11
 Imports: 
     Rcpp, RApiSerialize, stringfish (>= 0.14.1)
 LinkingTo: Rcpp, RApiSerialize, stringfish
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet; the 'lz4' library created and owned by Yann Collet; xxHash library created and owned by Yann Collet; and code derived from the 'Blosc' library created and owned by Francesc Alted.  

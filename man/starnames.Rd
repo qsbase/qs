@@ -14,7 +14,7 @@ A `data.frame` with official IAU star names and several properties, such as coor
 data(starnames)
 }
 \description{
-Data from the International Astronomical Union.  
+Data from the International Astronomical Union.
 An official list of the 336 internationally recognized named stars,
 updated as of June 1, 2018.
 }

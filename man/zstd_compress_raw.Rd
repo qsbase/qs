@@ -15,7 +15,7 @@ zstd_compress_raw(x, compress_level)
 The compressed data
 }
 \description{
-Compression of raw vector.  Exports the main zstd compression function.
+Compression of raw vector. Exports the main zstd compression function.
 }
 \examples{
 x <- 1:1e6

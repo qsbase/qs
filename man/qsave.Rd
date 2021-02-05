@@ -13,17 +13,17 @@ shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
 
 \item{file}{the file name/path.}
 
-\item{preset}{One of "fast", "high" (default), "high", "archive", "uncompressed" or "custom".  See details.}
+\item{preset}{One of "fast", "high" (default), "archive", "uncompressed" or "custom". See details.}
 
 \item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".}
 
-\item{compress_level}{The compression level used (Default 1).  For lz4, this number must be > 1 (higher is less compressed).  For zstd, a number between -50 to 22 (higher is more compressed).}
+\item{compress_level}{The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).}
 
-\item{shuffle_control}{An integer setting the use of byte shuffle compression.  A value between 0 and 15 (Default 15).  See details.}
+\item{shuffle_control}{An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.}
 
 \item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization}
 
-\item{nthreads}{Number of threads to use.  Default 1.}
+\item{nthreads}{Number of threads to use. Default 1.}
 }
 \value{
 The total number of bytes written to the file (returned invisibly)
@@ -32,29 +32,29 @@ The total number of bytes written to the file (returned invisibly)
 Saves (serializes) an object to disk.
 }
 \details{
-This function serializes and compresses R objects using block compresion with the option of byte shuffling.  
-There are lots of possible parameters.  This function exposes three parameters related to compression level and byte shuffling. 
+This function serializes and compresses R objects using block compresion with the option of byte shuffling.
+There are lots of possible parameters. This function exposes three parameters related to compression level and byte shuffling.
 
-`compress_level` - Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.  
-Due to the format of qs, there is very little benefit to compression levels > 5 or so.  
+`compress_level` - Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.
+Due to the format of qs, there is very little benefit to compression levels > 5 or so.
 
-`shuffle_control` - This sets which numerical R object types are subject to byte shuffling.  
-Generally speaking, the more ordered/sequential an object is (e.g., `1:1e7`), the larger the potential benefit of byte shuffling.  
-It is not uncommon to have several orders magnitude benefit to compression ratio or compression speed.  The more random an object is (e.g., `rnorm(1e7)`), 
-the less potential benefit there is, even negative benefit is possible.  Integer vectors almost always benefit from byte shuffling whereas the results for numeric vectors are mixed.  
-To control block shuffling, add +1 to the parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors. 
+`shuffle_control` - This sets which numerical R object types are subject to byte shuffling.
+Generally speaking, the more ordered/sequential an object is (e.g., `1:1e7`), the larger the potential benefit of byte shuffling.
+It is not uncommon to have several orders magnitude benefit to compression ratio or compression speed. The more random an object is (e.g., `rnorm(1e7)`), 
+the less potential benefit there is, even negative benefit is possible. Integer vectors almost always benefit from byte shuffling whereas the results for numeric vectors are mixed.
+To control block shuffling, add +1 to the parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors.
 
-The `preset` parameter has several different combination of parameter sets that are performant over a large variety of data.  
+The `preset` parameter has several different combination of parameter sets that are performant over a large variety of data.
 The `algorithm` parameter, `compression_level` and `shuffle_control` 
-parameters are ignored unless `preset` is "custom".  "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.  
-"balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.  
-"high" preset: algorithm zstd, compress_level 4, shuffle_control 15.  
+parameters are ignored unless `preset` is "custom". "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.
+"balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.
+"high" preset: algorithm zstd, compress_level 4, shuffle_control 15.
 "archive" preset: algorithm zstd_stream, compress_level 14, shuffle_control 15. (zstd_stream is currently single threaded only)
 }
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE), 
-                 num = rnorm(1e3), 
-                 char = randomStrings(1e3), stringsAsFactors = FALSE)
+        num = rnorm(1e3), 
+        char = randomStrings(1e3), stringsAsFactors = FALSE)
 myfile <- tempfile()
 qsave(x, myfile)
 x2 <- qread(myfile)
