@@ -1,3 +1,6 @@
+Version 0.23.6 (2020-12-9)
+   * Add BNDCELLS support added in R 4.0 (https://github.com/traversc/qs/issues/50)
+
 Version 0.23.5 (2020-12-9)
    * Correct issue in `qsavem` function (https://github.com/traversc/qs/issues/46)
 
