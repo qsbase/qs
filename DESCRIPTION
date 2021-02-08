@@ -13,7 +13,6 @@ Authors@R: c(
     person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for ALTREP structures"),
     person("Francesc", "Alted", role = c("ctb", "cph"), comment = "Shuffling routines derived from Blosc library"),
     person("Bryce", "Chamberlain", email = "superchordate@gmail.com", role = c("ctb"), comment = "qsavem and qload functions"),
-    person("R Core Team", role = c("ctb"), comment = "R_expand_binding_value function"),
     person("Gentleman", "Robert", role = c("ctb", "cph"), comment = "R_expand_binding_value function"),
     person("Ihaka", "Ross", role = c("ctb", "cph"), comment = "R_expand_binding_value function"),
     person("R Core Team", role = c("ctb", "cph"), comment = "R_expand_binding_value function"))
