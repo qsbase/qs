@@ -2,64 +2,6 @@ AC_INIT(qs, 0.22.1, traversc@gmail.com)
 AC_PATH_PROG([PKGCONF],[pkg-config],[],[$PATH:/usr/local/bin:ext/bin:ext:/sw/bin:/opt/bin:/opt/local/bin])
 
 ########################################################
-### Predefined compile strings for different cases
-
-LIBS=""
-INCLUDE_PATHS="-IZSTD -IZSTD/common -IZSTD/decompress -IZSTD/compress -ILZ4"
-LZ4_ZSTD_COMPILE_STRING='LIBZSTD = ZSTD/common/debug.o ZSTD/common/entropy_common.o ZSTD/common/error_private.o ZSTD/common/fse_decompress.o ZSTD/common/pool.o ZSTD/common/threading.o ZSTD/common/xxhash.o ZSTD/common/zstd_common.o ZSTD/compress/fse_compress.o ZSTD/compress/hist.o ZSTD/compress/huf_compress.o ZSTD/compress/zstd_compress.o ZSTD/compress/zstd_double_fast.o ZSTD/compress/zstd_fast.o ZSTD/compress/zstd_lazy.o ZSTD/compress/zstd_ldm.o ZSTD/compress/zstdmt_compress.o ZSTD/compress/zstd_opt.o ZSTD/decompress/huf_decompress.o ZSTD/decompress/zstd_ddict.o ZSTD/decompress/zstd_decompress_block.o ZSTD/decompress/zstd_decompress.o ZSTD/dictBuilder/cover.o ZSTD/dictBuilder/divsufsort.o ZSTD/dictBuilder/fastcover.o ZSTD/dictBuilder/zdict.o
-LIBLZ4  = LZ4/lz4.o LZ4/lz4hc.o
-LIBEXPANDBINDINGVALUE  = expand_binding_value.o
-$(SHLIB): libQSZSTD.a	libQSLZ4.a libEXPANDBINDINGVALUE.a
-
-libQSZSTD.a: $(LIBZSTD)
-	$(AR) rcs libQSZSTD.a $(LIBZSTD)
-	
-libQSLZ4.a: $(LIBLZ4)
-	$(AR) rcs libQSLZ4.a $(LIBLZ4)
-	
-libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
-	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
-
-clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a $(LIBLZ4) libQSLZ4.a $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
-	
-ZSTD_COMPILE_STRING='LIBZSTD = ZSTD/common/debug.o ZSTD/common/entropy_common.o ZSTD/common/error_private.o ZSTD/common/fse_decompress.o ZSTD/common/pool.o ZSTD/common/threading.o ZSTD/common/xxhash.o ZSTD/common/zstd_common.o ZSTD/compress/fse_compress.o ZSTD/compress/hist.o ZSTD/compress/huf_compress.o ZSTD/compress/zstd_compress.o ZSTD/compress/zstd_double_fast.o ZSTD/compress/zstd_fast.o ZSTD/compress/zstd_lazy.o ZSTD/compress/zstd_ldm.o ZSTD/compress/zstdmt_compress.o ZSTD/compress/zstd_opt.o ZSTD/decompress/huf_decompress.o ZSTD/decompress/zstd_ddict.o ZSTD/decompress/zstd_decompress_block.o ZSTD/decompress/zstd_decompress.o ZSTD/dictBuilder/cover.o ZSTD/dictBuilder/divsufsort.o ZSTD/dictBuilder/fastcover.o ZSTD/dictBuilder/zdict.o
-LIBEXPANDBINDINGVALUE  = expand_binding_value.o
-$(SHLIB): libQSZSTD.a libEXPANDBINDINGVALUE.a
-
-libQSZSTD.a: $(LIBZSTD)
-	$(AR) rcs libQSZSTD.a $(LIBZSTD)
-
-libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
-	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
-
-clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBZSTD) libQSZSTD.a $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
-	
-LZ4_COMPILE_STRING='LIBLZ4 = LZ4/lz4.o LZ4/lz4hc.o
-LIBEXPANDBINDINGVALUE  = expand_binding_value.o
-$(SHLIB): libQSLZ4.a libEXPANDBINDINGVALUE.a
-
-libQSLZ4.a: $(LIBLZ4)
-	$(AR) rcs libQSLZ4.a $(LIBLZ4)
-
-libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
-	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
-
-clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBLZ4) libQSLZ4.a $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
-	
-BASELINE_COMPILE_STRING='LIBEXPANDBINDINGVALUE  = expand_binding_value.o
-$(SHLIB): libEXPANDBINDINGVALUE.a
-
-libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
-	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
-
-clean:
-	rm -f $(SHLIB) $(OBJECTS) $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a'
-	
-	
-########################################################
 ### Configure args
 
 AC_ARG_WITH([zstd-force-compile],
@@ -115,16 +57,27 @@ RELEASE=`echo $VERSION_STRING | cut -d. -f3`
 echo $(($MAJOR*100000+$MINOR*100+$RELEASE))
 }
 
+
 ########################################################
-#### Compile ZSTD checks
+#### Compile ZSTD/LZ4/SIMD checks
+
+ZSTD_INCLUDE_PATH=""
+LZ4_INCLUDE_PATH=""
+ZSTD_LIBS=""
+LZ4_LIBS=""
+ZSTD_SHLIB=""
+LZ4_SHLIB=""
+ZSTD_CLEAN=""
+LZ4_CLEAN=""
+SIMD_FLAG=""
 
 if test xx$zstd_force_compile = "xxtrue"; then
   echo "Compiling zstd from source due to --with-zstd-force-compile"
   COMPILE_ZSTD="true"
 elif test "xx$zstd_include_path" != "xx"; then
   echo "Using user-defined zstd install paths"
-    LIBS="${LIBS} -L${zstd_lib_path}"
-    INCLUDE_PATHS="${INCLUDE_PATHS} -I${zstd_include_path}"
+    ZSTD_LIBS="-L${zstd_lib_path}"
+    ZSTD_INCLUDE_PATH="-I${zstd_include_path}"
     COMPILE_ZSTD="false"
 elif test "xx$PKGCONF" != "xx"; then
   if "${PKGCONF}" --exists libzstd; then
@@ -132,10 +85,8 @@ elif test "xx$PKGCONF" != "xx"; then
     VER=`getVersion ${VERSION_STRING}`
     if test "${VER}" -ge 100400; then
       echo "zstd ${VERSION_STRING} dynamic library detected -- skipping zstd compilation"
-      zstd_lib_path=`"${PKGCONF}" --libs libzstd`
-      zstd_include_path=`"${PKGCONF}" --cflags-only-I libzstd`
-      LIBS="${LIBS} ${zstd_lib_path}"
-      INCLUDE_PATHS="${INCLUDE_PATHS} ${zstd_include_path}"
+      ZSTD_LIBS=`"${PKGCONF}" --libs libzstd`
+      ZSTD_INCLUDE_PATH=`"${PKGCONF}" --cflags-only-I libzstd`
       COMPILE_ZSTD="false"
     else
       echo "zstd ${VERSION_STRING} dynamic library detected but is lower than bundled version (1.4.0) -- compiling from source"
@@ -146,8 +97,15 @@ elif test "xx$PKGCONF" != "xx"; then
     COMPILE_ZSTD="true"
   fi
 else
-  echo "pkg-confg not detected -- compiling zstd from source"
+  echo "pkg-config not detected -- compiling zstd from source"
   COMPILE_ZSTD="true"
+fi
+
+if test xx$COMPILE_ZSTD = "xxtrue"; then
+  ZSTD_LIBS="${LIBS} -lQSZSTD"
+  ZSTD_INCLUDE_PATH="-IZSTD -IZSTD/common -IZSTD/decompress -IZSTD/compress"
+  ZSTD_SHLIB="libQSZSTD.a"
+  ZSTD_CLEAN="\$(LIBZSTD) libQSZSTD.a"
 fi
 
 if test xx$lz4_force_compile = "xxtrue"; then
@@ -155,8 +113,8 @@ if test xx$lz4_force_compile = "xxtrue"; then
   COMPILE_LZ4="true"
 elif test "xx$lz4_include_path" != "xx"; then
   echo "Using user-defined LZ4 install paths"
-    LIBS="${LIBS} -L${lz4_lib_path}"
-    INCLUDE_PATHS="${INCLUDE_PATHS} -I${lz4_include_path}"
+    LZ4_LIBS="-L${lz4_lib_path}"
+    LZ4_INCLUDE_PATH="-I${lz4_include_path}"
     COMPILE_LZ4="false"
 elif test "xx$PKGCONF" != "xx"; then
   if "${PKGCONF}" --exists liblz4; then
@@ -164,10 +122,8 @@ elif test "xx$PKGCONF" != "xx"; then
     VER=`getVersion ${VERSION_STRING}`
     if test ${VER} -ge 100901; then
       echo "lz4 ${VERSION_STRING} dynamic library detected -- skipping lz4 compilation"
-      lz4_lib_path=`"${PKGCONF}" --libs liblz4`
-      lz4_include_path=`"${PKGCONF}" --cflags-only-I liblz4`
-      LIBS="${LIBS} ${lz4_lib_path}"
-      INCLUDE_PATHS="${INCLUDE_PATHS} ${lz4_include_path}"
+      LZ4_LIBS=`"${PKGCONF}" --libs liblz4`
+      LZ4_INCLUDE_PATH=`"${PKGCONF}" --cflags-only-I liblz4`
       COMPILE_LZ4="false"
     else
       echo "lz4 ${VERSION_STRING} dynamic library detected but is lower than bundled version (1.9.1) -- compiling from source"
@@ -182,45 +138,40 @@ else
   COMPILE_LZ4="true"
 fi
 
-if test xx$COMPILE_ZSTD = "xxtrue"; then
-  if test xx$COMPILE_LZ4 = "xxtrue"; then
-    COMPILE_STRING=$LZ4_ZSTD_COMPILE_STRING
-    LIBS="${LIBS} -lQSZSTD -lQSLZ4"
-  else
-    COMPILE_STRING=$ZSTD_COMPILE_STRING
-    LIBS="${LIBS} -lQSZSTD"
-  fi
-elif test xx$COMPILE_LZ4 = "xxtrue"; then
-  COMPILE_STRING=$LZ4_COMPILE_STRING
-  LIBS="${LIBS} -lQSLZ4"
-else
-  COMPILE_STRING=$BASELINE_COMPILE_STRING
+if test xx$COMPILE_LZ4 = "xxtrue"; then
+  LZ4_LIBS="-lQSLZ4"
+  LZ4_INCLUDE_PATH="-ILZ4"
+  LZ4_SHLIB="libQSLZ4.a"
+  LZ4_CLEAN="\$(LIBLZ4) libQSLZ4.a"
 fi
 
 if test xx$with_simd = "xxAVX2"; then
   echo "Using AVX2"
-  INCLUDE_PATHS="$INCLUDE_PATHS -mavx2"
+  SIMD_FLAG="-mavx2"
 elif test xx$with_simd = "xxSSE2"; then
   echo "Using SSE2"
-  INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
+  SIMD_FLAG="-msse2"
 fi
 
-# else
-#  if test xx$AVX2_SUPPORTED = "xx1"; then
-#    echo "AVX2 support detected"
-#    INCLUDE_PATHS="$INCLUDE_PATHS -mavx2"
-#  elif test xx$SSE2_SUPPORTED = "xx1"; then
-#    echo "SSE2 supported detected"
-#    INCLUDE_PATHS="$INCLUDE_PATHS -msse2"
-#  fi
-# fi
+echo $ZSTD_INCLUDE_PATH
+echo $LZ4_INCLUDE_PATH
+echo $ZSTD_LIBS
+echo $LZ4_LIBS
+echo $ZSTD_SHLIB
+echo $LZ4_SHLIB
+echo $ZSTD_CLEAN
+echo $LZ4_CLEAN
+echo $SIMD_FLAG
 
-echo $LIBS
-echo $INCLUDE_PATHS
-echo $COMPILE_STRING
-
-AC_SUBST([COMPILE_STRING], $COMPILE_STRING)
-AC_SUBST([INCLUDE_PATHS], $INCLUDE_PATHS)
+AC_SUBST([ZSTD_INCLUDE_PATH], $ZSTD_INCLUDE_PATH)
+AC_SUBST([LZ4_INCLUDE_PATH], $LZ4_INCLUDE_PATH)
+AC_SUBST([ZSTD_LIBS], $ZSTD_LIBS)
+AC_SUBST([LZ4_LIBS], $LZ4_LIBS)
+AC_SUBST([ZSTD_SHLIB], $ZSTD_SHLIB)
+AC_SUBST([LZ4_SHLIB], $LZ4_SHLIB)
+AC_SUBST([ZSTD_CLEAN], $ZSTD_CLEAN)
+AC_SUBST([LZ4_CLEAN], $LZ4_CLEAN)
+AC_SUBST([SIMD_FLAG], $SIMD_FLAG)
 
 AC_CONFIG_FILES([src/Makevars])
 AC_OUTPUT

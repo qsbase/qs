@@ -1,4 +1,21 @@
 CXX_STD=CXX11
-PKG_CPPFLAGS=-DRCPP_USE_UNWIND_PROTECT -I. @INCLUDE_PATHS@
-PKG_LIBS=-L. -lpthread -lEXPANDBINDINGVALUE @LIBS@
-@COMPILE_STRING@
+PKG_CPPFLAGS=-DRCPP_USE_UNWIND_PROTECT -I. @ZSTD_INCLUDE_PATH@ @LZ4_INCLUDE_PATH@ @SIMD_FLAG@
+PKG_LIBS=-L. -lpthread -lEXPANDBINDINGVALUE @ZSTD_LIBS@ @LZ4_LIBS@
+
+LIBZSTD = ZSTD/common/debug.o ZSTD/common/entropy_common.o ZSTD/common/error_private.o ZSTD/common/fse_decompress.o ZSTD/common/pool.o ZSTD/common/threading.o ZSTD/common/xxhash.o ZSTD/common/zstd_common.o ZSTD/compress/fse_compress.o ZSTD/compress/hist.o ZSTD/compress/huf_compress.o ZSTD/compress/zstd_compress.o ZSTD/compress/zstd_double_fast.o ZSTD/compress/zstd_fast.o ZSTD/compress/zstd_lazy.o ZSTD/compress/zstd_ldm.o ZSTD/compress/zstdmt_compress.o ZSTD/compress/zstd_opt.o ZSTD/decompress/huf_decompress.o ZSTD/decompress/zstd_ddict.o ZSTD/decompress/zstd_decompress_block.o ZSTD/decompress/zstd_decompress.o ZSTD/dictBuilder/cover.o ZSTD/dictBuilder/divsufsort.o ZSTD/dictBuilder/fastcover.o ZSTD/dictBuilder/zdict.o
+LIBLZ4  = LZ4/lz4.o LZ4/lz4hc.o
+LIBEXPANDBINDINGVALUE  = expand_binding_value.o
+
+$(SHLIB): libEXPANDBINDINGVALUE.a @ZSTD_SHLIB@ @LZ4_SHLIB@
+
+libQSZSTD.a: $(LIBZSTD)
+	$(AR) rcs libQSZSTD.a $(LIBZSTD)
+	
+libQSLZ4.a: $(LIBLZ4)
+	$(AR) rcs libQSLZ4.a $(LIBLZ4)
+	
+libEXPANDBINDINGVALUE.a: $(LIBEXPANDBINDINGVALUE)
+	$(AR) rcs libEXPANDBINDINGVALUE.a $(LIBEXPANDBINDINGVALUE)
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS) $(LIBEXPANDBINDINGVALUE) libEXPANDBINDINGVALUE.a @ZSTD_CLEAN@ @LZ4_CLEAN@
