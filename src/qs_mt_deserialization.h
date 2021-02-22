@@ -181,12 +181,12 @@ struct Data_Context_MT {
   QsMetadata qm;
   std::ifstream & myFile;
   Data_Thread_Context<decompress_env> dtc;
-  xxhash_env xenv; // default constructoer
+  xxhash_env xenv;
   std::unordered_map<uint32_t, SEXP> object_ref_hash;
   bool use_alt_rep_bool;
   
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
-  char* block_data; // default constructor
+  char* block_data;
   uint64_t block_size = 0;
   uint64_t data_offset = 0;
   std::string temp_string = std::string(256, '\0');

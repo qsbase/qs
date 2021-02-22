@@ -525,6 +525,7 @@ SEXP processBlock(T * const sobj) {
     if(r_array_len > 0) sobj->getBlockData(reinterpret_cast<char*>(RAW(obj)), r_array_len);
     break;
   case qstype::CHARACTER:
+#ifdef USE_ALT_REP
     if(sobj->use_alt_rep_bool) {
       obj = PROTECT(sf_vector(r_array_len)); pt++;
       auto & ref = sf_vec_data_ref(obj);
@@ -548,6 +549,7 @@ SEXP processBlock(T * const sobj) {
         }
       }
     } else {
+#endif
       obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
       for(uint64_t i=0; i<r_array_len; i++) {
         uint32_t r_string_len;
@@ -568,7 +570,9 @@ SEXP processBlock(T * const sobj) {
           SET_STRING_ELT(obj, i, Rf_mkCharLenCE(sobj->temp_string.data(), r_string_len, string_encoding));
         }
       }
+#ifdef USE_ALT_REP
     }
+#endif
     break;
   case qstype::SYM:
   {

@@ -1917,15 +1917,18 @@ elif test xx$with_simd = "xxSSE2"; then
   SIMD_FLAG="-msse2"
 fi
 
-echo $ZSTD_INCLUDE_PATH
-echo $LZ4_INCLUDE_PATH
-echo $ZSTD_LIBS
-echo $LZ4_LIBS
-echo $ZSTD_SHLIB
-echo $LZ4_SHLIB
-echo $ZSTD_CLEAN
-echo $LZ4_CLEAN
-echo $SIMD_FLAG
+# : "${R_HOME=`R RHOME`}"
+# STRINGFISH_INCLUDE_PATH=-I`${R_HOME}/bin/Rscript -e 'cat(if(system.file(package = "stringfish") == "" || utils::compareVersion(as.character(packageVersion("stringfish")),"0.14.1") == -1) {""} else {system.file("include", package="stringfish")})'`
+
+# echo $ZSTD_INCLUDE_PATH
+# echo $LZ4_INCLUDE_PATH
+# echo $ZSTD_LIBS
+# echo $LZ4_LIBS
+# echo $ZSTD_SHLIB
+# echo $LZ4_SHLIB
+# echo $ZSTD_CLEAN
+# echo $LZ4_CLEAN
+# echo $SIMD_FLAG
 
 ZSTD_INCLUDE_PATH=$ZSTD_INCLUDE_PATH
 

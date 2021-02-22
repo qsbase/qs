@@ -16,6 +16,7 @@ struct CountToObjectMap {
   }
 };
 
+#ifdef USE_ALT_REP
 // should this be defined in the stringfish package instead?
 bool is_unmaterialized_sf_vector(const SEXP obj) {
   if(!ALTREP(obj)) return false;
@@ -28,6 +29,7 @@ bool is_unmaterialized_sf_vector(const SEXP obj) {
     return false;
   }
 }
+#endif
 
 template <class T>
 void writeHeader_common(const qstype object_type, const uint64_t length, T * const sobj) {
@@ -336,6 +338,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
     uint64_t dl = Rf_xlength(x);
     writeHeader_common(qstype::CHARACTER, dl, sobj);
+#ifdef USE_ALT_REP
     if(is_unmaterialized_sf_vector(x)) {
       auto & ref = sf_vec_data_ref(x);
       for(uint64_t i=0; i<dl; i++) {
@@ -354,6 +357,7 @@ void writeObject(T * const sobj, SEXP x) {
         }
       }
     } else {
+#endif
       for(uint64_t i=0; i<dl; i++) {
         SEXP xi = STRING_ELT(x, i);
         if(xi == NA_STRING) {
@@ -364,7 +368,9 @@ void writeObject(T * const sobj, SEXP x) {
           sobj->push_contiguous(CHAR(xi), di);
         }
       }
+#ifdef USE_ALT_REP
     }
+#endif
 
     writeAttributes(sobj, attrs, anames);
     return;
