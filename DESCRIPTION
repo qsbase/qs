@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.23.6
-Date: 2021-2-7
+Version: 0.23.7
+Date: 2021-2-21
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),
@@ -18,13 +18,13 @@ Authors@R: c(
     person("R Core Team", role = c("ctb", "cph"), comment = "R_expand_binding_value function"))
 Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for quickly writing and reading any R object to and from disk.  
-License: GPL-3 | file LICENSE
+License: GPL-3
 LazyData: true
 Biarch: true
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.0.2)
 SystemRequirements: C++11
 Imports: 
-    Rcpp, RApiSerialize, stringfish (>= 0.14.1)
+    Rcpp, RApiSerialize, stringfish (>= 0.15.0)
 LinkingTo: Rcpp, RApiSerialize, stringfish
 RoxygenNote: 7.1.1
 Suggests: knitr, rmarkdown

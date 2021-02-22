@@ -42,15 +42,18 @@ https://github.com/traversc/qs
 
 // platform specific headers
 #ifdef _WIN32
-#define TRUE WINTRUE // TRUE and FALSE is defined in one of these headers as 1 and 0; conflicts with #define in R headers
-#define FALSE WINFALSE
 #include <sys/stat.h> // _S_IWRITE
 #include <Fileapi.h>
 #include <WinDef.h>
 #include <Winbase.h>
 #include <Handleapi.h>
+// TRUE and FALSE is defined in one of these headers as 1 and 0; conflicts with #define in R headers
+#ifdef TRUE
 #undef TRUE
+#endif
+#ifdef FALSE
 #undef FALSE
+#endif
 #else
 #include <sys/mman.h> // mmap
 #endif
@@ -63,7 +66,6 @@ https://github.com/traversc/qs
 #include <Rversion.h>
 
 #include "RApiSerializeAPI.h"
-#include "sf_external.h"
 
 #include "zstd.h"
 #include "lz4.h"
@@ -76,6 +78,11 @@ https://github.com/traversc/qs
 
 #include "expand_binding_value.h"
 using namespace Rcpp;
+
+#if R_VERSION >= R_Version(3, 5, 0)
+#define USE_ALT_REP
+#include "sf_external.h"
+#endif
 
 ////////////////////////////////////////////////////////////////
 // common utility functions and constants
@@ -889,9 +896,32 @@ struct Protect_Tracker {
 ////////////////////////////////////////////////////////////////
 // Compress and decompress templates
 ////////////////////////////////////////////////////////////////
-
+// Testing xxh3 algorithm
+// There doesn't seem to be a significant enough improvement
+// in speed to be worth the additional changes
+// struct xxhash_env {
+//   XXH3_state_t* x;
+//   xxhash_env() : x(XXH3_createState()) {
+//     XXH_errorcode ret = XXH3_64bits_reset(x);
+//     if(ret == XXH_ERROR) throw std::runtime_error("error in hashing function");
+//   }
+//   ~xxhash_env() {
+//     XXH3_freeState(x);
+//   }
+//   void reset() {
+//     XXH_errorcode ret = XXH3_64bits_reset(x);
+//     if(ret == XXH_ERROR) throw std::runtime_error("error in hashing function");
+//   }
+//   void update(const void * const input, const uint64_t length) {
+//     XXH_errorcode ret = XXH3_64bits_update(x, input, length);
+//     if(ret == XXH_ERROR) throw std::runtime_error("error in hashing function");
+//     // std::cout << digest() << std::endl;
+//   }
+//   uint32_t digest() {
+//     return XXH3_64bits_digest(x) & 0xffffffff;
+//   }
+// };
 #define XXH_SEED 12345
-// seed is 12345
 struct xxhash_env {
   XXH32_state_s* x;
   xxhash_env() : x(XXH32_createState()) {

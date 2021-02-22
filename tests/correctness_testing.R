@@ -276,7 +276,9 @@ for(q in 1:reps) {
       cuts <- sample(tp*10, tp+1) %>% sort %>% as.numeric
       x1 <- splitstr(x1, cuts)
       x1 <- c(NA, "", x1)
-      x1 <- stringfish::convert_to_sf(x1)
+      if(utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
+        x1 <- stringfish::convert_to_sf(x1)
+      }
       qsave_rand(x1, file=myfile)
       time[i] <- Sys.time()
       z <- qread_rand(file=myfile)

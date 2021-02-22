@@ -1,4 +1,7 @@
-Version 0.23.6 (2020-12-9)
+Version 0.23.7 (2021-2-21)
+   * Reduce R version requirement from R 3.5.0 to R 3.0.2 (https://github.com/traversc/qs/pull/36)
+
+Version 0.23.6 (2020-2-7)
    * Add BNDCELLS support added in R 4.0 (https://github.com/traversc/qs/issues/50)
 
 Version 0.23.5 (2020-12-9)
