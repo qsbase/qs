@@ -51,9 +51,9 @@ bool is_big_endian()
   return bint.c[0] == 1; 
 }
 
-// [[Rcpp::export(rng = false)]]
-double c_qsave(SEXP const x, const std::string & file, const std::string & preset, const std::string & algorithm, 
-               const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
+// [[Rcpp::export(rng = false, invisible=true)]]
+double qsave(SEXP const x, const std::string & file, const std::string preset="high", const std::string algorithm="zstd", 
+               const int compress_level=4L, const int shuffle_control=15L, const bool check_hash=true, const int nthreads=1) {
   std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open " + file + ". Check file path.");
@@ -136,9 +136,9 @@ double c_qsave(SEXP const x, const std::string & file, const std::string & prese
   return static_cast<double>(total_file_size);
 }
 
-// [[Rcpp::export(rng = false)]]
-double c_qsave_fd(SEXP const x, const int fd, const std::string & preset, const std::string & algorithm, 
-                  const int compress_level, const int shuffle_control, const bool check_hash) {
+// [[Rcpp::export(rng = false, invisible=true)]]
+double qsave_fd(SEXP const x, const int fd, const std::string preset="high", const std::string algorithm="zstd", 
+                  const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
   fd_wrapper myFile(fd);
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
@@ -176,9 +176,9 @@ double c_qsave_fd(SEXP const x, const int fd, const std::string & preset, const 
   return static_cast<double>(myFile.bytes_processed);
 }
 
-// [[Rcpp::export(rng = false)]]
-double c_qsave_handle(SEXP const x, SEXP const handle, const std::string & preset, 
-                      const std::string & algorithm, const int compress_level, const int shuffle_control, const bool check_hash) {
+// [[Rcpp::export(rng = false, invisible=true)]]
+double qsave_handle(SEXP const x, SEXP const handle, const std::string preset="high", 
+                    const std::string algorithm="zstd", const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
   handle_wrapper myFile(h);
@@ -220,9 +220,9 @@ double c_qsave_handle(SEXP const x, SEXP const handle, const std::string & prese
 #endif
 }
 
-// [[Rcpp::export(rng = false)]]
-RawVector c_qserialize(SEXP const x, const std::string & preset, const std::string & algorithm, 
-                       const int compress_level, const int shuffle_control, const bool check_hash) {
+// [[Rcpp::export(rng = false, invisible=true)]]
+RawVector qserialize(SEXP const x, const std::string preset="high", const std::string algorithm="zstd", 
+                     const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
   vec_wrapper myFile;
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
@@ -269,7 +269,7 @@ RawVector c_qserialize(SEXP const x, const std::string & preset, const std::stri
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict, const int nthreads) {
+SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open " + file + ". Check file path.");
@@ -324,7 +324,7 @@ SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread_fd(const int fd, const bool use_alt_rep, const bool strict) {
+SEXP qread_fd(const int fd, const bool use_alt_rep=false, const bool strict=false) {
   fd_wrapper myFile(fd);
   Protect_Tracker pt = Protect_Tracker();
   QsMetadata qm  = QsMetadata::create(myFile);
@@ -356,7 +356,7 @@ SEXP c_qread_fd(const int fd, const bool use_alt_rep, const bool strict) {
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread_handle(SEXP const handle, const bool use_alt_rep, const bool strict) {
+SEXP qread_handle(SEXP const handle, const bool use_alt_rep=false, const bool strict=false) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
   handle_wrapper myFile(h);
@@ -393,7 +393,7 @@ SEXP c_qread_handle(SEXP const handle, const bool use_alt_rep, const bool strict
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep, const bool strict) {
+SEXP qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep=false, const bool strict=false) {
   void * vp = R_ExternalPtrAddr(pointer);
   mem_wrapper myFile(vp, static_cast<uint64_t>(length));
   Protect_Tracker pt = Protect_Tracker();
@@ -426,12 +426,12 @@ SEXP c_qread_ptr(SEXP const pointer, const double length, const bool use_alt_rep
 }
 
 // [[Rcpp::export(rng = false)]]
-SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
+SEXP qdeserialize(SEXP const x, const bool use_alt_rep=false, const bool strict=false) {
   void * p = reinterpret_cast<void*>(RAW(x));
   double dlen = static_cast<double>(Rf_xlength(x));
   Protect_Tracker pt = Protect_Tracker();
   SEXP pointer = PROTECT(R_MakeExternalPtr(p, R_NilValue, R_NilValue)); pt++;
-  return c_qread_ptr(pointer, dlen, use_alt_rep, strict);
+  return qread_ptr(pointer, dlen, use_alt_rep, strict);
 }
 
 // void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode) {
@@ -467,8 +467,8 @@ SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
 
 // TODO: use SEXPs
 // [[Rcpp::export(rng = false)]]
-RObject c_qdump(const std::string & file) {
-  std::ifstream myFile(file, std::ios::in | std::ios::binary);
+RObject qdump(const std::string & file) {
+  std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }

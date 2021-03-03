@@ -79,9 +79,8 @@
 #' w2 <- qread(myfile)
 #' identical(w, w2) # returns true
 #' @export
-qsave <- function(x, file, preset="high", algorithm="zstd", compress_level=4L, shuffle_control=15L, check_hash = TRUE, nthreads=1) {
- invisible(c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads))
-}
+#' @name qsave
+NULL
 
 #' qread
 #' 
@@ -119,9 +118,8 @@ qsave <- function(x, file, preset="high", algorithm="zstd", compress_level=4L, s
 #' w2 <- qread(myfile)
 #' identical(w, w2) # returns true
 #' @export
-qread <- function(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1) {
- c_qread(file, use_alt_rep, strict, nthreads)
-}
+#' @name qread
+NULL
 
 #' qsave_fd
 #' 
@@ -141,10 +139,8 @@ qread <- function(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1) {
 #' This function serializes and compresses an R object to a stream using a file descriptor
 #' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
 #' @export
-qsave_fd <- function(x, fd, preset = "high", algorithm="zstd", compress_level=4L, shuffle_control=15L, check_hash = TRUE) {
- invisible(c_qsave_fd(x, fd, preset, algorithm, compress_level, shuffle_control, check_hash))
-}
-
+#' @name qsave_fd
+NULL
 
 #' qread_fd
 #' 
@@ -157,9 +153,8 @@ qsave_fd <- function(x, fd, preset = "high", algorithm="zstd", compress_level=4L
 #' @details
 #' See `?qsave_fd` for additional details and examples.
 #' @export
-qread_fd <- function(fd, use_alt_rep=FALSE, strict=FALSE) {
- c_qread_fd(fd, use_alt_rep, strict)
-}
+#' @name qread_fd
+NULL
 
 #' qsave_handle
 #' 
@@ -179,10 +174,8 @@ qread_fd <- function(fd, use_alt_rep=FALSE, strict=FALSE) {
 #' This function serializes and compresses an R object to a stream using a file descriptor
 #' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
 #' @export
-qsave_handle <- function(x, handle, preset = "high", algorithm="zstd", compress_level=4L, shuffle_control=15L, check_hash = TRUE) {
- invisible(c_qsave_handle(x, handle, preset, algorithm, compress_level, shuffle_control, check_hash))
-}
-
+#' @name qsave_handle
+NULL
 
 #' qread_handle
 #' 
@@ -195,10 +188,8 @@ qsave_handle <- function(x, handle, preset = "high", algorithm="zstd", compress_
 #' @details
 #' See `?qsave_handle` for additional details and examples.
 #' @export
-qread_handle <- function(handle, use_alt_rep=FALSE, strict=FALSE) {
- c_qread_handle(handle, use_alt_rep, strict)
-}
-
+#' @name qread_handle
+NULL
 
 #' qserialize
 #' 
@@ -216,10 +207,8 @@ qread_handle <- function(handle, use_alt_rep=FALSE, strict=FALSE) {
 #' This function serializes and compresses an R object to a raw vctor
 #' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
 #' @export
-qserialize <- function(x, preset = "high", algorithm="zstd", compress_level=4L, shuffle_control=15L, check_hash = TRUE) {
- c_qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash)
-}
-
+#' @name qserialize
+NULL
 
 #' qdeserialize
 #' 
@@ -232,9 +221,8 @@ qserialize <- function(x, preset = "high", algorithm="zstd", compress_level=4L, 
 #' @details
 #' See `?qeserialize` for additional details and examples.
 #' @export
-qdeserialize <- function(x, use_alt_rep=FALSE, strict=FALSE) {
- c_qdeserialize(x, use_alt_rep, strict)
-}
+#' @name qdeserialize
+NULL
 
 #' qread_ptr
 #' 
@@ -246,9 +234,8 @@ qdeserialize <- function(x, use_alt_rep=FALSE, strict=FALSE) {
 #' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
 #' @return The de-serialized object
 #' @export
-qread_ptr <- function(pointer, length, use_alt_rep=FALSE, strict=FALSE) {
- c_qread_ptr(pointer, length, use_alt_rep, strict)
-}
+#' @name qread_ptr
+NULL
 
 #' qdump
 #' 
@@ -264,10 +251,8 @@ qread_ptr <- function(pointer, length, use_alt_rep=FALSE, strict=FALSE) {
 #' qsave(x, myfile)
 #' x2 <- qdump(myfile)
 #' @export
-qdump <- function(file) {
- c_qdump(normalizePath(file, mustWork=FALSE))
-}
-
+#' @name qdump
+NULL
 
 #' Zstd compress bound
 #' 
