@@ -55,6 +55,7 @@ bool is_big_endian()
 double qsave(SEXP const x, const std::string & file, const std::string preset="high", const std::string algorithm="zstd", 
                const int compress_level=4L, const int shuffle_control=15L, const bool check_hash=true, const int nthreads=1) {
   std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
+  myFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   if(!myFile) {
     throw std::runtime_error("Failed to open " + file + ". Check file path.");
   }
@@ -271,6 +272,7 @@ RawVector qserialize(SEXP const x, const std::string preset="high", const std::s
 // [[Rcpp::export(rng = false)]]
 SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
+  myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
   if(!myFile) {
     throw std::runtime_error("Failed to open " + file + ". Check file path.");
   }
@@ -469,6 +471,7 @@ SEXP qdeserialize(SEXP const x, const bool use_alt_rep=false, const bool strict=
 // [[Rcpp::export(rng = false)]]
 RObject qdump(const std::string & file) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
+  myFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   if(!myFile) {
     throw std::runtime_error("Failed to open file");
   }
