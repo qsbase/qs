@@ -1,4 +1,5 @@
-Version 0.23.7 (2021-2-21)
+Version 0.24.1 (2021-3-5)
+   * Add additional error checks on failure to read or write data
    * Update xxhash version to 0.8.0
    * Reduce R version requirement from R 3.5.0 to R 3.0.2 (https://github.com/traversc/qs/pull/36)
 
