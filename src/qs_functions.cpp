@@ -137,6 +137,13 @@ double qsave(SEXP const x, const std::string & file, const std::string preset="h
   return static_cast<double>(total_file_size);
 }
 
+// [[Rcpp::export(rng = false)]]
+double c_qsave(SEXP const x, const std::string & file, const std::string preset, const std::string algorithm, 
+             const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
+  return qsave(x, file, preset, algorithm, compress_level, shuffle_control,check_hash, nthreads);
+}
+
+
 // [[Rcpp::export(rng = false, invisible=true)]]
 double qsave_fd(SEXP const x, const int fd, const std::string preset="high", const std::string algorithm="zstd", 
                   const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
@@ -221,7 +228,7 @@ double qsave_handle(SEXP const x, SEXP const handle, const std::string preset="h
 #endif
 }
 
-// [[Rcpp::export(rng = false, invisible=true)]]
+// [[Rcpp::export(rng = false)]]
 RawVector qserialize(SEXP const x, const std::string preset="high", const std::string algorithm="zstd", 
                      const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
   vec_wrapper myFile;
@@ -267,6 +274,12 @@ RawVector qserialize(SEXP const x, const std::string preset="high", const std::s
   myFile.writeDirect(reinterpret_cast<char*>(&clength), 8, filesize_offset);
   myFile.shrink();
   return RawVector(myFile.buffer.begin(), myFile.buffer.end());
+}
+
+// [[Rcpp::export(rng = false)]]
+RawVector c_qserialize(SEXP const x, const std::string preset, const std::string algorithm, 
+                     const int compress_level, const int shuffle_control, const bool check_hash) {
+  return qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash);
 }
 
 // [[Rcpp::export(rng = false)]]
@@ -323,6 +336,11 @@ SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool st
       }
     }
   }
+}
+
+// [[Rcpp::export(rng = false)]]
+SEXP c_qread(const std::string & file, const bool use_alt_rep, const bool strict, const int nthreads) {
+  return qread(file, use_alt_rep, strict, nthreads);
 }
 
 // [[Rcpp::export(rng = false)]]
@@ -434,6 +452,11 @@ SEXP qdeserialize(SEXP const x, const bool use_alt_rep=false, const bool strict=
   Protect_Tracker pt = Protect_Tracker();
   SEXP pointer = PROTECT(R_MakeExternalPtr(p, R_NilValue, R_NilValue)); pt++;
   return qread_ptr(pointer, dlen, use_alt_rep, strict);
+}
+
+// [[Rcpp::export(rng = false)]]
+SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
+  return qdeserialize(x, use_alt_rep, strict);
 }
 
 // void c_qsave_fd(SEXP x, std::string scon, int shuffle_control, bool check_hash, std::string popen_mode) {

@@ -249,7 +249,7 @@ Example C++ script:
     
     // [[Rcpp::export]]
     void test() {
-      qs::c_qsave(IntegerVector::create(1,2,3), "/tmp/myfile.qs", "high", "zstd", 1, 15, true, 1);
+      qs::qsave(IntegerVector::create(1,2,3), "/tmp/myfile.qs", "high", "zstd", 1, 15, true, 1);
     }
 
 R side:

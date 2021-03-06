@@ -77,6 +77,10 @@ qsave <- function(x, file, preset = "high", algorithm = "zstd", compress_level =
     invisible(.Call(`_qs_qsave`, x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads))
 }
 
+c_qsave <- function(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads) {
+    .Call(`_qs_c_qsave`, x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads)
+}
+
 qsave_fd <- function(x, fd, preset = "high", algorithm = "zstd", compress_level = 4L, shuffle_control = 15L, check_hash = TRUE) {
     invisible(.Call(`_qs_qsave_fd`, x, fd, preset, algorithm, compress_level, shuffle_control, check_hash))
 }
@@ -86,11 +90,19 @@ qsave_handle <- function(x, handle, preset = "high", algorithm = "zstd", compres
 }
 
 qserialize <- function(x, preset = "high", algorithm = "zstd", compress_level = 4L, shuffle_control = 15L, check_hash = TRUE) {
-    invisible(.Call(`_qs_qserialize`, x, preset, algorithm, compress_level, shuffle_control, check_hash))
+    .Call(`_qs_qserialize`, x, preset, algorithm, compress_level, shuffle_control, check_hash)
+}
+
+c_qserialize <- function(x, preset, algorithm, compress_level, shuffle_control, check_hash) {
+    .Call(`_qs_c_qserialize`, x, preset, algorithm, compress_level, shuffle_control, check_hash)
 }
 
 qread <- function(file, use_alt_rep = FALSE, strict = FALSE, nthreads = 1L) {
     .Call(`_qs_qread`, file, use_alt_rep, strict, nthreads)
+}
+
+c_qread <- function(file, use_alt_rep, strict, nthreads) {
+    .Call(`_qs_c_qread`, file, use_alt_rep, strict, nthreads)
 }
 
 qread_fd <- function(fd, use_alt_rep = FALSE, strict = FALSE) {
@@ -107,6 +119,10 @@ qread_ptr <- function(pointer, length, use_alt_rep = FALSE, strict = FALSE) {
 
 qdeserialize <- function(x, use_alt_rep = FALSE, strict = FALSE) {
     .Call(`_qs_qdeserialize`, x, use_alt_rep, strict)
+}
+
+c_qdeserialize <- function(x, use_alt_rep, strict) {
+    .Call(`_qs_c_qdeserialize`, x, use_alt_rep, strict)
 }
 
 qdump <- function(file) {
