@@ -646,6 +646,46 @@ RcppExport SEXP _qs_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algor
     UNPROTECT(1);
     return rcpp_result_gen;
 }
+// c_qsave
+double c_qsave(SEXP const x, const std::string& file, const std::string preset, const std::string algorithm, const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads);
+static SEXP _qs_c_qsave_try(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type file(fileSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type preset(presetSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< const int >::type compress_level(compress_levelSEXP);
+    Rcpp::traits::input_parameter< const int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< const bool >::type check_hash(check_hashSEXP);
+    Rcpp::traits::input_parameter< const int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qsave(x, file, preset, algorithm, compress_level, shuffle_control, check_hash, nthreads));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_c_qsave(SEXP xSEXP, SEXP fileSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP, SEXP nthreadsSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_c_qsave_try(xSEXP, fileSEXP, presetSEXP, algorithmSEXP, compress_levelSEXP, shuffle_controlSEXP, check_hashSEXP, nthreadsSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 // qsave_fd
 double qsave_fd(SEXP const x, const int fd, const std::string preset, const std::string algorithm, const int compress_level, const int shuffle_control, const bool check_hash);
 static SEXP _qs_qsave_fd_try(SEXP xSEXP, SEXP fdSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
@@ -762,6 +802,44 @@ RcppExport SEXP _qs_qserialize(SEXP xSEXP, SEXP presetSEXP, SEXP algorithmSEXP, 
     UNPROTECT(1);
     return rcpp_result_gen;
 }
+// c_qserialize
+RawVector c_qserialize(SEXP const x, const std::string preset, const std::string algorithm, const int compress_level, const int shuffle_control, const bool check_hash);
+static SEXP _qs_c_qserialize_try(SEXP xSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type preset(presetSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< const int >::type compress_level(compress_levelSEXP);
+    Rcpp::traits::input_parameter< const int >::type shuffle_control(shuffle_controlSEXP);
+    Rcpp::traits::input_parameter< const bool >::type check_hash(check_hashSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_c_qserialize(SEXP xSEXP, SEXP presetSEXP, SEXP algorithmSEXP, SEXP compress_levelSEXP, SEXP shuffle_controlSEXP, SEXP check_hashSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_c_qserialize_try(xSEXP, presetSEXP, algorithmSEXP, compress_levelSEXP, shuffle_controlSEXP, check_hashSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 // qread
 SEXP qread(const std::string& file, const bool use_alt_rep, const bool strict, const int nthreads);
 static SEXP _qs_qread_try(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP nthreadsSEXP) {
@@ -779,6 +857,42 @@ RcppExport SEXP _qs_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, 
     SEXP rcpp_result_gen;
     {
         rcpp_result_gen = PROTECT(_qs_qread_try(fileSEXP, use_alt_repSEXP, strictSEXP, nthreadsSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// c_qread
+SEXP c_qread(const std::string& file, const bool use_alt_rep, const bool strict, const int nthreads);
+static SEXP _qs_c_qread_try(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP nthreadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type file(fileSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< const bool >::type strict(strictSEXP);
+    Rcpp::traits::input_parameter< const int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qread(file, use_alt_rep, strict, nthreads));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_c_qread(SEXP fileSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP, SEXP nthreadsSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_c_qread_try(fileSEXP, use_alt_repSEXP, strictSEXP, nthreadsSEXP));
     }
     Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
     if (rcpp_isInterrupt_gen) {
@@ -920,6 +1034,41 @@ RcppExport SEXP _qs_qdeserialize(SEXP xSEXP, SEXP use_alt_repSEXP, SEXP strictSE
     SEXP rcpp_result_gen;
     {
         rcpp_result_gen = PROTECT(_qs_qdeserialize_try(xSEXP, use_alt_repSEXP, strictSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// c_qdeserialize
+SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict);
+static SEXP _qs_c_qdeserialize_try(SEXP xSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP const >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const bool >::type use_alt_rep(use_alt_repSEXP);
+    Rcpp::traits::input_parameter< const bool >::type strict(strictSEXP);
+    rcpp_result_gen = Rcpp::wrap(c_qdeserialize(x, use_alt_rep, strict));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_c_qdeserialize(SEXP xSEXP, SEXP use_alt_repSEXP, SEXP strictSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_c_qdeserialize_try(xSEXP, use_alt_repSEXP, strictSEXP));
     }
     Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
     if (rcpp_isInterrupt_gen) {
@@ -1333,14 +1482,18 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("SEXP(*make_binding_value)(SEXP)");
         signatures.insert("bool(*is_big_endian)()");
         signatures.insert("double(*qsave)(SEXP const,const std::string&,const std::string,const std::string,const int,const int,const bool,const int)");
+        signatures.insert("double(*c_qsave)(SEXP const,const std::string&,const std::string,const std::string,const int,const int,const bool,const int)");
         signatures.insert("double(*qsave_fd)(SEXP const,const int,const std::string,const std::string,const int,const int,const bool)");
         signatures.insert("double(*qsave_handle)(SEXP const,SEXP const,const std::string,const std::string,const int,const int,const bool)");
         signatures.insert("RawVector(*qserialize)(SEXP const,const std::string,const std::string,const int,const int,const bool)");
+        signatures.insert("RawVector(*c_qserialize)(SEXP const,const std::string,const std::string,const int,const int,const bool)");
         signatures.insert("SEXP(*qread)(const std::string&,const bool,const bool,const int)");
+        signatures.insert("SEXP(*c_qread)(const std::string&,const bool,const bool,const int)");
         signatures.insert("SEXP(*qread_fd)(const int,const bool,const bool)");
         signatures.insert("SEXP(*qread_handle)(SEXP const,const bool,const bool)");
         signatures.insert("SEXP(*qread_ptr)(SEXP const,const double,const bool,const bool)");
         signatures.insert("SEXP(*qdeserialize)(SEXP const,const bool,const bool)");
+        signatures.insert("SEXP(*c_qdeserialize)(SEXP const,const bool,const bool)");
         signatures.insert("RObject(*qdump)(const std::string&)");
         signatures.insert("int(*openFd)(const std::string&,const std::string&)");
         signatures.insert("SEXP(*readFdDirect)(const int,const int)");
@@ -1377,14 +1530,18 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_make_binding_value", (DL_FUNC)_qs_make_binding_value_try);
     R_RegisterCCallable("qs", "_qs_is_big_endian", (DL_FUNC)_qs_is_big_endian_try);
     R_RegisterCCallable("qs", "_qs_qsave", (DL_FUNC)_qs_qsave_try);
+    R_RegisterCCallable("qs", "_qs_c_qsave", (DL_FUNC)_qs_c_qsave_try);
     R_RegisterCCallable("qs", "_qs_qsave_fd", (DL_FUNC)_qs_qsave_fd_try);
     R_RegisterCCallable("qs", "_qs_qsave_handle", (DL_FUNC)_qs_qsave_handle_try);
     R_RegisterCCallable("qs", "_qs_qserialize", (DL_FUNC)_qs_qserialize_try);
+    R_RegisterCCallable("qs", "_qs_c_qserialize", (DL_FUNC)_qs_c_qserialize_try);
     R_RegisterCCallable("qs", "_qs_qread", (DL_FUNC)_qs_qread_try);
+    R_RegisterCCallable("qs", "_qs_c_qread", (DL_FUNC)_qs_c_qread_try);
     R_RegisterCCallable("qs", "_qs_qread_fd", (DL_FUNC)_qs_qread_fd_try);
     R_RegisterCCallable("qs", "_qs_qread_handle", (DL_FUNC)_qs_qread_handle_try);
     R_RegisterCCallable("qs", "_qs_qread_ptr", (DL_FUNC)_qs_qread_ptr_try);
     R_RegisterCCallable("qs", "_qs_qdeserialize", (DL_FUNC)_qs_qdeserialize_try);
+    R_RegisterCCallable("qs", "_qs_c_qdeserialize", (DL_FUNC)_qs_c_qdeserialize_try);
     R_RegisterCCallable("qs", "_qs_qdump", (DL_FUNC)_qs_qdump_try);
     R_RegisterCCallable("qs", "_qs_openFd", (DL_FUNC)_qs_openFd_try);
     R_RegisterCCallable("qs", "_qs_readFdDirect", (DL_FUNC)_qs_readFdDirect_try);
@@ -1420,14 +1577,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_make_binding_value", (DL_FUNC) &_qs_make_binding_value, 1},
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_qsave", (DL_FUNC) &_qs_qsave, 8},
+    {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},
     {"_qs_qsave_fd", (DL_FUNC) &_qs_qsave_fd, 7},
     {"_qs_qsave_handle", (DL_FUNC) &_qs_qsave_handle, 7},
     {"_qs_qserialize", (DL_FUNC) &_qs_qserialize, 6},
+    {"_qs_c_qserialize", (DL_FUNC) &_qs_c_qserialize, 6},
     {"_qs_qread", (DL_FUNC) &_qs_qread, 4},
+    {"_qs_c_qread", (DL_FUNC) &_qs_c_qread, 4},
     {"_qs_qread_fd", (DL_FUNC) &_qs_qread_fd, 3},
     {"_qs_qread_handle", (DL_FUNC) &_qs_qread_handle, 3},
     {"_qs_qread_ptr", (DL_FUNC) &_qs_qread_ptr, 4},
     {"_qs_qdeserialize", (DL_FUNC) &_qs_qdeserialize, 3},
+    {"_qs_c_qdeserialize", (DL_FUNC) &_qs_c_qdeserialize, 3},
     {"_qs_qdump", (DL_FUNC) &_qs_qdump, 1},
     {"_qs_openFd", (DL_FUNC) &_qs_openFd, 2},
     {"_qs_readFdDirect", (DL_FUNC) &_qs_readFdDirect, 2},
