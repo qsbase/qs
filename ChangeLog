@@ -1,3 +1,6 @@
+Version 0.24.3 (2021-3-8)
+   * Add github actions to test compilation on different R versions
+
 Version 0.24.1 (2021-3-5)
    * Add additional error checks on failure to read or write data
    * Update xxhash version to 0.8.0
