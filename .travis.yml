@@ -11,6 +11,7 @@ before_install:
   - ./run.sh bootstrap
 
 install:
+  - export _R_CHECK_FORCE_SUGGESTS_=0
   - ./run.sh install_aptget r-cran-rcpp r-cran-knitr r-cran-rmarkdown r-cran-dplyr r-cran-data.table r-cran-rapiserialize && ./run.sh install_github traversc/stringfish traversc/qs
 
 script:
