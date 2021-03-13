@@ -1,4 +1,4 @@
-qs
+Using qs
 ================
 
 <!-- <img src="qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px"> -->
@@ -274,5 +274,6 @@ specified.
   - Additional compression algorithms
   - Improved ALTREP serialization
   - Re-write of multithreading code
+  - Mac M1 optimizations (NEON) and checking
 
 Future versions will be backwards compatible with the current version.
