@@ -1,5 +1,5 @@
 ---
-title: "qs"
+title: "Using qs"
 output:
   html_vignette:
     keep_md: no
@@ -209,5 +209,6 @@ The C++ functions do not have default parameters; all parameters must be specifi
 * Additional compression algorithms
 * Improved ALTREP serialization
 * Re-write of multithreading code
+* Mac M1 optimizations (NEON) and checking
 
 Future versions will be backwards compatible with the current version.

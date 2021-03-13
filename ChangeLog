@@ -1,3 +1,6 @@
+Version 0.24.4 (2021-3-13)
+   * Throw a proper error message for DBFS issues (https://github.com/traversc/qs/issues/51)
+
 Version 0.24.3 (2021-3-8)
    * Add github actions to test compilation on different R versions
 
