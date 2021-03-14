@@ -1,3 +1,3 @@
 .onAttach <- function(libname, pkgname) {
-  packageStartupMessage("qs v0.24.1.")
+  packageStartupMessage("qs v0.24.4.")
 }
