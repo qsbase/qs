@@ -7,7 +7,7 @@ suppressMessages(library(sf))
 suppressMessages(library(nanotime))
 suppressMessages(library(R6))
 suppressMessages(library(raster))
-suppressMessages(library(trqwe))
+# suppressMessages(library(trqwe))
 options(warn=1)
 
 if (Sys.info()[['sysname']] != "Windows") {
@@ -257,16 +257,20 @@ for(i in 1:200) {
   stopifnot(identical(x, x2))
 }
 
+
+f1 <- compiler::cmpfun(function(x) { x <- x + 1L; environment() })
+f2 <- compiler::cmpfun(function(x) { x <- x + 1.0; environment() })
+# f3 <- compiler::cmpfun(function(x) { x <- x | TRUE; environment() })
+# .Internal(inspect(f1(1L)))
+# .Internal(inspect(f2(1.0)))
+# .Internal(inspect(f3(TRUE))) # this doesn't work?
+
+
 print("https://github.com/traversc/qs/issues/50")
 for(i in 1:200) {
-  x <- qs:::make_binding_value(1L)
-  x2 <- qs::qdeserialize(qs::qserialize(x))
-  stopifnot(identical(x, x2))
-  x <- qs:::make_binding_value(NA)
-  x2 <- qs::qdeserialize(qs::qserialize(x))
-  stopifnot(identical(x, x2))
-  x <- qs:::make_binding_value(1.5)
-  x2 <- qs::qdeserialize(qs::qserialize(x))
-  stopifnot(identical(x, x2))
+  x2 <- qs::qdeserialize(qs::qserialize(f1(1L)))
+  stopifnot(identical(x2$x, 2L))
+  x2 <- qs::qdeserialize(qs::qserialize(f2(1.0)))
+  stopifnot(identical(x2$x, 2.0))
 }
 

@@ -76,7 +76,7 @@ https://github.com/traversc/qs
 #include "xxhash/xxhash.c"
 #include <R_ext/Rdynload.h>
 
-#include "expand_binding_value.h"
+// #include "expand_binding_value.h"
 using namespace Rcpp;
 
 #if R_VERSION >= R_Version(3, 5, 0)

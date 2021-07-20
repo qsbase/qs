@@ -30,4 +30,5 @@ export("qsave",
        "catquo",
        "qsavem",
        "qreadm",
-       "qload")
+       "qload",
+       "qcache")
