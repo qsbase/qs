@@ -317,6 +317,53 @@ void writeAttributes(T * const sobj, const std::vector<SEXP> & attrs, const std:
 }
 
 template <class T>
+void writeEnvFrame(T * const sobj, SEXP rho) {
+  SEXP xt = FRAME(rho);
+  if(TYPEOF(xt) == NILSXP) {
+    writeHeader_common(qstype::NIL, 0, sobj);
+  } else { // LISTSXP
+    // getAttributes(xt, attrs, anames);
+    // if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
+    std::vector<SEXP> cars;
+    std::vector<SEXP> tags;
+    std::vector<int> flags;
+    bool has_flags = false;
+    while(xt != R_NilValue) {
+      int f = packFlags(xt);
+      if(f != 0) has_flags = true;
+      flags.push_back(f);
+      SEXP tag = TAG(xt);
+      tags.push_back(tag);
+      if(R_BindingIsActive(tag, rho)) {
+        cars.push_back(CAR(xt));
+      } else {
+        // this expands immediate bindings; direct expansion is not allowed/part of API (Luke Tierney)
+        cars.push_back(Rf_findVarInFrame(rho, tag));
+      }
+      xt = CDR(xt);
+    }
+    if(has_flags) {
+      writeHeader_common(qstype::PAIRLIST_WF, cars.size(), sobj);
+    } else {
+      writeHeader_common(qstype::PAIRLIST, cars.size(), sobj);
+    }
+    for(uint64_t i=0; i<cars.size(); i++) {
+      if(has_flags) sobj->push_pod_noncontiguous(flags[i]);
+      if(tags[i] == R_NilValue) {
+        sobj->push_pod_noncontiguous(string_header_NA);
+      } else {
+        const char * tag_chars = (CHAR(PRINTNAME(tags[i])));
+        uint32_t alen = strlen(tag_chars);
+        writeStringHeader_common(alen, CE_NATIVE, sobj);
+        sobj->push_contiguous(tag_chars, alen);
+      }
+      writeObject(sobj, cars[i]);
+    }
+    // writeAttributes(sobj, attrs, anames);
+  }
+}
+
+template <class T>
 void writeObject(T * const sobj, SEXP x) {
   std::vector<SEXP> attrs; // attribute objects and names; r-serialized, env-references and NULLs don't have attributes, so process inline
   std::vector<SEXP> anames; // just declare attribute variables for convienence here
@@ -421,7 +468,7 @@ void writeObject(T * const sobj, SEXP x) {
       int f = packFlags(xt);
       if(f != 0) has_flags = true;
       flags.push_back(f);
-      if(get_bndcell_tag(xt)) R_expand_binding_value(xt);
+      // if(get_bndcell_tag(xt)) R_expand_binding_value(xt);
       cars.push_back(CAR(xt));
       tags.push_back(TAG(xt));
       xt = CDR(xt);
@@ -486,7 +533,7 @@ void writeObject(T * const sobj, SEXP x) {
       }
     }
     writeObject(sobj, TAG(x));
-    if(xtype != CLOSXP && get_bndcell_tag(x)) R_expand_binding_value(x);
+    // if(xtype != CLOSXP && get_bndcell_tag(x)) R_expand_binding_value(x);
     writeObject(sobj, CAR(x));
     writeObject(sobj, CDR(x)); // TAG/CAR/CDR are just accessors to elements; not real pairlist
     writeAttributes(sobj, attrs, anames);
@@ -515,7 +562,8 @@ void writeObject(T * const sobj, SEXP x) {
           writeHeader_common(qstype::UNLOCKED_ENV, sobj->object_ref_hash.index, sobj);
         }
         writeObject(sobj, ENCLOS(x)); // parent env
-        writeObject(sobj, FRAME(x));
+        // writeObject(sobj, FRAME(x));
+        writeEnvFrame(sobj, x);
         writeObject(sobj, HASHTAB(x));
         writeAttributes(sobj, attrs, anames);
       }
