@@ -1,7 +1,7 @@
 #' qcache
 #' 
 #' Helper function for caching objects for long running tasks
-#' @usage qcache(expr, name, envir=parent.frame(), cache_dir="cache", clear=FALSE, prompt=TRUE, qsave_params=list(), qread_params=list())
+#' @usage qcache(expr, name, envir=parent.frame(), cache_dir=".cache", clear=FALSE, prompt=TRUE, qsave_params=list(), qread_params=list())
 #' @param expr The expression to evaluate
 #' @param name The cached expression name (see details)
 #' @param envir The environment to evaluate `expr`
@@ -11,8 +11,10 @@
 #' @param qsave_params Parameters passed to `qsave`
 #' @param qread_params Parameters passed to `qread`
 #' @details 
-#' This is a simplistic helper function to cache results of long running calculations. 
-#' The evaluated expression is is saved with `qsave` in <cache_dir>/<name>.qs. 
+#' This is a (very) simple helper function to cache results of long running calculations. There are other packages specializing 
+#' in caching data that are more feature complete. 
+#' 
+#' The evaluated expression is saved with `qsave` in <cache_dir>/<name>.qs. 
 #' If the file already exists instead the expression is not evaluated and the cached result is read using `qread` and returned. 
 #' 
 #' To clear a cached result, you can manually delete the associated `qs` file, or you can call `qcache` with `clear=TRUE`. 
