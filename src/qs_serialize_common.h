@@ -405,8 +405,9 @@ void writeObject(T * const sobj, SEXP x) {
       }
     } else {
 #endif
+      SEXP * xptr = STRING_PTR(x);
       for(uint64_t i=0; i<dl; i++) {
-        SEXP xi = STRING_ELT(x, i);
+        SEXP xi = xptr[i]; // STRING_ELT(x, i);
         if(xi == NA_STRING) {
           sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
         } else {
