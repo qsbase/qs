@@ -470,27 +470,25 @@ SEXP processBlock(T * const sobj) {
     break;
   case qstype::UNLOCKED_ENV:
   case qstype::LOCKED_ENV:
+  {
     obj = PROTECT(Rf_allocSExp(ENVSXP)); pt++;
     sobj->object_ref_hash.emplace(static_cast<uint32_t>(r_array_len), obj);
     SET_ENCLOS(obj, processBlock(sobj));
-    SET_FRAME(obj, processBlock(sobj));
+    SEXP table = processBlock(sobj);
+    SET_FRAME(obj, table);
     SET_HASHTAB(obj, processBlock(sobj));
     // R_RestoreHashCount(obj); // doesn't exist in new API; the function sets truelength to the number of filled hash slots
-    {
-      SEXP table = HASHTAB(obj);
-      if(table != R_NilValue) {
-        int size = Rf_xlength(table);
-        int count = 0;
-        SEXP * tablep = reinterpret_cast<SEXP*>(DATAPTR(table));
-        for(int i = 0; i < size; ++i) {
-            if(tablep[i] != R_NilValue) ++count;
-        }
-        SET_TRUELENGTH(table, count);
+    if(table != R_NilValue) {
+      int size = Rf_xlength(table);
+      int count = 0;
+      for(int i = 0; i < size; ++i) {
+        if(VECTOR_ELT(table, i) != R_NilValue) ++count;
       }
+      SET_TRUELENGTH(table, count);
     }
-
     if(obj_type == qstype::LOCKED_ENV) R_LockEnvironment(obj, FALSE);
-    if (ENCLOS(obj) == R_NilValue) SET_ENCLOS(obj, R_BaseEnv);
+    if(ENCLOS(obj) == R_NilValue) SET_ENCLOS(obj, R_BaseEnv);
+  }
     break;
   case qstype::S4:
     obj = PROTECT(Rf_allocS4Object()); pt++;
