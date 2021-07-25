@@ -85,6 +85,7 @@ test_ext_compatability <- function(save_funs, read_funs) {
   res <- list()
   grid <- expand.grid(i = 1:length(save_funs), j = 1:length(read_funs))
   for(q in 1:nrow(grid)) {
+    print(q)
     save_funs[[grid$i[q]]](x)
     res[[q]] <- read_funs[[grid$j[q]]](file)
   }
@@ -186,6 +187,8 @@ test_ext_compatability <- function(save_funs, read_funs) {
 qs241_lz4_save <- function(x) qs241::qsave(x, file, preset = "custom", algorithm = "lz4")
 qs241_zstd_save <- function(x) qs241::qsave(x, file, preset = "custom", algorithm = "zstd")
 qs241_zstd_stream_save <- function(x) qs241::qsave(x, file, preset = "custom", algorithm = "zstd_stream")
+qs241_zstd_stream_save_nohash <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream", check_hash = F)
+qs241_no_shuffle <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd", shuffle_control = 0)
 qs251_lz4_save <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "lz4")
 qs251_zstd_save <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd")
 qs251_zstd_stream_save <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream")
