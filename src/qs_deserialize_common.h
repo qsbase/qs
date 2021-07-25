@@ -474,10 +474,10 @@ SEXP processBlock(T * const sobj) {
     obj = PROTECT(Rf_allocSExp(ENVSXP)); pt++;
     sobj->object_ref_hash.emplace(static_cast<uint32_t>(r_array_len), obj);
     SET_ENCLOS(obj, processBlock(sobj));
-    SEXP table = processBlock(sobj);
-    SET_FRAME(obj, table);
+    SET_FRAME(obj, processBlock(sobj));
     SET_HASHTAB(obj, processBlock(sobj));
     // R_RestoreHashCount(obj); // doesn't exist in new API; the function sets truelength to the number of filled hash slots
+    SEXP table = HASHTAB(obj);
     if(table != R_NilValue) {
       int size = Rf_xlength(table);
       int count = 0;
