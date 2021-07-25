@@ -1,6 +1,7 @@
 Version 0.25.1 (2021-7-20)
    * Add `qcache` helper function
    * Remove immediate binding expansion, as it is not part of the R API (comments from CRAN/Luke Tierney). Instead, use the `findVarsInFrame` function to extract immediate bindings from environments.
+   * Remove `R_restoreHashCount` function, as it is not part of the new R API
 
 Version 0.24.4 (2021-3-13)
    * Throw a proper error message for DBFS issues (https://github.com/traversc/qs/issues/51)

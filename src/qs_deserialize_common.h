@@ -475,7 +475,20 @@ SEXP processBlock(T * const sobj) {
     SET_ENCLOS(obj, processBlock(sobj));
     SET_FRAME(obj, processBlock(sobj));
     SET_HASHTAB(obj, processBlock(sobj));
-    R_RestoreHashCount(obj);
+    // R_RestoreHashCount(obj); // doesn't exist in new API; the function sets truelength to the number of filled hash slots
+    {
+      SEXP table = HASHTAB(obj);
+      if(table != R_NilValue) {
+        int size = Rf_xlength(table);
+        int count = 0;
+        SEXP * tablep = reinterpret_cast<SEXP*>(DATAPTR(table));
+        for(int i = 0; i < size; ++i) {
+            if(tablep[i] != R_NilValue) ++count;
+        }
+        SET_TRUELENGTH(table, count);
+      }
+    }
+
     if(obj_type == qstype::LOCKED_ENV) R_LockEnvironment(obj, FALSE);
     if (ENCLOS(obj) == R_NilValue) SET_ENCLOS(obj, R_BaseEnv);
     break;
