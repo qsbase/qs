@@ -4,7 +4,6 @@
 rebuild.sh
 .*\.tar\.gz
 ^local
-^tests
 ^benchmark_results
 rticle
 .Rhistory

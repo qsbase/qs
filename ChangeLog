@@ -1,3 +1,8 @@
+Version 0.25.2 (2021-11-6)
+   * Update autoconf to version 2.6.9 (autoupdate; autoreconf --warnings=obsolete)
+   * Include tests/ folder in build/check process
+   * Add `encode_source` and `decode_source` -- helper functions for inlining files and documents
+
 Version 0.25.1 (2021-7-20)
    * Add `qcache` helper function
    * Remove immediate binding expansion, as it is not part of the R API (comments from CRAN/Luke Tierney). Instead, use the `findVarsInFrame` function to extract immediate bindings from environments.

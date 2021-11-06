@@ -53,12 +53,12 @@ base85_decode <- function(encoded_string) {
     .Call(`_qs_base85_decode`, encoded_string)
 }
 
-base91_encode <- function(rawdata) {
-    .Call(`_qs_base91_encode`, rawdata)
+c_base91_encode <- function(rawdata) {
+    .Call(`_qs_c_base91_encode`, rawdata)
 }
 
-base91_decode <- function(encoded_string) {
-    .Call(`_qs_base91_decode`, encoded_string)
+c_base91_decode <- function(encoded_string) {
+    .Call(`_qs_c_base91_decode`, encoded_string)
 }
 
 is_big_endian <- function() {

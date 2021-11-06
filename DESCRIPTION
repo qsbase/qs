@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.25.1
-Date: 2021-7-24
+Version: 0.25.2
+Date: 2021-11-7
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),
@@ -24,7 +24,7 @@ Imports:
     Rcpp, RApiSerialize, stringfish (>= 0.15.1)
 LinkingTo: Rcpp, RApiSerialize, stringfish
 RoxygenNote: 7.1.1
-Suggests: knitr, rmarkdown
+Suggests: knitr, rmarkdown, teststhat, dplyr, data.table
 VignetteBuilder: knitr
 Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet; the 'lz4' library created and owned by Yann Collet; xxHash library created and owned by Yann Collet; and code derived from the 'Blosc' library created and owned by Francesc Alted.  
 URL: https://github.com/traversc/qs

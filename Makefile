@@ -9,9 +9,13 @@ check: $(BUILD)
 	R CMD check --as-cran $<
 
 check-cran: $(BUILD)
-	# R --interactive --no-save --args $< <<<'rhub::check_for_cran(commandArgs(T)[1])'
-	# Rscript -e "rhub::check_on_solaris()"
-	Rscript -e 'rhub::check("$(BUILD)", platform = c("ubuntu-gcc-devel", "windows-x86_64-devel", "solaris-x86-patched", "linux-x86_64-rocker-gcc-san"))'
+	Rscript -e 'rhub::check("$(BUILD)", platform = c("ubuntu-gcc-devel", "windows-x86_64-devel", "solaris-x86-patched", "macos-m1-bigsur-release"))'
+
+check-solaris: $(BUILD)
+	Rscript -e 'rhub::check("$(BUILD)", platform = c("solaris-x86-patched"))'
+	
+check-m1: $(BUILD)
+	Rscript -e 'rhub::check("$(BUILD)", platform = c("macos-m1-bigsur-release"))'
 
 build:
 	autoconf
@@ -51,16 +55,14 @@ vignette:
 	sed -r -i 's/\((.+)\.png/\(vignettes\/\1\.png/' README.md
 
 test:
+	Rscript tests/qsavemload_testing.R
 	Rscript tests/correctness_testing.R filestream
 	Rscript tests/correctness_testing.R fd
 	Rscript tests/correctness_testing.R memory
-	Rscript tests/regression_testing.R
+	Rscript inst/extra_tests/regression_testing.R
 
 testext:
-	Rscript tests/correctness_testing_extended.R
-
-testqsavem:
-	Rscript tests/qsavemload_testing.R
+	Rscript inst/extra_tests/correctness_testing_extended.R
 
 bench:
-	Rscript tests/benchmark_testing.R
+	Rscript inst/extra_tests/benchmark_testing.R

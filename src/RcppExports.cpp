@@ -448,20 +448,20 @@ RcppExport SEXP _qs_base85_decode(SEXP encoded_stringSEXP) {
     UNPROTECT(1);
     return rcpp_result_gen;
 }
-// base91_encode
-std::string base91_encode(const RawVector& rawdata);
-static SEXP _qs_base91_encode_try(SEXP rawdataSEXP) {
+// c_base91_encode
+std::string c_base91_encode(const RawVector& rawdata);
+static SEXP _qs_c_base91_encode_try(SEXP rawdataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const RawVector& >::type rawdata(rawdataSEXP);
-    rcpp_result_gen = Rcpp::wrap(base91_encode(rawdata));
+    rcpp_result_gen = Rcpp::wrap(c_base91_encode(rawdata));
     return rcpp_result_gen;
 END_RCPP_RETURN_ERROR
 }
-RcppExport SEXP _qs_base91_encode(SEXP rawdataSEXP) {
+RcppExport SEXP _qs_c_base91_encode(SEXP rawdataSEXP) {
     SEXP rcpp_result_gen;
     {
-        rcpp_result_gen = PROTECT(_qs_base91_encode_try(rawdataSEXP));
+        rcpp_result_gen = PROTECT(_qs_c_base91_encode_try(rawdataSEXP));
     }
     Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
     if (rcpp_isInterrupt_gen) {
@@ -481,20 +481,20 @@ RcppExport SEXP _qs_base91_encode(SEXP rawdataSEXP) {
     UNPROTECT(1);
     return rcpp_result_gen;
 }
-// base91_decode
-RawVector base91_decode(const std::string& encoded_string);
-static SEXP _qs_base91_decode_try(SEXP encoded_stringSEXP) {
+// c_base91_decode
+RawVector c_base91_decode(const std::string& encoded_string);
+static SEXP _qs_c_base91_decode_try(SEXP encoded_stringSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< const std::string& >::type encoded_string(encoded_stringSEXP);
-    rcpp_result_gen = Rcpp::wrap(base91_decode(encoded_string));
+    rcpp_result_gen = Rcpp::wrap(c_base91_decode(encoded_string));
     return rcpp_result_gen;
 END_RCPP_RETURN_ERROR
 }
-RcppExport SEXP _qs_base91_decode(SEXP encoded_stringSEXP) {
+RcppExport SEXP _qs_c_base91_decode(SEXP encoded_stringSEXP) {
     SEXP rcpp_result_gen;
     {
-        rcpp_result_gen = PROTECT(_qs_base91_decode_try(encoded_stringSEXP));
+        rcpp_result_gen = PROTECT(_qs_c_base91_decode_try(encoded_stringSEXP));
     }
     Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
     if (rcpp_isInterrupt_gen) {
@@ -1416,8 +1416,8 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("SEXP(*convertToAlt)(const CharacterVector&)");
         signatures.insert("std::string(*base85_encode)(const RawVector&)");
         signatures.insert("RawVector(*base85_decode)(const std::string&)");
-        signatures.insert("std::string(*base91_encode)(const RawVector&)");
-        signatures.insert("RawVector(*base91_decode)(const std::string&)");
+        signatures.insert("std::string(*c_base91_encode)(const RawVector&)");
+        signatures.insert("RawVector(*c_base91_decode)(const std::string&)");
         signatures.insert("bool(*is_big_endian)()");
         signatures.insert("double(*qsave)(SEXP const,const std::string&,const std::string,const std::string,const int,const int,const bool,const int)");
         signatures.insert("double(*c_qsave)(SEXP const,const std::string&,const std::string,const std::string,const int,const int,const bool,const int)");
@@ -1462,8 +1462,8 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_convertToAlt", (DL_FUNC)_qs_convertToAlt_try);
     R_RegisterCCallable("qs", "_qs_base85_encode", (DL_FUNC)_qs_base85_encode_try);
     R_RegisterCCallable("qs", "_qs_base85_decode", (DL_FUNC)_qs_base85_decode_try);
-    R_RegisterCCallable("qs", "_qs_base91_encode", (DL_FUNC)_qs_base91_encode_try);
-    R_RegisterCCallable("qs", "_qs_base91_decode", (DL_FUNC)_qs_base91_decode_try);
+    R_RegisterCCallable("qs", "_qs_c_base91_encode", (DL_FUNC)_qs_c_base91_encode_try);
+    R_RegisterCCallable("qs", "_qs_c_base91_decode", (DL_FUNC)_qs_c_base91_decode_try);
     R_RegisterCCallable("qs", "_qs_is_big_endian", (DL_FUNC)_qs_is_big_endian_try);
     R_RegisterCCallable("qs", "_qs_qsave", (DL_FUNC)_qs_qsave_try);
     R_RegisterCCallable("qs", "_qs_c_qsave", (DL_FUNC)_qs_c_qsave_try);
@@ -1507,8 +1507,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_convertToAlt", (DL_FUNC) &_qs_convertToAlt, 1},
     {"_qs_base85_encode", (DL_FUNC) &_qs_base85_encode, 1},
     {"_qs_base85_decode", (DL_FUNC) &_qs_base85_decode, 1},
-    {"_qs_base91_encode", (DL_FUNC) &_qs_base91_encode, 1},
-    {"_qs_base91_decode", (DL_FUNC) &_qs_base91_decode, 1},
+    {"_qs_c_base91_encode", (DL_FUNC) &_qs_c_base91_encode, 1},
+    {"_qs_c_base91_decode", (DL_FUNC) &_qs_c_base91_decode, 1},
     {"_qs_is_big_endian", (DL_FUNC) &_qs_is_big_endian, 0},
     {"_qs_qsave", (DL_FUNC) &_qs_qsave, 8},
     {"_qs_c_qsave", (DL_FUNC) &_qs_c_qsave, 8},

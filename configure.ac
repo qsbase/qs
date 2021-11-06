@@ -1,42 +1,35 @@
-AC_INIT(qs, 0.22.1, traversc@gmail.com)
+AC_INIT([qs],[0.22.1],[traversc@gmail.com])
 AC_PATH_PROG([PKGCONF],[pkg-config],[],[$PATH:/usr/local/bin:ext/bin:ext:/sw/bin:/opt/bin:/opt/local/bin])
 
 ########################################################
 ### Configure args
 
 AC_ARG_WITH([zstd-force-compile],
-            AC_HELP_STRING([--with-zstd-force-compile],
-                           [Force compilation of bundled zstd source files]),
+            AS_HELP_STRING([--with-zstd-force-compile],[Force compilation of bundled zstd source files]),
             [zstd_force_compile="true"])
             
 AC_ARG_WITH([lz4-force-compile],
-            AC_HELP_STRING([--with-lz4-force-compile],
-                           [Force compilation of bundled lz4 source files]),
+            AS_HELP_STRING([--with-lz4-force-compile],[Force compilation of bundled lz4 source files]),
             [lz4_force_compile="true"])
 
 AC_ARG_WITH([zstd-include],
-            AC_HELP_STRING([--with-zstd-include=INCLUDE_PATH],
-                           [the location of zstd header files]),
+            AS_HELP_STRING([--with-zstd-include=INCLUDE_PATH],[the location of zstd header files]),
             [zstd_include_path=$withval])
             
 AC_ARG_WITH([zstd-lib],
-            AC_HELP_STRING([--with-zstd-lib=LIB_PATH],
-                           [the location of zstd library files]),
+            AS_HELP_STRING([--with-zstd-lib=LIB_PATH],[the location of zstd library files]),
             [zstd_lib_path=$withval])
             
 AC_ARG_WITH([lz4-include],
-            AC_HELP_STRING([--with-lz4-include=INCLUDE_PATH],
-                           [the location of lz4 header files]),
+            AS_HELP_STRING([--with-lz4-include=INCLUDE_PATH],[the location of lz4 header files]),
             [lz4_include_path=$withval])
             
 AC_ARG_WITH([lz4-lib],
-            AC_HELP_STRING([--with-lz4-lib=LIB_PATH],
-                           [the location of lz4 library files]),
+            AS_HELP_STRING([--with-lz4-lib=LIB_PATH],[the location of lz4 library files]),
             [lz4_lib_path=$withval])
             
 AC_ARG_WITH([simd],
-            AC_HELP_STRING([--with-simd],
-                           [Manually select SIMD support (options: AVX2, SSE2)]),
+            AS_HELP_STRING([--with-simd],[Manually select SIMD support (options: AVX2, SSE2)]),
             [with_simd=$withval])
        
   
