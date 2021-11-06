@@ -34,7 +34,7 @@
 #' @param nthreads Number of threads to use. Default 1.
 #' @return The total number of bytes written to the file (returned invisibly)
 #' @details 
-#' This function serializes and compresses R objects using block compresion with the option of byte shuffling.
+#' This function serializes and compresses R objects using block compression with the option of byte shuffling.
 #' There are lots of possible parameters. This function exposes three parameters related to compression level and byte shuffling.
 #' 
 #' `compress_level` - Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.
@@ -204,7 +204,7 @@ NULL
 #' @param shuffle_control An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.
 #' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
 #' @details 
-#' This function serializes and compresses an R object to a raw vctor
+#' This function serializes and compresses an R object to a raw vector.
 #' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
 #' @export
 #' @name qserialize
