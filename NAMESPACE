@@ -31,4 +31,6 @@ export("qsave",
        "qsavem",
        "qreadm",
        "qload",
-       "qcache")
+       "qcache",
+       "encode_source",
+       "decode_source")

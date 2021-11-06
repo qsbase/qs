@@ -5,6 +5,14 @@ suppressMessages(library(qs))
 suppressMessages(library(stringfish))
 options(warn=1)
 
+sourceCpp(code = decode_source(
+c("un]'BAAA@QRtHACAAAAAAA+>nAAAv7#aT)JXC:JAR%*QaAh72AB'B'vw5pac6M<xR5V+cWn+KxIBy6|r,OVt?2~X%:xAw/,f}d^_#|XKWFvW%N#TD'H'$}!eH:<{E(H&Yk90NjkdSLMP5[S$2_W,xfO(ao}fQ+jw",
+  "Q{>6_%ygB8MFP)gz)^m++prny$p$2zd4,TjRyD]#^IDs$AEA.Iln5o|!b6Rg,?H[7:4>fVhjk;Elgs[t~/2QV.smWKr)qciq:,gJ.WM#<7X[GTC*H}p8LL/GQv]6d>R=O>iPUN11/~8!@P^g#xecEHjR>JF<,zuB",
+  "8d@Aq1w1Wu;h`BaHYM2BlL6'_X((9Fn4,ns<9^5xcw[_.)4nTTMPw~^2pcKT)+g&])=3]x2;(q7gVbF5qI7RS.hY;}@^Pu~Qxr5/V!#B6}G{Csfkb&I^Xe;hLkO}dX;5`'Wd8?BvZ*@laa2qbX<XE_{|7H*;869]",
+  "zXa+QU~nU3~Xan{Pt5:LtE;TJ=^8_jDXcl#X:u)M`h&a&t&':CQ0!0atQoDNsGfRotbL2BvG&7;TM<uKn>{L%h{E2WwF+}2aDp01lLf&+8HLAbetZ_hlWHeGgi|Xl.U@;O~RhGYsXC1e}#R]e=ky)D<SpP+)~|XO",
+  "TYww=2?PA~!09BKVaX]Kr1Xt[O&{gzkTc9KbV=<uAA+ivS![q)L4F#n5'*XTy2YPl?+(1Szz:4klMBs?9Bk9!wKDZV'mx*Qb#CLRs6Sd1[5HYHk;:H2d{CZt|=iTU2EwD&=pD(:wGGm_$H$WNFG'g9aOTl4q^IQd",
+  "KCA4q>Z>Lku@C8Iy")))
+
 args <- commandArgs(T)
 if(length(args) == 0) {
   mode <- "filestream"
@@ -16,58 +24,6 @@ if(length(args) < 2) {
 } else {
   reps <- as.numeric(args[2])
 }
-
-Sys.setenv("PKG_CXXFLAGS"="-std=c++11")
-cppFunction("CharacterVector splitstr(std::string x, std::vector<double> cuts){
-            CharacterVector ret(cuts.size() - 1);
-            for(uint64_t i=1; i<cuts.size(); i++) {
-              ret[i-1] = x.substr(std::round(cuts[i-1])-1, std::round(cuts[i])-std::round(cuts[i-1]));
-            }
-            return ret;
-            }")
-
-cppFunction('
-  int setlev(SEXP x, int i) {
-    return SETLEVELS(x,i);
-  }')
-
-cppFunction('
-void setobj(SEXP x, int i) {
-  return SET_OBJECT(x, i);
-}')
-
-# https://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
-cppFunction('List generateList(std::vector<int> list_elements){
-            auto randchar = []() -> char
-            {
-                const char charset[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-                const size_t max_index = (sizeof(charset) - 1);
-                return charset[ rand() % max_index ];
-            };
-            List ret(list_elements.size());
-            std::string str(10,0);
-            for(size_t i=0; i<list_elements.size(); i++) {
-              switch(list_elements[i]) {
-                case 1:
-                  ret[i] = R_NilValue;
-                  break;
-                case 2:
-                  std::generate_n( str.begin(), 10, randchar );
-                  ret[i] = str;
-                  break;
-                case 3:
-                  ret[i] = rand();
-                  break;
-                case 4:
-                  ret[i] = static_cast<double>(rand());
-                  break;
-                }
-              }
-            return ret;
-            }')
 
 obj_size <- 0; max_size <- 1e7
 get_obj_size <- function() {

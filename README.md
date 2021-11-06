@@ -3,8 +3,8 @@ Using qs
 
 <!-- <img src="qshex.png" width = "130" height = "150" align="right" style="border:0px;padding:15px"> -->
 
-[![Build
-Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs)
+<!-- [![Build Status](https://travis-ci.org/traversc/qs.svg)](https://travis-ci.org/traversc/qs) -->
+
 [![R-CMD-check](https://github.com/traversc/qs/workflows/R-CMD-check/badge.svg)](https://github.com/traversc/qs/actions)
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/qs)](https://cran.r-project.org/package=qs)
 [![CRAN\_Downloads\_Badge](https://cranlogs.r-pkg.org/badges/qs)](https://cran.r-project.org/package=qs)

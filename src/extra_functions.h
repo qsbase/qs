@@ -306,7 +306,7 @@ RawVector base85_decode(const std::string & encoded_string) {
 }
 
 // [[Rcpp::export(rng = false)]]
-std::string base91_encode(const RawVector & rawdata) {
+std::string c_base91_encode(const RawVector & rawdata) {
   basE91 b = basE91();
   size_t size = Rf_xlength(rawdata);
   size_t outsize = basE91_encode_bound(size);
@@ -318,7 +318,7 @@ std::string base91_encode(const RawVector & rawdata) {
 }
 
 // [[Rcpp::export(rng = false)]]
-RawVector base91_decode(const std::string & encoded_string) {
+RawVector c_base91_decode(const std::string & encoded_string) {
   basE91 b = basE91();
   size_t size = encoded_string.size();
   size_t outsize = basE91_decode_bound(size);

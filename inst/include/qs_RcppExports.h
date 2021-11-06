@@ -285,16 +285,16 @@ namespace qs {
         return Rcpp::as<RawVector >(rcpp_result_gen);
     }
 
-    inline std::string base91_encode(const RawVector& rawdata) {
-        typedef SEXP(*Ptr_base91_encode)(SEXP);
-        static Ptr_base91_encode p_base91_encode = NULL;
-        if (p_base91_encode == NULL) {
-            validateSignature("std::string(*base91_encode)(const RawVector&)");
-            p_base91_encode = (Ptr_base91_encode)R_GetCCallable("qs", "_qs_base91_encode");
+    inline std::string c_base91_encode(const RawVector& rawdata) {
+        typedef SEXP(*Ptr_c_base91_encode)(SEXP);
+        static Ptr_c_base91_encode p_c_base91_encode = NULL;
+        if (p_c_base91_encode == NULL) {
+            validateSignature("std::string(*c_base91_encode)(const RawVector&)");
+            p_c_base91_encode = (Ptr_c_base91_encode)R_GetCCallable("qs", "_qs_c_base91_encode");
         }
         RObject rcpp_result_gen;
         {
-            rcpp_result_gen = p_base91_encode(Shield<SEXP>(Rcpp::wrap(rawdata)));
+            rcpp_result_gen = p_c_base91_encode(Shield<SEXP>(Rcpp::wrap(rawdata)));
         }
         if (rcpp_result_gen.inherits("interrupted-error"))
             throw Rcpp::internal::InterruptedException();
@@ -305,16 +305,16 @@ namespace qs {
         return Rcpp::as<std::string >(rcpp_result_gen);
     }
 
-    inline RawVector base91_decode(const std::string& encoded_string) {
-        typedef SEXP(*Ptr_base91_decode)(SEXP);
-        static Ptr_base91_decode p_base91_decode = NULL;
-        if (p_base91_decode == NULL) {
-            validateSignature("RawVector(*base91_decode)(const std::string&)");
-            p_base91_decode = (Ptr_base91_decode)R_GetCCallable("qs", "_qs_base91_decode");
+    inline RawVector c_base91_decode(const std::string& encoded_string) {
+        typedef SEXP(*Ptr_c_base91_decode)(SEXP);
+        static Ptr_c_base91_decode p_c_base91_decode = NULL;
+        if (p_c_base91_decode == NULL) {
+            validateSignature("RawVector(*c_base91_decode)(const std::string&)");
+            p_c_base91_decode = (Ptr_c_base91_decode)R_GetCCallable("qs", "_qs_c_base91_decode");
         }
         RObject rcpp_result_gen;
         {
-            rcpp_result_gen = p_base91_decode(Shield<SEXP>(Rcpp::wrap(encoded_string)));
+            rcpp_result_gen = p_c_base91_decode(Shield<SEXP>(Rcpp::wrap(encoded_string)));
         }
         if (rcpp_result_gen.inherits("interrupted-error"))
             throw Rcpp::internal::InterruptedException();
