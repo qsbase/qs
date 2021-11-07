@@ -31,9 +31,14 @@ shared_params_save <- function(incl_file = FALSE,
     '@param fd A file descriptor.'[incl_fd],
     '@param preset One of `"fast"`, `"balanced"`, `"high"` (default), `"archive"`, `"uncompressed"` or `"custom"`. See section *Presets* for details.',
     '@param algorithm **Ignored unless `preset = "custom"`.** Compression algorithm used: `"lz4"`, `"zstd"`, `"lz4hc"`, `"zstd_stream"` or `"uncompressed"`.',
-    '@param compress_level **Ignored unless `preset = "custom"`.** The compression level used (default `4`). For lz4, this number must be > 1 (higher is less ',
-      'compressed). For zstd, a number  between `-50` to `22` (higher is more compressed). Higher values tend to have a better compression ratio, while ',
-      'lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5 or so.',
+    '@param compress_level **Ignored unless `preset = "custom"`.** The compression level used.',
+      '',
+      '',
+      'For lz4, this number must be > 1 (higher is less compressed).',
+      '',
+      '',
+      'For zstd, a number  between `-50` to `22` (higher is more compressed). Due to the format of qs, there is very little benefit to compression levels > 5 ',
+      'or so.',
     '@param shuffle_control **Ignored unless `preset = "custom"`.** An integer setting the use of byte shuffle compression. A value between `0` and `15` ',
       '(default `15`). See section *Byte shuffling* for details.',
     '@param check_hash Default `TRUE`, compute a hash which can be used to verify file integrity during serialization.')
@@ -307,9 +312,8 @@ NULL
 #' @usage zstd_compress_raw(x, compress_level)
 #'
 #' @param x The object to serialize.
-#' @param compress_level The compression level used (default `4`). A number between `-50` to `22` (higher is more compressed). Higher values tend to have a
-#'   better compression ratio, while lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5
-#'   or so.
+#' @param compress_level The compression level used (default `4`). A number between `-50` to `22` (higher is more compressed). Due to the format of qs, there is
+#'   very little benefit to compression levels > 5 or so.
 #'
 #' @return The compressed data as a raw vector.
 #' @examples

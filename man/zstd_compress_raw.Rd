@@ -9,9 +9,8 @@ zstd_compress_raw(x, compress_level)
 \arguments{
 \item{x}{The object to serialize.}
 
-\item{compress_level}{The compression level used (default \code{4}). A number between \code{-50} to \code{22} (higher is more compressed). Higher values tend to have a
-better compression ratio, while lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5
-or so.}
+\item{compress_level}{The compression level used (default \code{4}). A number between \code{-50} to \code{22} (higher is more compressed). Due to the format of qs, there is
+very little benefit to compression levels > 5 or so.}
 }
 \value{
 The compressed data as a raw vector.

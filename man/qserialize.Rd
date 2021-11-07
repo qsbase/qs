@@ -15,9 +15,12 @@ shuffle_control = 15L, check_hash=TRUE)
 
 \item{algorithm}{\strong{Ignored unless \code{preset = "custom"}.} Compression algorithm used: \code{"lz4"}, \code{"zstd"}, \code{"lz4hc"}, \code{"zstd_stream"} or \code{"uncompressed"}.}
 
-\item{compress_level}{\strong{Ignored unless \code{preset = "custom"}.} The compression level used (default \code{4}). For lz4, this number must be > 1 (higher is less
-compressed). For zstd, a number  between \code{-50} to \code{22} (higher is more compressed). Higher values tend to have a better compression ratio, while
-lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5 or so.}
+\item{compress_level}{\strong{Ignored unless \code{preset = "custom"}.} The compression level used.
+
+For lz4, this number must be > 1 (higher is less compressed).
+
+For zstd, a number  between \code{-50} to \code{22} (higher is more compressed). Due to the format of qs, there is very little benefit to compression levels > 5
+or so.}
 
 \item{shuffle_control}{\strong{Ignored unless \code{preset = "custom"}.} An integer setting the use of byte shuffle compression. A value between \code{0} and \code{15}
 (default \code{15}). See section \emph{Byte shuffling} for details.}
