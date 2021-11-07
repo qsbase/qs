@@ -23,7 +23,9 @@ SystemRequirements: C++11
 Imports: 
     Rcpp, RApiSerialize, stringfish (>= 0.15.1)
 LinkingTo: Rcpp, RApiSerialize, stringfish
-RoxygenNote: 7.1.1
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
 Suggests: knitr, rmarkdown, testthat, dplyr, data.table
 VignetteBuilder: knitr
 Copyright: This package includes code from the 'zstd' library owned by Facebook, Inc. and created by Yann Collet; the 'lz4' library created and owned by Yann Collet; xxHash library created and owned by Yann Collet; and code derived from the 'Blosc' library created and owned by Francesc Alted.  

@@ -7,15 +7,15 @@
 lz4_compress_raw(x, compress_level)
 }
 \arguments{
-\item{x}{A Raw Vector}
+\item{x}{The object to serialize.}
 
-\item{compress_level}{The compression level (> 1).}
+\item{compress_level}{The compression level used. A number > 1 (higher is less compressed).}
 }
 \value{
-The compressed data
+The compressed data as a raw vector.
 }
 \description{
-Compression of raw vector. Exports the main lz4 compression function.
+Compresses to a raw vector using the lz4 algorithm. Exports the main lz4 compression function.
 }
 \examples{
 x <- 1:1e6

@@ -7,15 +7,15 @@
 encode_source(file = NULL, string = NULL, width = 120)
 }
 \arguments{
-\item{file}{The file to encode (if `string` is not NULL)}
+\item{file}{The file to encode (if \code{string} is not NULL)}
 
-\item{string}{The string to encode (if `file` is not NULL)}
+\item{string}{The string to encode (if \code{file} is not NULL)}
 
-\item{width}{The output will be broken up into individual strings, with `width` being the longest allowable string.}
+\item{width}{The output will be broken up into individual strings, with \code{width} being the longest allowable string.}
 }
 \value{
 A CharacterVector in base91 representing the compressed original file or string.
 }
 \description{
-A helper function for encoding and compressing a file or string to ascii using `base91_encode` and `qserialize` with the highest compression level.
+A helper function for encoding and compressing a file or string to ascii using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
 }

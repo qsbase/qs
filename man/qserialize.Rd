@@ -4,27 +4,54 @@
 \alias{qserialize}
 \title{qserialize}
 \usage{
-qserialize(x, preset = "high", 
-algorithm = "zstd", compress_level = 4L, 
+qserialize(x, preset = "high",
+algorithm = "zstd", compress_level = 4L,
 shuffle_control = 15L, check_hash=TRUE)
 }
 \arguments{
-\item{x}{the object to serialize.}
+\item{x}{The object to serialize.}
 
-\item{preset}{One of "fast", "balanced", "high" (default), "archive", "uncompressed" or "custom". See details.}
+\item{preset}{One of \code{"fast"}, \code{"balanced"}, \code{"high"} (default), \code{"archive"}, \code{"uncompressed"} or \code{"custom"}. See section \emph{Presets} for details.}
 
-\item{algorithm}{Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".}
+\item{algorithm}{\strong{Ignored unless \code{preset = "custom"}.} Compression algorithm used: \code{"lz4"}, \code{"zstd"}, \code{"lz4hc"}, \code{"zstd_stream"} or \code{"uncompressed"}.}
 
-\item{compress_level}{The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).}
+\item{compress_level}{\strong{Ignored unless \code{preset = "custom"}.} The compression level used (default \code{4}). For lz4, this number must be > 1 (higher is less
+compressed). For zstd, a number  between \code{-50} to \code{22} (higher is more compressed). Higher values tend to have a better compression ratio, while
+lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5 or so.}
 
-\item{shuffle_control}{An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.}
+\item{shuffle_control}{\strong{Ignored unless \code{preset = "custom"}.} An integer setting the use of byte shuffle compression. A value between \code{0} and \code{15}
+(default \code{15}). See section \emph{Byte shuffling} for details.}
 
-\item{check_hash}{Default TRUE, compute a hash which can be used to verify file integrity during serialization}
+\item{check_hash}{Default \code{TRUE}, compute a hash which can be used to verify file integrity during serialization.}
+}
+\value{
+A raw vector.
 }
 \description{
-Saves an object to a raw vector
+Saves an object to a raw vector.
 }
 \details{
-This function serializes and compresses an R object to a raw vctor
-If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.
+This function serializes and compresses R objects using block compression with the option of byte shuffling.
 }
+\section{Presets}{
+There are lots of possible parameters. To simplify usage, there are four main presets that are performant over a large variety of data:
+\itemize{
+\item \strong{\code{"fast"}} is a shortcut for \code{algorithm = "lz4"}, \code{compress_level = 100} and \code{shuffle_control = 0}.
+\item \strong{\code{"balanced"}} is a shortcut for \code{algorithm = "lz4"}, \code{compress_level = 1} and \code{shuffle_control = 15}.
+\item \strong{\code{"high"}} is a shortcut for \code{algorithm = "zstd"}, \code{compress_level = 4} and \code{shuffle_control = 15}.
+\item \strong{\code{"archive"}} is a shortcut for \code{algorithm = "zstd_stream"}, \code{compress_level = 14} and \code{shuffle_control = 15}. (\code{zstd_stream} is currently
+single-threaded only)
+}
+
+To gain more control over compression level and byte shuffling, set \code{preset = "custom"}, in which case the individual parameters \code{algorithm},
+\code{compress_level} and \code{shuffle_control} are actually regarded.
+}
+
+\section{Byte shuffling}{
+The parameter \code{shuffle_control} defines which numerical R object types are subject to \emph{byte shuffling}. Generally speaking, the more ordered/sequential an
+object is (e.g., \code{1:1e7}), the larger the potential benefit of byte shuffling. It is not uncommon to improve compression ratio or compression speed by
+several orders of magnitude. The more random an object is (e.g., \code{rnorm(1e7)}), the less potential benefit there is, even negative benefit is possible.
+Integer vectors almost always benefit from byte shuffling, whereas the results for numeric vectors are mixed. To control block shuffling, add +1 to the
+parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors.
+}
+

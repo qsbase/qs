@@ -1,78 +1,105 @@
 # qs - Quick Serialization of R Objects
 # Copyright (C) 2019-present Travers Ching
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
-# 
+#
 # You can contact the author at:
 #   https://github.com/traversc/qs
 
 
+# Since roxygen2 doesn't parse the `@usage` block, it doesn't know what the usage is, and hence it doesn't find any parameters to inherit, so we can't rely on
+# `@inheritParams`, cf. https://github.com/r-lib/roxygen2/issues/836#issuecomment-513476356
+#
+# Instead we use `@eval` to minimize duplication, cf. https://roxygen2.r-lib.org/articles/rd.html#evaluating-arbitrary-code
+shared_params_save <- function(incl_file = FALSE,
+                               incl_handle = FALSE,
+                               incl_fd = FALSE) {
+  c('@param x The object to serialize.',
+    '@param file The file name/path.'[incl_file],
+    '@param handle A windows handle external pointer.'[incl_handle],
+    '@param fd A file descriptor.'[incl_fd],
+    '@param preset One of `"fast"`, `"balanced"`, `"high"` (default), `"archive"`, `"uncompressed"` or `"custom"`. See section *Presets* for details.',
+    '@param algorithm **Ignored unless `preset = "custom"`.** Compression algorithm used: `"lz4"`, `"zstd"`, `"lz4hc"`, `"zstd_stream"` or `"uncompressed"`.',
+    '@param compress_level **Ignored unless `preset = "custom"`.** The compression level used (default `4`). For lz4, this number must be > 1 (higher is less ',
+      'compressed). For zstd, a number  between `-50` to `22` (higher is more compressed). Higher values tend to have a better compression ratio, while ',
+      'lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5 or so.',
+    '@param shuffle_control **Ignored unless `preset = "custom"`.** An integer setting the use of byte shuffle compression. A value between `0` and `15` ',
+      '(default `15`). See section *Byte shuffling* for details.',
+    '@param check_hash Default `TRUE`, compute a hash which can be used to verify file integrity during serialization.')
+}
+
+shared_params_read <- c(
+  '@param use_alt_rep Use ALTREP when reading in string data (default `FALSE`). On R versions prior to 3.5.0, this parameter does nothing.',
+  '@param strict Whether to throw an error or just report a warning (default: `FALSE`, i.e. report warning).'
+)
+
 #' qsave
-#' 
+#'
 #' Saves (serializes) an object to disk.
-#' @usage qsave(x, file, 
-#' preset = "high", algorithm = "zstd", compress_level = 4L, 
+#'
+#' @usage qsave(x, file,
+#' preset = "high", algorithm = "zstd", compress_level = 4L,
 #' shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
-#' @param x the object to serialize.
-#' @param file the file name/path.
-#' @param preset One of "fast", "high" (default), "archive", "uncompressed" or "custom". See details.
-#' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
-#' @param compress_level The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).
-#' @param shuffle_control An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.
-#' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
-#' @param nthreads Number of threads to use. Default 1.
-#' @return The total number of bytes written to the file (returned invisibly)
-#' @details 
-#' This function serializes and compresses R objects using block compresion with the option of byte shuffling.
-#' There are lots of possible parameters. This function exposes three parameters related to compression level and byte shuffling.
-#' 
-#' `compress_level` - Higher values tend to have a better compression ratio, while lower values/negative values tend to be quicker.
-#' Due to the format of qs, there is very little benefit to compression levels > 5 or so.
-#' 
-#' `shuffle_control` - This sets which numerical R object types are subject to byte shuffling.
-#' Generally speaking, the more ordered/sequential an object is (e.g., `1:1e7`), the larger the potential benefit of byte shuffling.
-#' It is not uncommon to have several orders magnitude benefit to compression ratio or compression speed. The more random an object is (e.g., `rnorm(1e7)`), 
-#' the less potential benefit there is, even negative benefit is possible. Integer vectors almost always benefit from byte shuffling whereas the results for numeric vectors are mixed.
-#' To control block shuffling, add +1 to the parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors.
-#' 
-#' The `preset` parameter has several different combination of parameter sets that are performant over a large variety of data.
-#' The `algorithm` parameter, `compression_level` and `shuffle_control` 
-#' parameters are ignored unless `preset` is "custom". "fast" preset: algorithm lz4, compress_level 100, shuffle_control 0.
-#' "balanced" preset: algorithm lz4, compress_level 1, shuffle_control 15.
-#' "high" preset: algorithm zstd, compress_level 4, shuffle_control 15.
-#' "archive" preset: algorithm zstd_stream, compress_level 14, shuffle_control 15. (zstd_stream is currently single threaded only) 
-#' @examples 
-#' x <- data.frame(int = sample(1e3, replace=TRUE), 
-#'         num = rnorm(1e3), 
+#'
+#' @eval shared_params_save(incl_file = TRUE)
+#' @param nthreads Number of threads to use. Default `1`.
+#'
+#' @return The total number of bytes written to the file (returned invisibly).
+#' @details This function serializes and compresses R objects using block compression with the option of byte shuffling.
+#'
+#' # Presets
+#'
+#' There are lots of possible parameters. To simplify usage, there are four main presets that are performant over a large variety of data:
+#'
+#' - **`"fast"`** is a shortcut for `algorithm = "lz4"`, `compress_level = 100` and `shuffle_control = 0`.
+#' - **`"balanced"`** is a shortcut for `algorithm = "lz4"`, `compress_level = 1` and `shuffle_control = 15`.
+#' - **`"high"`** is a shortcut for `algorithm = "zstd"`, `compress_level = 4` and `shuffle_control = 15`.
+#' - **`"archive"`** is a shortcut for `algorithm = "zstd_stream"`, `compress_level = 14` and `shuffle_control = 15`. (`zstd_stream` is currently
+#'   single-threaded only)
+#'
+#' To gain more control over compression level and byte shuffling, set `preset = "custom"`, in which case the individual parameters `algorithm`,
+#' `compress_level` and `shuffle_control` are actually regarded.
+#'
+#' # Byte shuffling
+#'
+#' The parameter `shuffle_control` defines which numerical R object types are subject to *byte shuffling*. Generally speaking, the more ordered/sequential an
+#' object is (e.g., `1:1e7`), the larger the potential benefit of byte shuffling. It is not uncommon to improve compression ratio or compression speed by
+#' several orders of magnitude. The more random an object is (e.g., `rnorm(1e7)`), the less potential benefit there is, even negative benefit is possible.
+#' Integer vectors almost always benefit from byte shuffling, whereas the results for numeric vectors are mixed. To control block shuffling, add +1 to the
+#' parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors.
+#'
+#' @examples
+#' x <- data.frame(int = sample(1e3, replace=TRUE),
+#'         num = rnorm(1e3),
 #'         char = randomStrings(1e3), stringsAsFactors = FALSE)
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qread(myfile)
 #' identical(x, x2) # returns true
-#' 
+#'
 #' # qs support multithreading
 #' qsave(x, myfile, nthreads=2)
 #' x2 <- qread(myfile, nthreads=2)
 #' identical(x, x2) # returns true
-#' 
+#'
 #' # Other examples
 #' z <- 1:1e7
 #' myfile <- tempfile()
 #' qsave(z, myfile)
 #' z2 <- qread(myfile)
 #' identical(z, z2) # returns true
-#' 
+#'
 #' w <- as.list(rnorm(1e6))
 #' myfile <- tempfile()
 #' qsave(w, myfile)
@@ -83,35 +110,37 @@
 NULL
 
 #' qread
-#' 
-#' Reads an object in a file serialized to disk
- #' @usage qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
-#' @param file the file name/path
-#' @param use_alt_rep Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
-#' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
-#' @param nthreads Number of threads to use. Default 1.
-#' @return The de-serialized object
-#' @examples 
-#' x <- data.frame(int = sample(1e3, replace=TRUE), 
-#'         num = rnorm(1e3), 
+#'
+#' Reads an object in a file serialized to disk.
+#'
+#' @usage qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
+#'
+#' @param file The file name/path.
+#' @eval shared_params_read
+#' @param nthreads Number of threads to use. Default `1`.
+#'
+#' @return The de-serialized object.
+#' @examples
+#' x <- data.frame(int = sample(1e3, replace=TRUE),
+#'         num = rnorm(1e3),
 #'         char = randomStrings(1e3), stringsAsFactors = FALSE)
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qread(myfile)
 #' identical(x, x2) # returns true
-#' 
+#'
 #' # qs support multithreading
 #' qsave(x, myfile, nthreads=2)
 #' x2 <- qread(myfile, nthreads=2)
 #' identical(x, x2) # returns true
-#' 
+#'
 #' # Other examples
 #' z <- 1:1e7
 #' myfile <- tempfile()
 #' qsave(z, myfile)
 #' z2 <- qread(myfile)
 #' identical(z, z2) # returns true
-#' 
+#'
 #' w <- as.list(rnorm(1e6))
 #' myfile <- tempfile()
 #' qsave(w, myfile)
@@ -122,130 +151,132 @@ NULL
 NULL
 
 #' qsave_fd
-#' 
-#' Saves an object to a file descriptor
-#' @usage qsave_fd(x, fd, 
-#' preset = "high", algorithm = "zstd", compress_level = 4L, 
+#'
+#' Saves an object to a file descriptor.
+#'
+#' @usage qsave_fd(x, fd,
+#' preset = "high", algorithm = "zstd", compress_level = 4L,
 #' shuffle_control = 15L, check_hash=TRUE)
-#' @param x the object to serialize.
-#' @param fd A file descriptor
-#' @param preset One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom". See details.
-#' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
-#' @param compress_level The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).
-#' @param shuffle_control An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.
-#' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
-#' @return the number of bytes serialized (returned invisibly)
-#' @details 
-#' This function serializes and compresses an R object to a stream using a file descriptor
-#' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
+#'
+#' @eval shared_params_save(incl_fd = TRUE)
+#'
+#' @inherit qsave return details
+#' @inheritSection qsave Presets
+#' @inheritSection qsave Byte shuffling
 #' @export
 #' @name qsave_fd
 NULL
 
 #' qread_fd
-#' 
-#' Reads an object from a file descriptor
+#'
+#' Reads an object from a file descriptor.
+#'
 #' @usage qread_fd(fd, use_alt_rep=FALSE, strict=FALSE)
-#' @param fd A file descriptor
-#' @param use_alt_rep Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
-#' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
-#' @return The de-serialized object
+#'
+#' @param fd A file descriptor.
+#' @eval shared_params_read
+#'
+#' @inherit qread return
 #' @details
-#' See `?qsave_fd` for additional details and examples.
+#' See [qsave_fd()] for additional details and examples.
 #' @export
 #' @name qread_fd
 NULL
 
 #' qsave_handle
-#' 
-#' Saves an object to a windows handle
-#' @usage qsave_handle(x, handle, 
-#' preset = "high", algorithm = "zstd", compress_level = 4L, 
+#'
+#' Saves an object to a windows handle.
+#'
+#' @usage qsave_handle(x, handle,
+#' preset = "high", algorithm = "zstd", compress_level = 4L,
 #' shuffle_control = 15L, check_hash=TRUE)
-#' @param x the object to serialize.
-#' @param handle A windows handle external pointer
-#' @param preset One of "fast", "balanced" , "high" (default), "archive", "uncompressed" or "custom". See details.
-#' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
-#' @param compress_level The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).
-#' @param shuffle_control An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.
-#' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
-#' @return the number of bytes serialized (returned invisibly)
-#' @details 
-#' This function serializes and compresses an R object to a stream using a file descriptor
-#' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
+#'
+#' @eval shared_params_save(incl_handle = TRUE)
+#'
+#' @inherit qsave return details
+#' @inheritSection qsave Presets
+#' @inheritSection qsave Byte shuffling
 #' @export
 #' @name qsave_handle
 NULL
 
 #' qread_handle
-#' 
-#' Reads an object from a windows handle
+#'
+#' Reads an object from a windows handle.
+#'
 #' @usage qread_handle(handle, use_alt_rep=FALSE, strict=FALSE)
-#' @param handle A windows handle external pointer
-#' @param use_alt_rep Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
-#' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
-#' @return The de-serialized object
+#'
+#' @param handle A windows handle external pointer.
+#' @eval shared_params_read
+#'
+#' @inherit qread return
 #' @details
-#' See `?qsave_handle` for additional details and examples.
+#' See [qsave_handle()] for additional details and examples.
 #' @export
 #' @name qread_handle
 NULL
 
 #' qserialize
-#' 
-#' Saves an object to a raw vector 
-#' @usage qserialize(x, preset = "high", 
-#' algorithm = "zstd", compress_level = 4L, 
+#'
+#' Saves an object to a raw vector.
+#'
+#' @usage qserialize(x, preset = "high",
+#' algorithm = "zstd", compress_level = 4L,
 #' shuffle_control = 15L, check_hash=TRUE)
-#' @param x the object to serialize.
-#' @param preset One of "fast", "balanced", "high" (default), "archive", "uncompressed" or "custom". See details.
-#' @param algorithm Compression algorithm used: "lz4", "zstd", "lz4hc", "zstd_stream" or "uncompressed".
-#' @param compress_level The compression level used (Default 4). For lz4, this number must be > 1 (higher is less compressed). For zstd, a number between -50 to 22 (higher is more compressed).
-#' @param shuffle_control An integer setting the use of byte shuffle compression. A value between 0 and 15 (Default 15). See details.
-#' @param check_hash Default TRUE, compute a hash which can be used to verify file integrity during serialization
-#' @details 
-#' This function serializes and compresses an R object to a raw vctor
-#' If your data is important, make sure you know what happens on the other side of the pipe. See examples for usage.  
+#'
+#' @eval shared_params_save()
+#'
+#' @return A raw vector.
+#' @inherit qsave details
+#' @inheritSection qsave Presets
+#' @inheritSection qsave Byte shuffling
 #' @export
 #' @name qserialize
 NULL
 
 #' qdeserialize
-#' 
-#' Reads an object from a fd
+#'
+#' Reads an object from a raw vector.
+#'
 #' @usage qdeserialize(x, use_alt_rep=FALSE, strict=FALSE)
-#' @param x a raw vector
-#' @param use_alt_rep Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
-#' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
-#' @return The de-serialized object
+#'
+#' @param x A raw vector.
+#' @eval shared_params_read
+#'
+#' @inherit qread return
 #' @details
-#' See `?qeserialize` for additional details and examples.
+#' See [qserialize()] for additional details and examples.
 #' @export
 #' @name qdeserialize
 NULL
 
 #' qread_ptr
-#' 
-#' Reads an object from a external pointer
+#'
+#' Reads an object from an external pointer.
+#'
 #' @usage qread_ptr(pointer, length, use_alt_rep=FALSE, strict=FALSE)
-#' @param pointer An external pointer to memory
-#' @param length the length of the object in memory
-#' @param use_alt_rep Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.) 
-#' @param strict Whether to throw an error or just report a warning (Default: FALSE, report warning)
-#' @return The de-serialized object
+#'
+#' @param pointer An external pointer to memory.
+#' @param length The length of the object in memory.
+#' @eval shared_params_read
+#'
+#' @inherit qread return
 #' @export
 #' @name qread_ptr
 NULL
 
 #' qdump
-#' 
-#' Exports the uncompressed binary serialization to a list of Raw Vectors. For testing purposes and exploratory purposes mainly.
+#'
+#' Exports the uncompressed binary serialization to a list of raw vectors. For testing purposes and exploratory purposes mainly.
+#'
 #' @usage qdump(file)
-#' @param file the file name/path.
-#' @return The uncompressed serialization
+#'
+#' @param file A file name/path.
+#'
+#' @return The uncompressed serialization.
 #' @examples
-#' x <- data.frame(int = sample(1e3, replace=TRUE), 
-#'         num = rnorm(1e3), 
+#' x <- data.frame(int = sample(1e3, replace=TRUE),
+#'         num = rnorm(1e3),
 #'         char = randomStrings(1e3), stringsAsFactors = FALSE)
 #' myfile <- tempfile()
 #' qsave(x, myfile)
@@ -255,10 +286,13 @@ NULL
 NULL
 
 #' Zstd compress bound
-#' 
+#'
 #' Exports the compress bound function from the zstd library. Returns the maximum compressed size of an object of length `size`.
+#'
 #' @usage zstd_compress_bound(size)
+#'
 #' @param size An integer size
+#'
 #' @return maximum compressed size
 #' @examples
 #' zstd_compress_bound(100000)
@@ -267,12 +301,17 @@ NULL
 NULL
 
 #' Zstd compression
-#' 
-#' Compression of raw vector. Exports the main zstd compression function.
+#'
+#' Compresses to a raw vector using the zstd algorithm. Exports the main zstd compression function.
+#'
 #' @usage zstd_compress_raw(x, compress_level)
-#' @param x A Raw Vector
-#' @param compress_level The compression level (-50 to 22)
-#' @return The compressed data
+#'
+#' @param x The object to serialize.
+#' @param compress_level The compression level used (default `4`). A number between `-50` to `22` (higher is more compressed). Higher values tend to have a
+#'   better compression ratio, while lower/negative values tend to be quicker. Due to the format of qs, there is very little benefit to compression levels > 5
+#'   or so.
+#'
+#' @return The compressed data as a raw vector.
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
@@ -282,11 +321,14 @@ NULL
 NULL
 
 #' Zstd decompression
-#' 
-#' Decompresses of raw vector
+#'
+#' Decompresses a zstd compressed raw vector.
+#'
 #' @usage zstd_decompress_raw(x)
-#' @param x A Raw Vector
-#' @return The uncompressed data
+#'
+#' @param x A raw vector.
+#'
+#' @inherit qread return
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
@@ -296,11 +338,14 @@ NULL
 NULL
 
 #' lz4 compress bound
-#' 
+#'
 #' Exports the compress bound function from the lz4 library. Returns the maximum compressed size of an object of length `size`.
+#'
 #' @usage lz4_compress_bound(size)
-#' @param size An integer size
-#' @return maximum compressed size
+#'
+#' @param size An integer size.
+#'
+#' @return Maximum compressed size.
 #' @examples
 #' lz4_compress_bound(100000)
 #' #' lz4_compress_bound(1e9)
@@ -308,12 +353,15 @@ NULL
 NULL
 
 #' lz4 compression
-#' 
-#' Compression of raw vector. Exports the main lz4 compression function.
+#'
+#' Compresses to a raw vector using the lz4 algorithm. Exports the main lz4 compression function.
+#'
 #' @usage lz4_compress_raw(x, compress_level)
-#' @param x A Raw Vector
-#' @param compress_level The compression level (> 1).
-#' @return The compressed data
+#'
+#' @param x The object to serialize.
+#' @param compress_level The compression level used. A number > 1 (higher is less compressed).
+#'
+#' @inherit zstd_compress_raw return
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
@@ -323,11 +371,14 @@ NULL
 NULL
 
 #' lz4 decompression
-#' 
-#' Decompresses of raw vector
+#'
+#' Decompresses an lz4 compressed raw vector.
+#'
 #' @usage lz4_decompress_raw(x)
-#' @param x A Raw Vector
-#' @return The uncompressed data
+#'
+#' @param x A raw vector.
+#'
+#' @inherit qread return
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
@@ -336,12 +387,13 @@ NULL
 #' @name lz4_decompress_raw
 NULL
 
-
 #' System Endianness
-#' 
+#'
 #' Tests system endianness. Intel and AMD based systems are little endian, and so this function will likely return `FALSE`.
 #' The `qs` package is not capable of transferring data between systems of different endianness. This should not matter for the large majority of use cases.
+#'
 #' @usage is_big_endian()
+#'
 #' @return `TRUE` if big endian, `FALSE` if little endian.
 #' @examples
 #' is_big_endian() # returns FALSE on Intel/AMD systems
@@ -349,11 +401,14 @@ NULL
 NULL
 
 #' Generate random strings
-#' 
+#'
 #' A function for generating a character vector of random strings, for testing purposes.
+#'
 #' @usage randomStrings(N, string_size)
-#' @param N The number of random strings to generate
-#' @param string_size The number of characters in each string (default 50).
+#'
+#' @param N The number of random strings to generate.
+#' @param string_size The number of characters in each string (default `50`).
+#'
 #' @return A character vector of random alpha-numeric strings.
 #' @examples
 #' randomStrings(N=10, string_size=20) # returns 10 alphanumeric strings of length 20
@@ -361,26 +416,31 @@ NULL
 #' @name randomStrings
 NULL
 
-#' Convert character vector to alt-rep
-#' 
-#' A function for generating a alt-rep object from a character vector, for users to experiment with the alt-rep system.
+#' Convert character vector to ALTREP
+#'
+#' A function for generating an ALTREP object from a character vector, for users to experiment with the ALTREP system.
 #' This function is not available in R versions earlier than 3.5.0.
+#'
 #' @usage convertToAlt(x)
-#' @param x The character vector
-#' @return The character vector in alt-rep form
+#'
+#' @param x A character vector.
+#'
+#' @return The character vector in ALTREP form.
 #' @examples
 #' xalt <- convertToAlt(randomStrings(N=10, string_size=20))
 #' xalt2 <- convertToAlt(c("a", "b", "c"))
 #' @name convertToAlt
 NULL
 
-
-#' Shuffle a raw vector 
-#' 
-#' A function for shuffling a raw vector using BLOSC shuffle routines
+#' Shuffle a raw vector
+#'
+#' Shuffles a raw vector using BLOSC shuffle routines.
+#'
 #' @usage blosc_shuffle_raw(x, bytesofsize)
-#' @param x The raw vector
-#' @param bytesofsize Either 4 or 8
+#'
+#' @param x A raw vector.
+#' @param bytesofsize Either `4` or `8`.
+#'
 #' @return The shuffled vector
 #' @examples
 #' x <- serialize(1L:1000L, NULL)
@@ -389,14 +449,16 @@ NULL
 #' @name blosc_shuffle_raw
 NULL
 
-
-#' Un-shuffle a raw vector 
-#' 
-#' A function for un-shuffling a raw vector using BLOSC un-shuffle routines
+#' Un-shuffle a raw vector
+#'
+#' Un-shuffles a raw vector using BLOSC un-shuffle routines.
+#'
 #' @usage blosc_unshuffle_raw(x, bytesofsize)
-#' @param x The raw vector
-#' @param bytesofsize Either 4 or 8
-#' @return The unshuffled vector
+#'
+#' @param x A raw vector.
+#' @param bytesofsize Either `4` or `8`.
+#'
+#' @return The unshuffled vector.
 #' @examples
 #' x <- serialize(1L:1000L, NULL)
 #' xshuf <- blosc_shuffle_raw(x, 4)
@@ -408,17 +470,17 @@ NULL
 #'
 #' Data from the International Astronomical Union.
 #' An official list of the 336 internationally recognized named stars,
-#' updated as of June 1, 2018.  
+#' updated as of June 1, 2018.
 #'
 #' @docType data
 #'
 #' @usage data(starnames)
 #'
-#' @format A `data.frame` with official IAU star names and several properties, such as coordinates.  
+#' @format A `data.frame` with official IAU star names and several properties, such as coordinates.
 #'
 #' @keywords datasets
-#' 
-#' @references E Mamajek et. al. (2018), 
+#'
+#' @references E Mamajek et. al. (2018),
 #' \emph{WG Triennial Report (2015-2018) - Star Names}, Reports on Astronomy, 22 Mar 2018.
 #
 #' @source \href{https://www.iau.org/public/themes/naming_stars/}{Naming Stars | International Astronomical Union.}
@@ -428,11 +490,12 @@ NULL
 "starnames"
 
 #' catquo
-#' 
-#' Prints a string with single quotes on a new line
+#'
+#' Prints a string with single quotes on a new line.
+#'
 #' @usage catquo(...)
-#' @param ... Arguments passed to `cat` function
+#'
+#' @param ... Arguments passed on to [cat()].
 catquo <- function(...) {
  cat("'", ..., "'\n", sep = "")
 }
-
