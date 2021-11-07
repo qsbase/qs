@@ -5,6 +5,9 @@ suppressMessages(library(qs))
 suppressMessages(library(stringfish))
 options(warn=1)
 
+R_TESTS <- Sys.getenv("R_TESTS") # startup.Rs
+R_TESTS_absolute <- normalizePath(R_TESTS)
+Sys.setenv(R_TESTS = R_TESTS_absolute) # because sourceCpp uses setwd, we need absolute path to R_TESTS
 sourceCpp(code = decode_source(
 c("un]'BAAA@QRtHACAAAAAAA+>nAAAv7#aT)JXC:JAR%*QaAh72AB'B'vw5pac6M<xR5V+cWn+KxIBy6|r,OVt?2~X%:xAw/,f}d^_#|XKWFvW%N#TD'H'$}!eH:<{E(H&Yk90NjkdSLMP5[S$2_W,xfO(ao}fQ+jw",
   "Q{>6_%ygB8MFP)gz)^m++prny$p$2zd4,TjRyD]#^IDs$AEA.Iln5o|!b6Rg,?H[7:4>fVhjk;Elgs[t~/2QV.smWKr)qciq:,gJ.WM#<7X[GTC*H}p8LL/GQv]6d>R=O>iPUN11/~8!@P^g#xecEHjR>JF<,zuB",
@@ -12,6 +15,7 @@ c("un]'BAAA@QRtHACAAAAAAA+>nAAAv7#aT)JXC:JAR%*QaAh72AB'B'vw5pac6M<xR5V+cWn+KxIBy
   "zXa+QU~nU3~Xan{Pt5:LtE;TJ=^8_jDXcl#X:u)M`h&a&t&':CQ0!0atQoDNsGfRotbL2BvG&7;TM<uKn>{L%h{E2WwF+}2aDp01lLf&+8HLAbetZ_hlWHeGgi|Xl.U@;O~RhGYsXC1e}#R]e=ky)D<SpP+)~|XO",
   "TYww=2?PA~!09BKVaX]Kr1Xt[O&{gzkTc9KbV=<uAA+ivS![q)L4F#n5'*XTy2YPl?+(1Szz:4klMBs?9Bk9!wKDZV'mx*Qb#CLRs6Sd1[5HYHk;:H2d{CZt|=iTU2EwD&=pD(:wGGm_$H$WNFG'g9aOTl4q^IQd",
   "KCA4q>Z>Lku@C8Iy")))
+Sys.setenv(R_TESTS = R_TESTS)
 
 args <- commandArgs(T)
 if(length(args) == 0) {
