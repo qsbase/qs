@@ -1,8 +1,8 @@
 #' qcache
-#' 
+#'
 #' Helper function for caching objects for long running tasks
-#' @usage qcache(expr, name, envir=parent.frame(), cache_dir=".cache", 
-#'               clear=FALSE, prompt=TRUE, qsave_params=list(), 
+#' @usage qcache(expr, name, envir=parent.frame(), cache_dir=".cache",
+#'               clear=FALSE, prompt=TRUE, qsave_params=list(),
 #'               qread_params=list())
 #' @param expr The expression to evaluate
 #' @param name The cached expression name (see details)
@@ -12,31 +12,31 @@
 #' @param prompt Whether to prompt before clearing
 #' @param qsave_params Parameters passed to `qsave`
 #' @param qread_params Parameters passed to `qread`
-#' @details 
-#' This is a (very) simple helper function to cache results of long running calculations. There are other packages specializing 
-#' in caching data that are more feature complete. 
-#' 
-#' The evaluated expression is saved with `qsave` in <cache_dir>/<name>.qs. 
-#' If the file already exists instead the expression is not evaluated and the cached result is read using `qread` and returned. 
-#' 
-#' To clear a cached result, you can manually delete the associated `qs` file, or you can call `qcache` with `clear=TRUE`. 
-#' If `prompt` is also `TRUE` a prompt will be given asking you to confirm deletion. 
-#' If `name` is not specified, all cached results in `cache_dir` will be removed. 
-#' @examples 
+#' @details
+#' This is a (very) simple helper function to cache results of long running calculations. There are other packages specializing
+#' in caching data that are more feature complete.
+#'
+#' The evaluated expression is saved with [qsave()] in `<cache_dir>/<name>.qs`.
+#' If the file already exists instead, the expression is not evaluated and the cached result is read using [qread()] and returned.
+#'
+#' To clear a cached result, you can manually delete the associated `.qs` file, or you can call [qcache()] with `clear=TRUE`.
+#' If `prompt` is also `TRUE` a prompt will be given asking you to confirm deletion.
+#' If `name` is not specified, all cached results in `cache_dir` will be removed.
+#' @examples
 #' cache_dir <- tempdir()
-#' 
+#'
 #' a <- 1
 #' b <- 5
-#' 
+#'
 #' # not cached
-#' result <- qcache({a + b}, 
-#'                  name="aplusb", 
+#' result <- qcache({a + b},
+#'                  name="aplusb",
 #'                  cache_dir = cache_dir,
 #'                  qsave_params = list(preset="fast"))
-#' 
+#'
 #' # cached
-#' result <- qcache({a + b}, 
-#'                  name="aplusb", 
+#' result <- qcache({a + b},
+#'                  name="aplusb",
 #'                  cache_dir = cache_dir,
 #'                  qsave_params = list(preset="fast"))
 #'

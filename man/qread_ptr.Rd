@@ -7,17 +7,17 @@
 qread_ptr(pointer, length, use_alt_rep=FALSE, strict=FALSE)
 }
 \arguments{
-\item{pointer}{An external pointer to memory}
+\item{pointer}{An external pointer to memory.}
 
-\item{length}{the length of the object in memory}
+\item{length}{The length of the object in memory.}
 
-\item{use_alt_rep}{Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
+\item{use_alt_rep}{Use ALTREP when reading in string data (default \code{FALSE}). On R versions prior to 3.5.0, this parameter does nothing.}
 
-\item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
+\item{strict}{Whether to throw an error or just report a warning (default: \code{FALSE}, i.e. report warning).}
 }
 \value{
-The de-serialized object
+The de-serialized object.
 }
 \description{
-Reads an object from a external pointer
+Reads an object from an external pointer.
 }

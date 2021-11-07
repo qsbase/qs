@@ -5,7 +5,7 @@
 \alias{starnames}
 \title{Official list of IAU Star Names}
 \format{
-A `data.frame` with official IAU star names and several properties, such as coordinates.
+A \code{data.frame} with official IAU star names and several properties, such as coordinates.
 }
 \source{
 \href{https://www.iau.org/public/themes/naming_stars/}{Naming Stars | International Astronomical Union.}
@@ -22,7 +22,7 @@ updated as of June 1, 2018.
 data(starnames)
 }
 \references{
-E Mamajek et. al. (2018), 
+E Mamajek et. al. (2018),
 \emph{WG Triennial Report (2015-2018) - Star Names}, Reports on Astronomy, 22 Mar 2018.
 }
 \keyword{datasets}

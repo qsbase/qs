@@ -7,17 +7,17 @@
 qdump(file)
 }
 \arguments{
-\item{file}{the file name/path.}
+\item{file}{A file name/path.}
 }
 \value{
-The uncompressed serialization
+The uncompressed serialization.
 }
 \description{
-Exports the uncompressed binary serialization to a list of Raw Vectors. For testing purposes and exploratory purposes mainly.
+Exports the uncompressed binary serialization to a list of raw vectors. For testing purposes and exploratory purposes mainly.
 }
 \examples{
-x <- data.frame(int = sample(1e3, replace=TRUE), 
-        num = rnorm(1e3), 
+x <- data.frame(int = sample(1e3, replace=TRUE),
+        num = rnorm(1e3),
         char = randomStrings(1e3), stringsAsFactors = FALSE)
 myfile <- tempfile()
 qsave(x, myfile)

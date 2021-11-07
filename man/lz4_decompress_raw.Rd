@@ -7,13 +7,13 @@
 lz4_decompress_raw(x)
 }
 \arguments{
-\item{x}{A Raw Vector}
+\item{x}{A raw vector.}
 }
 \value{
-The uncompressed data
+The de-serialized object.
 }
 \description{
-Decompresses of raw vector
+Decompresses an lz4 compressed raw vector.
 }
 \examples{
 x <- 1:1e6

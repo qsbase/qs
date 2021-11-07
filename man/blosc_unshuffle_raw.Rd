@@ -7,15 +7,15 @@
 blosc_unshuffle_raw(x, bytesofsize)
 }
 \arguments{
-\item{x}{The raw vector}
+\item{x}{A raw vector.}
 
-\item{bytesofsize}{Either 4 or 8}
+\item{bytesofsize}{Either \code{4} or \code{8}.}
 }
 \value{
-The unshuffled vector
+The unshuffled vector.
 }
 \description{
-A function for un-shuffling a raw vector using BLOSC un-shuffle routines
+Un-shuffles a raw vector using BLOSC un-shuffle routines.
 }
 \examples{
 x <- serialize(1L:1000L, NULL)

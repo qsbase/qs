@@ -13,5 +13,5 @@ decode_source(string)
 The original (decoded) string.
 }
 \description{
-A helper function for encoding and compressing a file or string to ascii using `base91_encode` and `qserialize` with the highest compression level.
+A helper function for encoding and compressing a file or string to ascii using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
 }
