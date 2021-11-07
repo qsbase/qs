@@ -105,3 +105,15 @@ decode_source <- function(string) {
   x <- base91_decode(x)
   qdeserialize(x)
 }
+
+
+#' catquo
+#'
+#' Prints a string with single quotes on a new line.
+#'
+#' @usage catquo(...)
+#'
+#' @param ... Arguments passed on to [cat()].
+catquo <- function(...) {
+  cat("'", ..., "'\n", sep = "")
+}

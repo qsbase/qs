@@ -8,7 +8,7 @@ BUILD   := $(PACKAGE)_$(VERSION).tar.gz
 check: $(BUILD)
 	R CMD check --as-cran $<
 
-check-cran: $(BUILD)
+check-rhub: $(BUILD)
 	Rscript -e 'rhub::check("$(BUILD)", platform = c("ubuntu-gcc-devel", "windows-x86_64-devel", "solaris-x86-patched", "macos-m1-bigsur-release"))'
 
 check-solaris: $(BUILD)
