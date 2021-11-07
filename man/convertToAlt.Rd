@@ -2,18 +2,18 @@
 % Please edit documentation in R/zz_help_files.R
 \name{convertToAlt}
 \alias{convertToAlt}
-\title{Convert character vector to alt-rep}
+\title{Convert character vector to ALTREP}
 \usage{
 convertToAlt(x)
 }
 \arguments{
-\item{x}{The character vector}
+\item{x}{A character vector.}
 }
 \value{
-The character vector in alt-rep form
+The character vector in ALTREP form.
 }
 \description{
-A function for generating a alt-rep object from a character vector, for users to experiment with the alt-rep system.
+A function for generating an ALTREP object from a character vector, for users to experiment with the ALTREP system.
 This function is not available in R versions earlier than 3.5.0.
 }
 \examples{

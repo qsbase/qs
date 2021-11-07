@@ -7,18 +7,18 @@
 qread_handle(handle, use_alt_rep=FALSE, strict=FALSE)
 }
 \arguments{
-\item{handle}{A windows handle external pointer}
+\item{handle}{A windows handle external pointer.}
 
-\item{use_alt_rep}{Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
+\item{use_alt_rep}{Use ALTREP when reading in string data (default \code{FALSE}). On R versions prior to 3.5.0, this parameter does nothing.}
 
-\item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
+\item{strict}{Whether to throw an error or just report a warning (default: \code{FALSE}, i.e. report warning).}
 }
 \value{
-The de-serialized object
+The de-serialized object.
 }
 \description{
-Reads an object from a windows handle
+Reads an object from a windows handle.
 }
 \details{
-See `?qsave_handle` for additional details and examples.
+See \code{\link[=qsave_handle]{qsave_handle()}} for additional details and examples.
 }

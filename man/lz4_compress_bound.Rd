@@ -7,13 +7,13 @@
 lz4_compress_bound(size)
 }
 \arguments{
-\item{size}{An integer size}
+\item{size}{An integer size.}
 }
 \value{
-maximum compressed size
+Maximum compressed size.
 }
 \description{
-Exports the compress bound function from the lz4 library. Returns the maximum compressed size of an object of length `size`.
+Exports the compress bound function from the lz4 library. Returns the maximum compressed size of an object of length \code{size}.
 }
 \examples{
 lz4_compress_bound(100000)

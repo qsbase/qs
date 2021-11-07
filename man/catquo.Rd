@@ -7,8 +7,8 @@
 catquo(...)
 }
 \arguments{
-\item{...}{Arguments passed to `cat` function}
+\item{...}{Arguments passed on to \code{\link[=cat]{cat()}}.}
 }
 \description{
-Prints a string with single quotes on a new line
+Prints a string with single quotes on a new line.
 }

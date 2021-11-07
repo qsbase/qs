@@ -7,15 +7,15 @@
 blosc_shuffle_raw(x, bytesofsize)
 }
 \arguments{
-\item{x}{The raw vector}
+\item{x}{A raw vector.}
 
-\item{bytesofsize}{Either 4 or 8}
+\item{bytesofsize}{Either \code{4} or \code{8}.}
 }
 \value{
 The shuffled vector
 }
 \description{
-A function for shuffling a raw vector using BLOSC shuffle routines
+Shuffles a raw vector using BLOSC shuffle routines.
 }
 \examples{
 x <- serialize(1L:1000L, NULL)
