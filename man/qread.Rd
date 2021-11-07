@@ -7,23 +7,23 @@
 qread(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
 }
 \arguments{
-\item{file}{the file name/path}
+\item{file}{The file name/path.}
 
-\item{use_alt_rep}{Use alt rep when reading in string data. Default: FALSE. (Note: on R versions earlier than 3.5.0, this parameter does nothing.)}
+\item{use_alt_rep}{Use ALTREP when reading in string data (default \code{FALSE}). On R versions prior to 3.5.0, this parameter does nothing.}
 
-\item{strict}{Whether to throw an error or just report a warning (Default: FALSE, report warning)}
+\item{strict}{Whether to throw an error or just report a warning (default: \code{FALSE}, i.e. report warning).}
 
-\item{nthreads}{Number of threads to use. Default 1.}
+\item{nthreads}{Number of threads to use. Default \code{1}.}
 }
 \value{
-The de-serialized object
+The de-serialized object.
 }
 \description{
-Reads an object in a file serialized to disk
+Reads an object in a file serialized to disk.
 }
 \examples{
-x <- data.frame(int = sample(1e3, replace=TRUE), 
-        num = rnorm(1e3), 
+x <- data.frame(int = sample(1e3, replace=TRUE),
+        num = rnorm(1e3),
         char = randomStrings(1e3), stringsAsFactors = FALSE)
 myfile <- tempfile()
 qsave(x, myfile)

@@ -7,15 +7,16 @@
 zstd_compress_raw(x, compress_level)
 }
 \arguments{
-\item{x}{A Raw Vector}
+\item{x}{The object to serialize.}
 
-\item{compress_level}{The compression level (-50 to 22)}
+\item{compress_level}{The compression level used (default \code{4}). A number between \code{-50} to \code{22} (higher is more compressed). Due to the format of qs, there is
+very little benefit to compression levels > 5 or so.}
 }
 \value{
-The compressed data
+The compressed data as a raw vector.
 }
 \description{
-Compression of raw vector. Exports the main zstd compression function.
+Compresses to a raw vector using the zstd algorithm. Exports the main zstd compression function.
 }
 \examples{
 x <- 1:1e6

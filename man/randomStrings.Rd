@@ -7,9 +7,9 @@
 randomStrings(N, string_size)
 }
 \arguments{
-\item{N}{The number of random strings to generate}
+\item{N}{The number of random strings to generate.}
 
-\item{string_size}{The number of characters in each string (default 50).}
+\item{string_size}{The number of characters in each string (default \code{50}).}
 }
 \value{
 A character vector of random alpha-numeric strings.
