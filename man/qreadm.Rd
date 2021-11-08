@@ -23,7 +23,7 @@ Nothing is explicitly returned, but the function will load the saved objects int
 Reads an object in a file serialized to disk using qsavem.
 }
 \details{
-This function extends qread to replicate the functionality of base::load to load multiple saved objects into your workspace. \code{qloadm} and \code{qsavem} are alias of the same function.
+This function extends qread to replicate the functionality of base::load to load multiple saved objects into your workspace. \code{qload} and \code{qreadm} are alias of the same function.
 }
 \examples{
 x1 <- data.frame(int = sample(1e3, replace=TRUE), 
