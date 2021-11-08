@@ -13,41 +13,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// randomStrings
-std::vector<std::string> randomStrings(const int N, const int string_size);
-static SEXP _qs_randomStrings_try(SEXP NSEXP, SEXP string_sizeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< const int >::type string_size(string_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(randomStrings(N, string_size));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_randomStrings(SEXP NSEXP, SEXP string_sizeSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        Rcpp::RNGScope rcpp_rngScope_gen;
-        rcpp_result_gen = PROTECT(_qs_randomStrings_try(NSEXP, string_sizeSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
 // zstd_compress_bound
 int zstd_compress_bound(const int size);
 static SEXP _qs_zstd_compress_bound_try(SEXP sizeSEXP) {
@@ -330,39 +295,6 @@ RcppExport SEXP _qs_xxhash_raw(SEXP xSEXP) {
     SEXP rcpp_result_gen;
     {
         rcpp_result_gen = PROTECT(_qs_xxhash_raw_try(xSEXP));
-    }
-    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
-    if (rcpp_isInterrupt_gen) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
-    if (rcpp_isLongjump_gen) {
-        Rcpp::internal::resumeJump(rcpp_result_gen);
-    }
-    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
-    if (rcpp_isError_gen) {
-        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
-        UNPROTECT(1);
-        Rf_error(CHAR(rcpp_msgSEXP_gen));
-    }
-    UNPROTECT(1);
-    return rcpp_result_gen;
-}
-// convertToAlt
-SEXP convertToAlt(const CharacterVector& x);
-static SEXP _qs_convertToAlt_try(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< const CharacterVector& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(convertToAlt(x));
-    return rcpp_result_gen;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP _qs_convertToAlt(SEXP xSEXP) {
-    SEXP rcpp_result_gen;
-    {
-        rcpp_result_gen = PROTECT(_qs_convertToAlt_try(xSEXP));
     }
     Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
     if (rcpp_isInterrupt_gen) {
@@ -1403,7 +1335,6 @@ RcppExport SEXP _qs_closeWinMapView(SEXP pointerSEXP) {
 static int _qs_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
-        signatures.insert("std::vector<std::string>(*randomStrings)(const int,const int)");
         signatures.insert("int(*zstd_compress_bound)(const int)");
         signatures.insert("int(*lz4_compress_bound)(const int)");
         signatures.insert("std::vector<unsigned char>(*zstd_compress_raw)(SEXP const,const int)");
@@ -1413,7 +1344,6 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("std::vector<unsigned char>(*blosc_shuffle_raw)(SEXP const,int)");
         signatures.insert("std::vector<unsigned char>(*blosc_unshuffle_raw)(SEXP const,int)");
         signatures.insert("std::string(*xxhash_raw)(SEXP const)");
-        signatures.insert("SEXP(*convertToAlt)(const CharacterVector&)");
         signatures.insert("std::string(*base85_encode)(const RawVector&)");
         signatures.insert("RawVector(*base85_decode)(const std::string&)");
         signatures.insert("std::string(*c_base91_encode)(const RawVector&)");
@@ -1449,7 +1379,6 @@ static int _qs_RcppExport_validate(const char* sig) {
 
 // registerCCallable (register entry points for exported C++ functions)
 RcppExport SEXP _qs_RcppExport_registerCCallable() { 
-    R_RegisterCCallable("qs", "_qs_randomStrings", (DL_FUNC)_qs_randomStrings_try);
     R_RegisterCCallable("qs", "_qs_zstd_compress_bound", (DL_FUNC)_qs_zstd_compress_bound_try);
     R_RegisterCCallable("qs", "_qs_lz4_compress_bound", (DL_FUNC)_qs_lz4_compress_bound_try);
     R_RegisterCCallable("qs", "_qs_zstd_compress_raw", (DL_FUNC)_qs_zstd_compress_raw_try);
@@ -1459,7 +1388,6 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_blosc_shuffle_raw", (DL_FUNC)_qs_blosc_shuffle_raw_try);
     R_RegisterCCallable("qs", "_qs_blosc_unshuffle_raw", (DL_FUNC)_qs_blosc_unshuffle_raw_try);
     R_RegisterCCallable("qs", "_qs_xxhash_raw", (DL_FUNC)_qs_xxhash_raw_try);
-    R_RegisterCCallable("qs", "_qs_convertToAlt", (DL_FUNC)_qs_convertToAlt_try);
     R_RegisterCCallable("qs", "_qs_base85_encode", (DL_FUNC)_qs_base85_encode_try);
     R_RegisterCCallable("qs", "_qs_base85_decode", (DL_FUNC)_qs_base85_decode_try);
     R_RegisterCCallable("qs", "_qs_c_base91_encode", (DL_FUNC)_qs_c_base91_encode_try);
@@ -1494,7 +1422,6 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_qs_randomStrings", (DL_FUNC) &_qs_randomStrings, 2},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
     {"_qs_lz4_compress_bound", (DL_FUNC) &_qs_lz4_compress_bound, 1},
     {"_qs_zstd_compress_raw", (DL_FUNC) &_qs_zstd_compress_raw, 2},
@@ -1504,7 +1431,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_blosc_shuffle_raw", (DL_FUNC) &_qs_blosc_shuffle_raw, 2},
     {"_qs_blosc_unshuffle_raw", (DL_FUNC) &_qs_blosc_unshuffle_raw, 2},
     {"_qs_xxhash_raw", (DL_FUNC) &_qs_xxhash_raw, 1},
-    {"_qs_convertToAlt", (DL_FUNC) &_qs_convertToAlt, 1},
     {"_qs_base85_encode", (DL_FUNC) &_qs_base85_encode, 1},
     {"_qs_base85_decode", (DL_FUNC) &_qs_base85_decode, 1},
     {"_qs_c_base91_encode", (DL_FUNC) &_qs_c_base91_encode, 1},

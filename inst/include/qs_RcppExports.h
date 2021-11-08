@@ -24,27 +24,6 @@ namespace qs {
         }
     }
 
-    inline std::vector<std::string> randomStrings(const int N, const int string_size = 50) {
-        typedef SEXP(*Ptr_randomStrings)(SEXP,SEXP);
-        static Ptr_randomStrings p_randomStrings = NULL;
-        if (p_randomStrings == NULL) {
-            validateSignature("std::vector<std::string>(*randomStrings)(const int,const int)");
-            p_randomStrings = (Ptr_randomStrings)R_GetCCallable("qs", "_qs_randomStrings");
-        }
-        RObject rcpp_result_gen;
-        {
-            RNGScope RCPP_rngScope_gen;
-            rcpp_result_gen = p_randomStrings(Shield<SEXP>(Rcpp::wrap(N)), Shield<SEXP>(Rcpp::wrap(string_size)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<std::vector<std::string> >(rcpp_result_gen);
-    }
-
     inline int zstd_compress_bound(const int size) {
         typedef SEXP(*Ptr_zstd_compress_bound)(SEXP);
         static Ptr_zstd_compress_bound p_zstd_compress_bound = NULL;
@@ -223,26 +202,6 @@ namespace qs {
         if (rcpp_result_gen.inherits("try-error"))
             throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
         return Rcpp::as<std::string >(rcpp_result_gen);
-    }
-
-    inline SEXP convertToAlt(const CharacterVector& x) {
-        typedef SEXP(*Ptr_convertToAlt)(SEXP);
-        static Ptr_convertToAlt p_convertToAlt = NULL;
-        if (p_convertToAlt == NULL) {
-            validateSignature("SEXP(*convertToAlt)(const CharacterVector&)");
-            p_convertToAlt = (Ptr_convertToAlt)R_GetCCallable("qs", "_qs_convertToAlt");
-        }
-        RObject rcpp_result_gen;
-        {
-            rcpp_result_gen = p_convertToAlt(Shield<SEXP>(Rcpp::wrap(x)));
-        }
-        if (rcpp_result_gen.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
-            throw Rcpp::LongjumpException(rcpp_result_gen);
-        if (rcpp_result_gen.inherits("try-error"))
-            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
-        return Rcpp::as<SEXP >(rcpp_result_gen);
     }
 
     inline std::string base85_encode(const RawVector& rawdata) {

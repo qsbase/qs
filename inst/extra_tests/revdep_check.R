@@ -9,5 +9,11 @@
 # packages <- setdiff(packages, c("stringfish", "glow"))
 # print(packages)
 
-library(revdepcheck) # devtools::install_github("r-lib/revdepcheck")
+# library(revdepcheck) # devtools::install_github("r-lib/revdepcheck")
+# revdep_check(num_workers=12)
+
+library(usethis)
+use_revdep()
+
+library(revdepcheck)
 revdep_check(num_workers=12)

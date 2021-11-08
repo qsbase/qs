@@ -18,7 +18,8 @@ Exports the uncompressed binary serialization to a list of raw vectors. For test
 \examples{
 x <- data.frame(int = sample(1e3, replace=TRUE),
         num = rnorm(1e3),
-        char = randomStrings(1e3), stringsAsFactors = FALSE)
+        char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
+        stringsAsFactors = FALSE)
 myfile <- tempfile()
 qsave(x, myfile)
 x2 <- qdump(myfile)
