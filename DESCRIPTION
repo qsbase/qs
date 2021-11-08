@@ -12,7 +12,7 @@ Authors@R: c(
     person("Mori", "Yuta", role = c("ctb", "cph"), comment = "Contributor/copyright holder of zstd bundled code"),
     person("Romain", "Francois", role = c("ctb", "cph"), comment = "Derived example/tutorials for ALTREP structures"),
     person("Francesc", "Alted", role = c("ctb", "cph"), comment = "Shuffling routines derived from Blosc library"),
-    person("Bryce", "Chamberlain", email = "superchordate@gmail.com", role = c("ctb"), contributions = "qsavem and qload functions"),
+    person("Bryce", "Chamberlain", email = "superchordate@gmail.com", role = c("ctb"), comments = "qsavem and qload functions"),
     person("Salim", "Brüggemann", email = "salim-b@pm.me", role = c("ctb"), comment = c(ORCID = "0000-0002-5329-5987", contributions = "documentation")))
 Maintainer: Travers Ching <traversc@gmail.com>
 Description: Provides functions for quickly writing and reading any R object to and from disk.  
