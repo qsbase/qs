@@ -25,3 +25,4 @@ src/Makevars
 .vscode
 /src/.vscode
 README.html
+revdep/*

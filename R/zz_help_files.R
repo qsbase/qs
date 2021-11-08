@@ -87,7 +87,8 @@ shared_params_read <- c(
 #' @examples
 #' x <- data.frame(int = sample(1e3, replace=TRUE),
 #'         num = rnorm(1e3),
-#'         char = randomStrings(1e3), stringsAsFactors = FALSE)
+#'         char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
+#'          stringsAsFactors = FALSE)
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qread(myfile)
@@ -128,7 +129,8 @@ NULL
 #' @examples
 #' x <- data.frame(int = sample(1e3, replace=TRUE),
 #'         num = rnorm(1e3),
-#'         char = randomStrings(1e3), stringsAsFactors = FALSE)
+#'         char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
+#'         stringsAsFactors = FALSE)
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qread(myfile)
@@ -282,7 +284,8 @@ NULL
 #' @examples
 #' x <- data.frame(int = sample(1e3, replace=TRUE),
 #'         num = rnorm(1e3),
-#'         char = randomStrings(1e3), stringsAsFactors = FALSE)
+#'         char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
+#'         stringsAsFactors = FALSE)
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qdump(myfile)
@@ -402,38 +405,6 @@ NULL
 #' @examples
 #' is_big_endian() # returns FALSE on Intel/AMD systems
 #' @name is_big_endian
-NULL
-
-#' Generate random strings
-#'
-#' A function for generating a character vector of random strings, for testing purposes.
-#'
-#' @usage randomStrings(N, string_size)
-#'
-#' @param N The number of random strings to generate.
-#' @param string_size The number of characters in each string (default `50`).
-#'
-#' @return A character vector of random alpha-numeric strings.
-#' @examples
-#' randomStrings(N=10, string_size=20) # returns 10 alphanumeric strings of length 20
-#' randomStrings(N=100, string_size=200) # returns 100 alphanumeric strings of length 200
-#' @name randomStrings
-NULL
-
-#' Convert character vector to ALTREP
-#'
-#' A function for generating an ALTREP object from a character vector, for users to experiment with the ALTREP system.
-#' This function is not available in R versions earlier than 3.5.0.
-#'
-#' @usage convertToAlt(x)
-#'
-#' @param x A character vector.
-#'
-#' @return The character vector in ALTREP form.
-#' @examples
-#' xalt <- convertToAlt(randomStrings(N=10, string_size=20))
-#' xalt2 <- convertToAlt(c("a", "b", "c"))
-#' @name convertToAlt
 NULL
 
 #' Shuffle a raw vector

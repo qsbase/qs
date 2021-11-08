@@ -13,3 +13,4 @@ Makefile
 ^.vscode
 README.html
 ^.github
+^revdep

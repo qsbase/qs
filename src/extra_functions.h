@@ -26,19 +26,6 @@
 
 // [[Rcpp::interfaces(r, cpp)]]
 
-// [[Rcpp::export]] // RNG needed
-std::vector<std::string> randomStrings(const int N, const int string_size = 50) {
-  std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  std::vector<std::string> ret(N);
-  std::string str(string_size, '0');
-  for(int i=0; i<N; i++) {
-    std::vector<int> r = Rcpp::as< std::vector<int> >(Rcpp::sample(charset.size(), string_size, true, R_NilValue, false));
-    for(int j=0; j<string_size; j++) str[j] = charset[r[j]];
-    ret[i] = str;
-  }
-  return ret;
-}
-
 // [[Rcpp::export(rng = false)]]
 int zstd_compress_bound(const int size) {
   return ZSTD_compressBound(size);
@@ -156,45 +143,6 @@ std::string xxhash_raw(SEXP const x) {
   xxhash_env xenv = xxhash_env();
   xenv.update(xdata, xsize);
   return std::to_string(xenv.digest());
-}
-
-// [[Rcpp::export(rng = false)]]
-SEXP convertToAlt(const CharacterVector & x) {
-#ifdef ALTREP_SUPPORTED
-  auto ret = new stdvec_data(x.size());
-  for(int i=0; i < x.size(); i++) {
-    SEXP xi = x[i];
-    if(xi == NA_STRING) {
-      ret->encodings[i] = 5;
-    } else {
-      switch(Rf_getCharCE(xi)) {
-      case CE_NATIVE:
-        ret->encodings[i] = 1;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      case CE_UTF8:
-        ret->encodings[i] = 2;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      case CE_LATIN1:
-        ret->encodings[i] = 3;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      case CE_BYTES:
-        ret->encodings[i] = 4;
-        ret->strings[i] = Rcpp::as<std::string>(xi);
-        break;
-      default:
-        ret->encodings[i] = 5;
-      break;
-      }
-    }
-  }
-  return stdvec_string::Make(ret, true);
-#else
-  Rcerr << "this function is not available in R < 3.5.0" << std::endl;
-  return R_NilValue;
-#endif
 }
 
 // [[Rcpp::export(rng = false)]]

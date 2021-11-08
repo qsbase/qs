@@ -56,9 +56,9 @@ vignette:
 
 test:
 	Rscript tests/qsavemload_testing.R
-	Rscript tests/correctness_testing.R filestream
-	Rscript tests/correctness_testing.R fd
-	Rscript tests/correctness_testing.R memory
+	Rscript tests/correctness_testing.R filestream 3
+	Rscript tests/correctness_testing.R fd 3
+	Rscript tests/correctness_testing.R memory 3
 	Rscript inst/extra_tests/regression_testing.R
 
 testext:
