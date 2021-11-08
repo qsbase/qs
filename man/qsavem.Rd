@@ -18,10 +18,12 @@ This function extends qsave to replicate the functionality of base::save to save
 \examples{
 x1 <- data.frame(int = sample(1e3, replace=TRUE), 
                  num = rnorm(1e3), 
-                 char = randomStrings(1e3), stringsAsFactors = FALSE)
+                 char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
+                 stringsAsFactors = FALSE)
 x2 <- data.frame(int = sample(1e3, replace=TRUE), 
                  num = rnorm(1e3), 
-                 char = randomStrings(1e3), stringsAsFactors = FALSE)
+                 char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
+                 stringsAsFactors = FALSE)
 myfile <- tempfile()
 qsavem(x1, x2, file=myfile)
 rm(x1, x2)
