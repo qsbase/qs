@@ -13,11 +13,11 @@ on:
 name: R-CMD-check
 
 jobs:
-  rchk:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: r-lib/actions/run-rchk@master
+  # rchk:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v1
+  #   - uses: r-lib/actions/run-rchk@master
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
