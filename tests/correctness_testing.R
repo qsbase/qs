@@ -1,3 +1,5 @@
+total_time <- Sys.time()
+
 suppressMessages(library(Rcpp))
 suppressMessages(library(dplyr))
 suppressMessages(library(data.table))
@@ -5,9 +7,12 @@ suppressMessages(library(qs))
 suppressMessages(library(stringfish))
 options(warn=1)
 
+# because sourceCpp uses setwd, we need absolute path to R_TESTS when run within R CMD check
 R_TESTS <- Sys.getenv("R_TESTS") # startup.Rs
-R_TESTS_absolute <- normalizePath(R_TESTS)
-Sys.setenv(R_TESTS = R_TESTS_absolute) # because sourceCpp uses setwd, we need absolute path to R_TESTS
+if(nzchar(R_TESTS)) {
+  R_TESTS_absolute <- normalizePath(R_TESTS)
+  Sys.setenv(R_TESTS = R_TESTS_absolute)
+}
 sourceCpp(code = decode_source(
 c("un]'BAAA@QRtHACAAAAAAA+>nAAAv7#aT)JXC:JAR%*QaAh72AB'B'vw5pac6M<xR5V+cWn+KxIBy6|r,OVt?2~X%:xAw/,f}d^_#|XKWFvW%N#TD'H'$}!eH:<{E(H&Yk90NjkdSLMP5[S$2_W,xfO(ao}fQ+jw",
   "Q{>6_%ygB8MFP)gz)^m++prny$p$2zd4,TjRyD]#^IDs$AEA.Iln5o|!b6Rg,?H[7:4>fVhjk;Elgs[t~/2QV.smWKr)qciq:,gJ.WM#<7X[GTC*H}p8LL/GQv]6d>R=O>iPUN11/~8!@P^g#xecEHjR>JF<,zuB",
@@ -15,27 +20,36 @@ c("un]'BAAA@QRtHACAAAAAAA+>nAAAv7#aT)JXC:JAR%*QaAh72AB'B'vw5pac6M<xR5V+cWn+KxIBy
   "zXa+QU~nU3~Xan{Pt5:LtE;TJ=^8_jDXcl#X:u)M`h&a&t&':CQ0!0atQoDNsGfRotbL2BvG&7;TM<uKn>{L%h{E2WwF+}2aDp01lLf&+8HLAbetZ_hlWHeGgi|Xl.U@;O~RhGYsXC1e}#R]e=ky)D<SpP+)~|XO",
   "TYww=2?PA~!09BKVaX]Kr1Xt[O&{gzkTc9KbV=<uAA+ivS![q)L4F#n5'*XTy2YPl?+(1Szz:4klMBs?9Bk9!wKDZV'mx*Qb#CLRs6Sd1[5HYHk;:H2d{CZt|=iTU2EwD&=pD(:wGGm_$H$WNFG'g9aOTl4q^IQd",
   "KCA4q>Z>Lku@C8Iy")))
-Sys.setenv(R_TESTS = R_TESTS)
+if(nzchar(R_TESTS)) Sys.setenv(R_TESTS = R_TESTS)
+
 
 args <- commandArgs(T)
-if(length(args) == 0) {
+if(nzchar(R_TESTS) || ((length(args) > 0) && args[1] == "check")) { # do fewer tests within R CMD check so it completes within a reasonable amount of time
   mode <- "filestream"
+  reps <- 2
+  test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6)
+  test_points_slow <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16) # for Character Vector, stringfish and list
+  max_size <- 1e6
 } else {
-  mode <- args[1] # fd, memory, HANDLE
+  if(length(args) == 0) {
+    mode <- "filestream"
+    reps <- 3
+  } else {
+    mode <- args[1] # fd, memory, HANDLE
+    reps <- as.numeric(args[2])
+  }
+  test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
+  test_points_slow <- test_points
+  max_size <- 1e7
 }
-if(length(args) < 2) {
-  reps <- 5
-} else {
-  reps <- as.numeric(args[2])
-}
+myfile <- tempfile()
 
-obj_size <- 0; max_size <- 1e7
+obj_size <- 0
 get_obj_size <- function() {
   get("obj_size", envir=globalenv())
 }
 set_obj_size <- function(x) {
   assign("obj_size", get_obj_size() + as.numeric(object.size(x)), envir=globalenv())
-  # printCarriage(get_obj_size());
   return(get_obj_size());
 }
 random_object_generator <- function(N, with_envs = FALSE) { # additional input: global obj_size, max_size
@@ -76,7 +90,7 @@ random_object_generator <- function(N, with_envs = FALSE) { # additional input: 
 rand_strings <- function(n) {
   s <- sample(0:100, size=n, replace=T)
   x <- lapply(unique(s), function(si) {
-    qs::randomStrings(sum(s == si), si)
+    stringfish::random_strings(sum(s == si), si, vector_mode = "normal")
   }) %>% unlist %>% sample
   x[sample(n, size=n/10)] <- NA
   return(x)
@@ -95,15 +109,6 @@ nested_tibble <- function() {
   ) %>% setNames(make.unique(paste0(sample(letters, 5), rand_strings(5))))
 }
 
-test_points <- c(0, 1,2,4,8, 2^5-1, 2^5+1, 2^5,2^8-1, 2^8+1,2^8,2^16-1, 2^16+1, 2^16, 1e6, 1e7)
-extra_test_points <- c(2^32-1, 2^32+1, 2^32) # not enough memory on desktop
-
-if (Sys.info()[['sysname']] != "Windows") {
-  myfile <- "/tmp/ctest.z"
-} else {
-  myfile <- "N:/ctest.z"
-}
-
 printCarriage <- function(x) {
   cat(x, "\r")
 }
@@ -111,19 +116,6 @@ printCarriage <- function(x) {
 serialize_identical <- function(x1, x2) {
   identical(serialize(x1, NULL), serialize(x2, NULL))
 }
-################################################################################################
-# some one off tests
-
-# test 1: alt rep implementation
-# https://github.com/traversc/qs/issues/9
-
-x <- data.table(x = 1:26, y = letters)
-qsave(x, file=myfile)
-xu <- qread(myfile, use_alt_rep = T)
-data.table::setnames(xu, 1, "a")
-stopifnot(identical(c("a", "y"), colnames(xu)))
-data.table::setnames(xu, 2, "b")
-stopifnot(identical(c("a", "b"), colnames(xu)))
 
 ################################################################################################
 
@@ -187,7 +179,7 @@ qread_rand <- function(file) {
 ################################################################################################
 
 for(q in 1:reps) {
-  cat(q, "\n")
+  cat("Rep",  q, "of", reps, "\n")
   
   # String correctness
   time <- vector("numeric", length=3)
@@ -208,7 +200,7 @@ for(q in 1:reps) {
   
   # Character vectors
   time <- vector("numeric", length=3)
-  for(tp in test_points) {
+  for(tp in test_points_slow) {
     for(i in 1:3) {
       # qs_use_alt_rep(F)
       x1 <- rep(as.raw(sample(255)), length.out = tp*10) %>% rawToChar
@@ -226,29 +218,27 @@ for(q in 1:reps) {
   }
   cat("\n")
   
-  # stringfish character vectors
-  # more tests 
-  time <- vector("numeric", length=3)
-  for(tp in test_points) {
-    for(i in 1:3) {
-      # qs_use_alt_rep(F)
-      x1 <- rep(as.raw(sample(255)), length.out = tp*10) %>% rawToChar
-      cuts <- sample(tp*10, tp+1) %>% sort %>% as.numeric
-      x1 <- splitstr(x1, cuts)
-      x1 <- c(NA, "", x1)
-      if(utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
+  # stringfish character vectors -- require R > 3.5.0
+  if(utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
+    time <- vector("numeric", length=3)
+    for(tp in test_points_slow) {
+      for(i in 1:3) {
+        x1 <- rep(as.raw(sample(255)), length.out = tp*10) %>% rawToChar
+        cuts <- sample(tp*10, tp+1) %>% sort %>% as.numeric
+        x1 <- splitstr(x1, cuts)
+        x1 <- c(NA, "", x1)
         x1 <- stringfish::convert_to_sf(x1)
+        qsave_rand(x1, file=myfile)
+        time[i] <- Sys.time()
+        z <- qread_rand(file=myfile)
+        time[i] <- Sys.time() - time[i]
+        gc()
+        stopifnot(identical(z, x1))
       }
-      qsave_rand(x1, file=myfile)
-      time[i] <- Sys.time()
-      z <- qread_rand(file=myfile)
-      time[i] <- Sys.time() - time[i]
-      gc()
-      stopifnot(identical(z, x1))
+      printCarriage(sprintf("Stringfish: %s, %s s",tp, signif(mean(time),4)))
     }
-    printCarriage(sprintf("Stringfish: %s, %s s",tp, signif(mean(time),4)))
+    cat("\n")
   }
-  cat("\n")
   
   # Integers
   time <- vector("numeric", length=3)
@@ -303,7 +293,7 @@ for(q in 1:reps) {
   
   # List
   time <- vector("numeric", length=3)
-  for(tp in test_points) {
+  for(tp in test_points_slow) {
     for(i in 1:3) {
       x1 <- generateList(sample(1:4, replace=T, size=tp))
       time[i] <- Sys.time()
@@ -409,13 +399,13 @@ for(q in 1:reps) {
   }
   cat("\n")
 
-  # nested lists
+  # Random objects
   time <- vector("numeric", length=8)
   for(i in 1:8) {
     # qs_use_alt_rep(sample(c(T,F), size=1))
     obj_size <- 0
     x1 <- random_object_generator(12)
-    printCarriage(sprintf("Nested list/attributes: %s bytes", object.size(x1) %>% as.numeric))
+    printCarriage(sprintf("Random objects: %s bytes", object.size(x1) %>% as.numeric))
     time[i] <- Sys.time()
     qsave_rand(x1, file=myfile)
     z <- qread_rand(file=myfile)
@@ -423,7 +413,7 @@ for(q in 1:reps) {
     gc()
     stopifnot(identical(z, x1))
   }
-  printCarriage(sprintf("Nested list/attributes: %s s", signif(mean(time),4)))
+  printCarriage(sprintf("Random objects: %s s", signif(mean(time),4)))
   cat("\n")
   
   # nested attributes
@@ -447,7 +437,7 @@ for(q in 1:reps) {
   # alt-rep -- should serialize the unpacked object
   time <- vector("numeric", length=3)
   for(i in 1:3) {
-    x1 <- 1:1e7
+    x1 <- 1:max_size
     time[i] <- Sys.time()
     qsave_rand(x1, file=myfile)
     z <- qread_rand(file=myfile)
@@ -463,9 +453,9 @@ for(q in 1:reps) {
   time <- vector("numeric", length=3)
   for(i in 1:3) {
     x1 <- new.env()
-    x1[["a"]] <- 1:1e7
-    x1[["b"]] <- runif(1e7)
-    x1[["c"]] <- qs::randomStrings(1e4)
+    x1[["a"]] <- 1:max_size
+    x1[["b"]] <- runif(max_size)
+    x1[["c"]] <- stringfish::random_strings(1e4, vector_mode = "normal")
     time[i] <- Sys.time()
     qsave_rand(x1, file=myfile)
     z <- qread_rand(file=myfile)
@@ -492,9 +482,27 @@ for(q in 1:reps) {
   cat("\n")
 }
 
-cat("tests done")
-rm(list=ls())
-gc()
+################################################################################################
+# some one off tests
 
+# test 1: alt rep implementation
+# https://github.com/traversc/qs/issues/9
+
+# stringfish character vectors -- require R > 3.5.0
+if(utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
+  x <- data.table(x = 1:26, y = letters)
+  qsave(x, file=myfile)
+  xu <- qread(myfile, use_alt_rep = T)
+  data.table::setnames(xu, 1, "a")
+  stopifnot(identical(c("a", "y"), colnames(xu)))
+  data.table::setnames(xu, 2, "b")
+  stopifnot(identical(c("a", "b"), colnames(xu)))
+}
+
+cat("tests done\n")
+rm(list=setdiff(ls(), "total_time"))
+gc(full = TRUE)
+total_time <- Sys.time() - total_time
+print(total_time)
 
 
