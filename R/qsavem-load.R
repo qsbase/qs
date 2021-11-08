@@ -47,7 +47,7 @@ qsavem <- function (...) {
 #' @param ... additional arguments will be passed to qread.
 #' @return Nothing is explicitly returned, but the function will load the saved objects into the workspace.
 #' @details 
-#' This function extends qread to replicate the functionality of base::load to load multiple saved objects into your workspace. `qload` and `qreadm` are alias of the same function. 
+#' This function extends qread to replicate the functionality of base::load to load multiple saved objects into your workspace. `qload` and `qreadm` are alias of the same function.
 #' @examples 
 #' x1 <- data.frame(int = sample(1e3, replace=TRUE), 
 #'                  num = rnorm(1e3), 
