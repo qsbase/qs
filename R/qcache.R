@@ -44,51 +44,50 @@
 #' qcache(name="aplusb", clear=TRUE, prompt=FALSE, cache_dir = cache_dir)
 
 #' @export
-qcache <- function(expr, name, envir=parent.frame(), cache_dir=".cache", clear=FALSE, prompt=TRUE, qsave_params=list(), qread_params=list()) {
-  if(clear) {
-    if(missing(name)) {
-      files <- list.files(cache_dir, pattern = ".qs$", full.names=TRUE)
+qcache <- function(expr, name, envir = parent.frame(), cache_dir = ".cache", clear = FALSE, prompt = TRUE, qsave_params = list(), qread_params = list()) {
+  if (clear) {
+    if (missing(name)) {
+      files <- list.files(cache_dir, pattern = ".qs$", full.names = TRUE)
     } else {
       stopifnot(length(name) == 1)
       files <- paste0(cache_dir, "/", name, ".qs")
-      if(!file.exists(files)) {
+      if (!file.exists(files)) {
         stop("Cached file does not exist")
       }
     }
-    if(prompt) {
+    if (prompt) {
       rl <- readline("Clear cached file(s)? (yes/no) ")
-      if(rl == "yes") {
+      if (rl == "yes") {
         # nothing
-      } else if(rl == "no") {
+      } else if (rl == "no") {
         return(FALSE)
       } else {
         stop("Please enter yes or no")
       }
     }
     rem <- file.remove(files)
-    if(!(all(rem))) {
-      rem <- paste0(files[!rem], collapse=", ")
+    if (!(all(rem))) {
+      rem <- paste0(files[!rem], collapse = ", ")
       stop(paste0("The following files couldn't be removed: ", rem))
     }
     return(TRUE)
   } else {
     stopifnot(length(name) == 1)
     file <- paste0(cache_dir, "/", name, ".qs")
-    if(file.exists(file)) {
+    if (file.exists(file)) {
       print("cached")
       qread_params$file <- file
-      return(do.call(qread, args=qread_params,envir=envir))
+      return(do.call(qread, args = qread_params, envir = envir))
     } else {
       print("not cached")
-      if(!dir.exists(cache_dir)) {
-        dir.create(cache_dir, recursive=T)
+      if (!dir.exists(cache_dir)) {
+        dir.create(cache_dir, recursive = TRUE)
       }
-      x <- eval(expr, envir=envir)
+      x <- eval(expr, envir = envir)
       qsave_params$x <- x
       qsave_params$file <- file
       do.call(qsave, qsave_params)
       return(x)
     }
-
   }
 }
