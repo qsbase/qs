@@ -504,5 +504,3 @@ rm(list=setdiff(ls(), "total_time"))
 gc(full = TRUE)
 total_time <- Sys.time() - total_time
 print(total_time)
-
-

@@ -7,21 +7,21 @@
 qsavem(...)
 }
 \arguments{
-\item{...}{objects to serialize. Named arguments will be passed to qsave during saving. Un-named arguments will be saved. A named file argument is required.}
+\item{...}{Objects to serialize. Named arguments will be passed to \code{\link[=qsave]{qsave()}} during saving. Un-named arguments will be saved. A named \code{file} argument is required.}
 }
 \description{
 Saves (serializes) multiple objects to disk.
 }
 \details{
-This function extends qsave to replicate the functionality of base::save to save multiple objects. Read them back with qload.
+This function extends \code{\link[=qsave]{qsave()}} to replicate the functionality of \code{\link[base:save]{base::save()}} to save multiple objects. Read them back with \code{\link[=qload]{qload()}}.
 }
 \examples{
-x1 <- data.frame(int = sample(1e3, replace=TRUE), 
-                 num = rnorm(1e3), 
+x1 <- data.frame(int = sample(1e3, replace=TRUE),
+                 num = rnorm(1e3),
                  char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
                  stringsAsFactors = FALSE)
-x2 <- data.frame(int = sample(1e3, replace=TRUE), 
-                 num = rnorm(1e3), 
+x2 <- data.frame(int = sample(1e3, replace=TRUE),
+                 num = rnorm(1e3),
                  char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
                  stringsAsFactors = FALSE)
 myfile <- tempfile()
