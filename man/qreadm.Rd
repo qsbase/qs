@@ -5,14 +5,14 @@
 \alias{qload}
 \title{qload}
 \usage{
-qload(file, env = parent.frame(), ...)
-
 qreadm(file, env = parent.frame(), ...)
+
+qload(file, env = parent.frame(), ...)
 }
 \arguments{
-\item{file}{the file name/path.}
+\item{file}{The file name/path.}
 
-\item{env}{the environment where the data should be loaded.}
+\item{env}{The environment where the data should be loaded.}
 
 \item{...}{additional arguments will be passed to qread.}
 }
@@ -20,18 +20,18 @@ qreadm(file, env = parent.frame(), ...)
 Nothing is explicitly returned, but the function will load the saved objects into the workspace.
 }
 \description{
-Reads an object in a file serialized to disk using qsavem.
+Reads an object in a file serialized to disk using \code{\link[=qsavem]{qsavem()}}.
 }
 \details{
-This function extends qread to replicate the functionality of base::load to load multiple saved objects into your workspace. \code{qload} and \code{qreadm} are alias of the same function.
+This function extends qread to replicate the functionality of \code{\link[base:load]{base::load()}} to load multiple saved objects into your workspace. \code{qload} and \code{qreadm} are alias of the same function.
 }
 \examples{
-x1 <- data.frame(int = sample(1e3, replace=TRUE), 
-                 num = rnorm(1e3), 
+x1 <- data.frame(int = sample(1e3, replace=TRUE),
+                 num = rnorm(1e3),
                  char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
                  stringsAsFactors = FALSE)
-x2 <- data.frame(int = sample(1e3, replace=TRUE), 
-                 num = rnorm(1e3), 
+x2 <- data.frame(int = sample(1e3, replace=TRUE),
+                 num = rnorm(1e3),
                  char = sample(starnames$`IAU Name`, 1e3, replace=TRUE),
                  stringsAsFactors = FALSE)
 myfile <- tempfile()
