@@ -29,25 +29,29 @@ Inspired by the `fst` package, `qs` uses a similar block-compression design usin
 `qs` is both  extremely fast and general: it can serialize any R object like `saveRDS` and is just as fast and sometimes faster than `fst`.
 
 ## Usage
+
 ```{r eval=FALSE}
 library(qs)
-df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6, replace=T))
+df1 <- data.frame(x = rnorm(5e6), y = sample(5e6), z=sample(letters, 5e6, replace = T))
 qsave(df1, "myfile.qs")
 df2 <- qread("myfile.qs")
 ```
+
 ## Installation
+
 ```{r eval=FALSE}
 # CRAN version
 install.packages("qs")
 
 # CRAN version compile from source (recommended)
-remotes::install_cran("qs", type="source", configure.args="--with-simd=AVX2")
+remotes::install_cran("qs", type = "source", configure.args = "--with-simd=AVX2")
 
 # For earlier versions of R <= 3.4
 remotes::install_github("traversc/qs@legacy")
 ```
 
 ## Features
+
 The table below compares the features of different serialization approaches in R.
 
 |                    | qs         | fst           | saveRDS  |
@@ -80,10 +84,10 @@ These features have the possibility of additionally increasing performance by or
 The following benchmarks were performed comparing `qs`, `fst` and `saveRDS`/`readRDS` in base R for serializing and de-serializing a medium sized `data.frame` with 5 million rows (approximately 115 Mb in memory):
 
 ```{r eval=FALSE}
-data.frame(a=rnorm(5e6), 
-           b=rpois(5e6,100),
-           c=sample(starnames$IAU,5e6,T),
-           d=sample(state.name,5e6,T),
+data.frame(a = rnorm(5e6), 
+           b = rpois(5e6, 100),
+           c = sample(starnames$IAU, 5e6, T),
+           d = sample(state.name, 5e6, T),
            stringsAsFactors = F)
 ```
 
@@ -134,24 +138,26 @@ Byte shuffling rearranges the data such that all of the first bytes are blocked 
 ```{r eval=FALSE}
 # With byte shuffling
 x <- 1:1e8
-qsave(x, "mydat.qs", preset="custom", shuffle_control=15, algorithm="zstd")
+qsave(x, "mydat.qs", preset = "custom", shuffle_control = 15, algorithm = "zstd")
 cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.qs")$size, "\n" )
 # Compression Ratio:  1389.164
 
 # Without byte shuffling
 x <- 1:1e8
-qsave(x, "mydat.qs", preset="custom", shuffle_control=0, algorithm="zstd")
+qsave(x, "mydat.qs", preset = "custom", shuffle_control = 0, algorithm = "zstd")
 cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.qs")$size, "\n" )
 # Compression Ratio:  1.479294 
 ```
 
 ## Serializing to memory
+
 You can use `qs` to directly serialize objects to memory. 
 
 Example:
+
 ```{r eval=FALSE}
 library(qs)
-x <- qserialize(c(1,2,3))
+x <- qserialize(c(1, 2, 3))
 qdeserialize(x)
 [1] 1 2 3
 ```
@@ -171,14 +177,17 @@ Example:
 enc <- base91_encode(qserialize(datasets::mtcars, preset = "custom", compress_level = 22))
 dec <- qdeserialize(base91_decode(enc))
 ```
+
 (Note: base91 strings contain double quote characters (`"`) and need to be single quoted if stored as a string.)
 
 See the help files for additional details and history behind these algorithms. 
 
 ## Using qs within Rcpp
+
 `qs` functions can be called directly within C++ code via Rcpp. 
 
 Example C++ script:
+
 ```
 // [[Rcpp::depends(qs)]]
 #include <Rcpp.h>
@@ -192,6 +201,7 @@ void test() {
 ```
 
 R side:
+
 ```{r eval=FALSE}
 library(qs)
 library(Rcpp)
@@ -202,6 +212,7 @@ test()
 qread("/tmp/myfile.qs")
 [1] 1 2 3
 ```
+
 The C++ functions do not have default parameters; all parameters must be specified.
 
 ## Future developments
