@@ -43,7 +43,6 @@
 #'
 #' # clear cached result
 #' qcache(name="aplusb", clear=TRUE, prompt=FALSE, cache_dir = cache_dir)
-#' @export
 qcache <- function(expr, name, envir = parent.frame(), cache_dir = ".cache", clear = FALSE, prompt = TRUE, qsave_params = list(), qread_params = list()) {
   if (clear) {
     if (missing(name)) {
