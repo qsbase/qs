@@ -24,6 +24,26 @@ namespace qs {
         }
     }
 
+    inline std::string check_SIMD() {
+        typedef SEXP(*Ptr_check_SIMD)();
+        static Ptr_check_SIMD p_check_SIMD = NULL;
+        if (p_check_SIMD == NULL) {
+            validateSignature("std::string(*check_SIMD)()");
+            p_check_SIMD = (Ptr_check_SIMD)R_GetCCallable("qs", "_qs_check_SIMD");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_check_SIMD();
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<std::string >(rcpp_result_gen);
+    }
+
     inline int zstd_compress_bound(const int size) {
         typedef SEXP(*Ptr_zstd_compress_bound)(SEXP);
         static Ptr_zstd_compress_bound p_zstd_compress_bound = NULL;
