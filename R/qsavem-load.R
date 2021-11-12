@@ -33,7 +33,7 @@ qsavem <- function (...) {
   objects <- list(...)
   unnamed <- which(names(objects) == "")
   unnamed_list <- objects[unnamed]
-  names(unnamed_list) <- sapply(unnamed, function(i) parse(text=full_call[[i]]))
+  names(unnamed_list) <- sapply(unnamed, function(i) parse(text = full_call[[i]]))
   named_list <- objects[-unnamed]
   named_list$x <- unnamed_list
   do.call(qsave,named_list)
@@ -74,13 +74,13 @@ qsavem <- function (...) {
 #' qload(myfile, nthreads=2)
 #' exists('x1') && exists('x2') # returns true
 qreadm <- function(file, env = parent.frame(), ...) {
-  
+
   savelist <- qread(file, ...)
-  
-  if(!is.list(savelist) || is.null(names(savelist))) stop(paste0("Object read from ", file, " is not a named list."))
-  
+
+  if (!is.list(savelist) || is.null(names(savelist))) stop(paste0("Object read from ", file, " is not a named list."))
+
   invisible(list2env(savelist, env))
-  
+
 }
 
 
