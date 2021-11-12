@@ -7,16 +7,16 @@
 base85_encode(rawdata)
 }
 \arguments{
-\item{rawdata}{A raw vector}
+\item{rawdata}{A raw vector.}
 }
 \value{
 A string representation of the raw vector.
 }
 \description{
-Encodes binary data (a raw vector) as ascii text using Z85 encoding format
+Encodes binary data (a raw vector) as ASCII text using \href{https://rfc.zeromq.org/spec/32/}{Z85 encoding format}.
 }
 \details{
-Z85 is a binary to ascii encoding format created by Pieter Hintjens in 2010 and is part of the ZeroMQ RFC.
+Z85 is a binary to ASCII encoding format created by Pieter Hintjens in 2010 and is part of the ZeroMQ RFC.
 The encoding has a dictionary using 85 out of 94 printable ASCII characters.
 There are other base 85 encoding schemes, including Ascii85, which is popularized and used by Adobe.
 Z85 is distinguished by its choice of dictionary, which is suitable for easier inclusion into source code for many programming languages.

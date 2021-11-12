@@ -7,11 +7,11 @@
 decode_source(string)
 }
 \arguments{
-\item{string}{The string to decode}
+\item{string}{A string to decode.}
 }
 \value{
 The original (decoded) string.
 }
 \description{
-A helper function for encoding and compressing a file or string to ascii using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
+A helper function for encoding and compressing a file or string to ASCII using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
 }
