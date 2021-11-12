@@ -13,6 +13,38 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// check_SIMD
+std::string check_SIMD();
+static SEXP _qs_check_SIMD_try() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(check_SIMD());
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_check_SIMD() {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_check_SIMD_try());
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error(CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 // zstd_compress_bound
 int zstd_compress_bound(const int size);
 static SEXP _qs_zstd_compress_bound_try(SEXP sizeSEXP) {
@@ -1335,6 +1367,7 @@ RcppExport SEXP _qs_closeWinMapView(SEXP pointerSEXP) {
 static int _qs_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
+        signatures.insert("std::string(*check_SIMD)()");
         signatures.insert("int(*zstd_compress_bound)(const int)");
         signatures.insert("int(*lz4_compress_bound)(const int)");
         signatures.insert("std::vector<unsigned char>(*zstd_compress_raw)(SEXP const,const int)");
@@ -1379,6 +1412,7 @@ static int _qs_RcppExport_validate(const char* sig) {
 
 // registerCCallable (register entry points for exported C++ functions)
 RcppExport SEXP _qs_RcppExport_registerCCallable() { 
+    R_RegisterCCallable("qs", "_qs_check_SIMD", (DL_FUNC)_qs_check_SIMD_try);
     R_RegisterCCallable("qs", "_qs_zstd_compress_bound", (DL_FUNC)_qs_zstd_compress_bound_try);
     R_RegisterCCallable("qs", "_qs_lz4_compress_bound", (DL_FUNC)_qs_lz4_compress_bound_try);
     R_RegisterCCallable("qs", "_qs_zstd_compress_raw", (DL_FUNC)_qs_zstd_compress_raw_try);
@@ -1422,6 +1456,7 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_qs_check_SIMD", (DL_FUNC) &_qs_check_SIMD, 0},
     {"_qs_zstd_compress_bound", (DL_FUNC) &_qs_zstd_compress_bound, 1},
     {"_qs_lz4_compress_bound", (DL_FUNC) &_qs_lz4_compress_bound, 1},
     {"_qs_zstd_compress_raw", (DL_FUNC) &_qs_zstd_compress_raw, 2},
