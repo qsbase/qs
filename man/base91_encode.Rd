@@ -4,10 +4,10 @@
 \alias{base91_encode}
 \title{basE91 Encoding}
 \usage{
-base91_encode(rawdata, quote_character = "\"")
+base91_encode(rawdata, quote_character = "\\"")
 }
 \arguments{
-\item{rawdata}{A raw vector}
+\item{rawdata}{A raw vector.}
 
 \item{quote_character}{The character to use in the encoding, replacing the double quote character. Must be either a single quote (\code{"'"}), a double quote
 (\verb{"\\""}) or a dash (\code{"-"}).}
@@ -16,10 +16,10 @@ base91_encode(rawdata, quote_character = "\"")
 A string representation of the raw vector.
 }
 \description{
-Encodes binary data (a raw vector) as ascii text using basE91 encoding format
+Encodes binary data (a raw vector) as ASCII text using \href{http://base91.sourceforge.net/}{basE91 encoding format}.
 }
 \details{
-basE91 (capital E for stylization) is a binary to ascii encoding format created by Joachim Henke in 2005.
+basE91 (capital E for stylization) is a binary to ASCII encoding format created by Joachim Henke in 2005.
 The overhead (extra bytes used relative to binary) is 22.97\% on average. In comparison, base 64 encoding has an overhead of 33.33\%.
 The original encoding uses a dictionary of 91 out of 94 printable ASCII characters excluding \code{-} (dash), \verb{\\} (backslash) and \verb{'} (single quote).
 The original encoding does include double quote characters, which are less than ideal for strings in R. Therefore,

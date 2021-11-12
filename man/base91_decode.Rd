@@ -7,7 +7,7 @@
 base91_decode(encoded_string)
 }
 \arguments{
-\item{encoded_string}{A string}
+\item{encoded_string}{A string.}
 }
 \value{
 The original raw vector.

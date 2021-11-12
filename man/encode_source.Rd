@@ -14,8 +14,8 @@ encode_source(file = NULL, string = NULL, width = 120)
 \item{width}{The output will be broken up into individual strings, with \code{width} being the longest allowable string.}
 }
 \value{
-A CharacterVector in base91 representing the compressed original file or string.
+A character vector in base91 representing the compressed original file or string.
 }
 \description{
-A helper function for encoding and compressing a file or string to ascii using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
+A helper function for encoding and compressing a file or string to ASCII using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
 }

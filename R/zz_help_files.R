@@ -53,15 +53,7 @@ shared_params_read <- c(
 #'
 #' Saves (serializes) an object to disk.
 #'
-#' @usage qsave(x, file,
-#' preset = "high", algorithm = "zstd", compress_level = 4L,
-#' shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
-#'
-#' @eval shared_params_save(incl_file = TRUE)
-#' @param nthreads Number of threads to use. Default `1`.
-#'
-#' @return The total number of bytes written to the file (returned invisibly).
-#' @details This function serializes and compresses R objects using block compression with the option of byte shuffling.
+#' This function serializes and compresses R objects using block compression with the option of byte shuffling.
 #'
 #' # Presets
 #'
@@ -83,6 +75,17 @@ shared_params_read <- c(
 #' several orders of magnitude. The more random an object is (e.g., `rnorm(1e7)`), the less potential benefit there is, even negative benefit is possible.
 #' Integer vectors almost always benefit from byte shuffling, whereas the results for numeric vectors are mixed. To control block shuffling, add +1 to the
 #' parameter for logical vectors, +2 for integer vectors, +4 for numeric vectors and/or +8 for complex vectors.
+#'
+#' @usage qsave(x, file,
+#' preset = "high", algorithm = "zstd", compress_level = 4L,
+#' shuffle_control = 15L, check_hash=TRUE, nthreads = 1)
+#'
+#' @eval shared_params_save(incl_file = TRUE)
+#' @param nthreads Number of threads to use. Default `1`.
+#'
+#' @return The total number of bytes written to the file (returned invisibly).
+#' @export
+#' @name qsave
 #'
 #' @examples
 #' x <- data.frame(int = sample(1e3, replace=TRUE),
@@ -111,8 +114,6 @@ shared_params_read <- c(
 #' qsave(w, myfile)
 #' w2 <- qread(myfile)
 #' identical(w, w2) # returns true
-#' @export
-#' @name qsave
 NULL
 
 #' qread
@@ -126,6 +127,9 @@ NULL
 #' @param nthreads Number of threads to use. Default `1`.
 #'
 #' @return The de-serialized object.
+#' @export
+#' @name qread
+#'
 #' @examples
 #' x <- data.frame(int = sample(1e3, replace=TRUE),
 #'         num = rnorm(1e3),
@@ -153,8 +157,6 @@ NULL
 #' qsave(w, myfile)
 #' w2 <- qread(myfile)
 #' identical(w, w2) # returns true
-#' @export
-#' @name qread
 NULL
 
 #' qsave_fd
@@ -178,14 +180,14 @@ NULL
 #'
 #' Reads an object from a file descriptor.
 #'
+#' See [qsave_fd()] for additional details and examples.
+#'
 #' @usage qread_fd(fd, use_alt_rep=FALSE, strict=FALSE)
 #'
 #' @param fd A file descriptor.
 #' @eval shared_params_read
 #'
 #' @inherit qread return
-#' @details
-#' See [qsave_fd()] for additional details and examples.
 #' @export
 #' @name qread_fd
 NULL
@@ -211,14 +213,14 @@ NULL
 #'
 #' Reads an object from a windows handle.
 #'
+#' See [qsave_handle()] for additional details and examples.
+#'
 #' @usage qread_handle(handle, use_alt_rep=FALSE, strict=FALSE)
 #'
 #' @param handle A windows handle external pointer.
 #' @eval shared_params_read
 #'
 #' @inherit qread return
-#' @details
-#' See [qsave_handle()] for additional details and examples.
 #' @export
 #' @name qread_handle
 NULL
@@ -245,14 +247,14 @@ NULL
 #'
 #' Reads an object from a raw vector.
 #'
+#' See [qserialize()] for additional details and examples.
+#'
 #' @usage qdeserialize(x, use_alt_rep=FALSE, strict=FALSE)
 #'
 #' @param x A raw vector.
 #' @eval shared_params_read
 #'
 #' @inherit qread return
-#' @details
-#' See [qserialize()] for additional details and examples.
 #' @export
 #' @name qdeserialize
 NULL
@@ -281,6 +283,9 @@ NULL
 #' @param file A file name/path.
 #'
 #' @return The uncompressed serialization.
+#' @export
+#' @name qdump
+#'
 #' @examples
 #' x <- data.frame(int = sample(1e3, replace=TRUE),
 #'         num = rnorm(1e3),
@@ -289,8 +294,6 @@ NULL
 #' myfile <- tempfile()
 #' qsave(x, myfile)
 #' x2 <- qdump(myfile)
-#' @export
-#' @name qdump
 NULL
 
 #' Zstd compress bound
@@ -302,10 +305,12 @@ NULL
 #' @param size An integer size
 #'
 #' @return maximum compressed size
+#' @export
+#' @name zstd_compress_bound
+#'
 #' @examples
 #' zstd_compress_bound(100000)
 #' zstd_compress_bound(1e9)
-#' @name zstd_compress_bound
 NULL
 
 #' Zstd compression
@@ -319,12 +324,14 @@ NULL
 #'   very little benefit to compression levels > 5 or so.
 #'
 #' @return The compressed data as a raw vector.
+#' @export
+#' @name zstd_compress_raw
+#'
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
 #' xcompressed <- zstd_compress_raw(xserialized, compress_level = 1)
 #' xrecovered <- unserialize(zstd_decompress_raw(xcompressed))
-#' @name zstd_compress_raw
 NULL
 
 #' Zstd decompression
@@ -336,12 +343,14 @@ NULL
 #' @param x A raw vector.
 #'
 #' @inherit qread return
+#' @export
+#' @name zstd_decompress_raw
+#'
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
 #' xcompressed <- zstd_compress_raw(xserialized, compress_level = 1)
 #' xrecovered <- unserialize(zstd_decompress_raw(xcompressed))
-#' @name zstd_decompress_raw
 NULL
 
 #' lz4 compress bound
@@ -353,10 +362,12 @@ NULL
 #' @param size An integer size.
 #'
 #' @return Maximum compressed size.
+#' @export
+#' @name lz4_compress_bound
+#'
 #' @examples
 #' lz4_compress_bound(100000)
 #' #' lz4_compress_bound(1e9)
-#' @name lz4_compress_bound
 NULL
 
 #' lz4 compression
@@ -369,12 +380,14 @@ NULL
 #' @param compress_level The compression level used. A number > 1 (higher is less compressed).
 #'
 #' @inherit zstd_compress_raw return
+#' @export
+#' @name lz4_compress_raw
+#'
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
 #' xcompressed <- lz4_compress_raw(xserialized, compress_level = 1)
 #' xrecovered <- unserialize(lz4_decompress_raw(xcompressed))
-#' @name lz4_compress_raw
 NULL
 
 #' lz4 decompression
@@ -386,12 +399,14 @@ NULL
 #' @param x A raw vector.
 #'
 #' @inherit qread return
+#' @export
+#' @name lz4_decompress_raw
+#'
 #' @examples
 #' x <- 1:1e6
 #' xserialized <- serialize(x, connection=NULL)
 #' xcompressed <- lz4_compress_raw(xserialized, compress_level = 1)
 #' xrecovered <- unserialize(lz4_decompress_raw(xcompressed))
-#' @name lz4_decompress_raw
 NULL
 
 #' System Endianness
@@ -402,9 +417,11 @@ NULL
 #' @usage is_big_endian()
 #'
 #' @return `TRUE` if big endian, `FALSE` if little endian.
+#' @export
+#' @name is_big_endian
+#'
 #' @examples
 #' is_big_endian() # returns FALSE on Intel/AMD systems
-#' @name is_big_endian
 NULL
 
 #' Shuffle a raw vector
@@ -417,11 +434,13 @@ NULL
 #' @param bytesofsize Either `4` or `8`.
 #'
 #' @return The shuffled vector
+#' @export
+#' @name blosc_shuffle_raw
+#'
 #' @examples
 #' x <- serialize(1L:1000L, NULL)
 #' xshuf <- blosc_shuffle_raw(x, 4)
 #' xunshuf <- blosc_unshuffle_raw(xshuf, 4)
-#' @name blosc_shuffle_raw
 NULL
 
 #' Un-shuffle a raw vector
@@ -434,11 +453,13 @@ NULL
 #' @param bytesofsize Either `4` or `8`.
 #'
 #' @return The unshuffled vector.
+#' @export
+#' @name blosc_unshuffle_raw
+#'
 #' @examples
 #' x <- serialize(1L:1000L, NULL)
 #' xshuf <- blosc_shuffle_raw(x, 4)
 #' xunshuf <- blosc_unshuffle_raw(xshuf, 4)
-#' @name blosc_unshuffle_raw
 NULL
 
 #' Official list of IAU Star Names
@@ -463,4 +484,3 @@ NULL
 #' @examples
 #' data(starnames)
 "starnames"
-
