@@ -13,7 +13,7 @@ check-rhub: $(BUILD)
 
 check-solaris: $(BUILD)
 	Rscript -e 'rhub::check("$(BUILD)", platform = c("solaris-x86-patched"))'
-	
+
 check-m1: $(BUILD)
 	Rscript -e 'rhub::check("$(BUILD)", platform = c("macos-m1-bigsur-release"))'
 

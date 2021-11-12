@@ -1,19 +1,19 @@
 /* qs - Quick Serialization of R Objects
   Copyright (C) 2019-present Travers Ching
-  
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
+
  You can contact the author at:
  https://github.com/traversc/qs
 */
@@ -25,6 +25,17 @@
 #include "ascii_encoding/base91.h"
 
 // [[Rcpp::interfaces(r, cpp)]]
+
+// [[Rcpp::export(rng = false)]]
+std::string check_SIMD() {
+#if defined (__AVX2__)
+  return "AVX2";
+#elif defined (__SSE2__)
+  return "SSE2";
+#else
+  return "no SIMD";
+#endif
+}
 
 // [[Rcpp::export(rng = false)]]
 int zstd_compress_bound(const int size) {
@@ -78,7 +89,7 @@ std::vector<unsigned char> lz4_decompress_raw(SEXP const x) {
   int zsize = Rf_xlength(x);
   char* xdata = reinterpret_cast<char*>(RAW(x));
   std::vector<unsigned char> ret(zsize*3/2);
-  
+
   // char* retdata = reinterpret_cast<char*>(ret.data());
   // int decomp = LZ4_decompress_safe(xdata, retdata, zsize, ret.size());
   int decomp = -1;
@@ -98,13 +109,6 @@ std::vector<unsigned char> lz4_decompress_raw(SEXP const x) {
 
 // [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> blosc_shuffle_raw(SEXP const x, int bytesofsize) {
-#if defined (__AVX2__)
-  Rcpp::Rcerr << "AVX2" << std::endl;
-#elif defined (__SSE2__)
-  Rcpp::Rcerr << "SSE2" << std::endl;
-#else
-  Rcpp::Rcerr << "no SIMD" << std::endl;
-#endif
   if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
   uint64_t blocksize = Rf_xlength(x);
   uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
@@ -118,13 +122,6 @@ std::vector<unsigned char> blosc_shuffle_raw(SEXP const x, int bytesofsize) {
 
 // [[Rcpp::export(rng = false)]]
 std::vector<unsigned char> blosc_unshuffle_raw(SEXP const x, int bytesofsize) {
-#if defined (__AVX2__)
-  Rcpp::Rcerr << "AVX2" << std::endl;
-#elif defined (__SSE2__)
-  Rcpp::Rcerr << "SSE2" << std::endl;
-#else
-  Rcpp::Rcerr << "no SIMD" << std::endl;
-#endif
   if(bytesofsize != 4 && bytesofsize != 8) throw std::runtime_error("bytesofsize must be 4 or 8");
   uint64_t blocksize = Rf_xlength(x);
   uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
@@ -154,7 +151,7 @@ std::string base85_encode(const RawVector & rawdata) {
   size_t encoded_size = encoded_size_partial + (size % 4 != 0 ? size % 4 + 1 : 0);
   std::string encoded_string(encoded_size,'\0');
   uint8_t * encoded = reinterpret_cast<uint8_t*>(const_cast<char*>(encoded_string.c_str()));
-  
+
   size_t dbyte = 0;
   size_t ebyte = 0;
   while(dbyte < size_partial) {
@@ -167,7 +164,7 @@ std::string base85_encode(const RawVector & rawdata) {
     dbyte += 4;
     ebyte += 5;
   }
-  
+
   size_t leftover_bytes = size - size_partial;
   if(leftover_bytes == 1) {
     uint32_t value = data[dbyte];
@@ -199,7 +196,7 @@ RawVector base85_decode(const std::string & encoded_string) {
   size_t decoded_size = decoded_size_partial + (size % 5 != 0 ? size % 5 - 1 : 0);
   RawVector decoded_vector(decoded_size);
   uint8_t * decoded = reinterpret_cast<uint8_t*>(RAW(decoded_vector));
-  
+
   size_t dbyte = 0;
   size_t ebyte = 0;
   while(ebyte < size_partial) {
@@ -211,7 +208,7 @@ RawVector base85_decode(const std::string & encoded_string) {
     uint64_t value_of = 52200625ULL*base85_decoder_ring[data[ebyte]-32] + 614125ULL*base85_decoder_ring[data[ebyte+1]-32];
     value_of         += 7225ULL*base85_decoder_ring[data[ebyte+2]-32] + 85ULL*base85_decoder_ring[data[ebyte+3]-32];
     value_of         += base85_decoder_ring[data[ebyte+4]-32];
-    
+
     // is there a better way to detect overflow?
     if(value_of > 4294967296ULL) throw std::runtime_error("base85_decode: corrupted input data, decoded block overflow");
     uint32_t value = static_cast<uint32_t>(value_of);
@@ -222,7 +219,7 @@ RawVector base85_decode(const std::string & encoded_string) {
     ebyte += 5;
     dbyte += 4;
   }
-  
+
   if(leftover_bytes == 2) {
     base85_check_byte(data[ebyte]);
     base85_check_byte(data[ebyte+1]);
