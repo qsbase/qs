@@ -33,7 +33,7 @@ like `saveRDS` and is just as fast and sometimes faster than `fst`.
 
 ``` r
 library(qs)
-df1 <- data.frame(x=rnorm(5e6), y=sample(5e6), z=sample(letters,5e6, replace=T))
+df1 <- data.frame(x = rnorm(5e6), y = sample(5e6), z=sample(letters, 5e6, replace = T))
 qsave(df1, "myfile.qs")
 df2 <- qread("myfile.qs")
 ```
@@ -45,7 +45,7 @@ df2 <- qread("myfile.qs")
 install.packages("qs")
 
 # CRAN version compile from source (recommended)
-remotes::install_cran("qs", type="source", configure.args="--with-simd=AVX2")
+remotes::install_cran("qs", type = "source", configure.args = "--with-simd=AVX2")
 
 # For earlier versions of R <= 3.4
 remotes::install_github("traversc/qs@legacy")
@@ -95,10 +95,10 @@ medium sized `data.frame` with 5 million rows (approximately 115 Mb in
 memory):
 
 ``` r
-data.frame(a=rnorm(5e6), 
-           b=rpois(5e6,100),
-           c=sample(starnames$IAU,5e6,T),
-           d=sample(state.name,5e6,T),
+data.frame(a = rnorm(5e6), 
+           b = rpois(5e6, 100),
+           c = sample(starnames$IAU, 5e6, T),
+           d = sample(state.name, 5e6, T),
            stringsAsFactors = F)
 ```
 
@@ -160,7 +160,7 @@ In `qs`, `ALTREP` character vectors are implemented via the
 [`stringfish`](https://github.com/traversc/stringfish) package and can
 be used by setting `use_alt_rep=TRUE` in the `qread` function. The
 benchmark below shows the time it takes to `qread` several million
-random strings (nchar = 80) with and without `ALTREP`.
+random strings (`nchar = 80`) with and without `ALTREP`.
 
 ![](vignettes/altrep_bench.png "altrep_bench")
 
@@ -170,32 +170,32 @@ system, but there are caveats. Downstream processing functions must be
 [`stringfish`](https://github.com/traversc/stringfish) package for more
 details.
 
-## Byte Shuffle
+## Byte shuffle
 
 Byte shuffling (adopted from the Blosc meta-compression library) is a
-way of re-organizing data to be more ammenable to compression. An
-integer contains four bytes and the limits of an integer in R are +/-
-2^31-1. However, most real data doesn’t use anywhere near the range of
-possible integer values. For example, if the data were representing
-percentages, 0% to 100%, the first three bytes would be unused and zero.
+way of re-organizing data to be more amenable to compression. An integer
+contains four bytes and the limits of an integer in R are +/- 2^31-1.
+However, most real data doesn’t use anywhere near the range of possible
+integer values. For example, if the data were representing percentages,
+0% to 100%, the first three bytes would be unused and zero.
 
 Byte shuffling rearranges the data such that all of the first bytes are
-blocked together, the second bytes are blocked together, and so on This
-procedure often makes it very easy for compression algorithms to find
-repeated patterns and can often improves compression ratio by orders of
-magnitude. In the example below, shuffle compression achieves a
-compression ratio of over 1000x. See `?qsave` for more details.
+blocked together, all of the second bytes are blocked together, and so
+on. This procedure often makes it very easy for compression algorithms
+to find repeated patterns and can often improve compression ratio by
+orders of magnitude. In the example below, shuffle compression achieves
+a compression ratio of over 1:1000. See `?qsave` for more details.
 
 ``` r
 # With byte shuffling
 x <- 1:1e8
-qsave(x, "mydat.qs", preset="custom", shuffle_control=15, algorithm="zstd")
+qsave(x, "mydat.qs", preset = "custom", shuffle_control = 15, algorithm = "zstd")
 cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.qs")$size, "\n" )
 # Compression Ratio:  1389.164
 
 # Without byte shuffling
 x <- 1:1e8
-qsave(x, "mydat.qs", preset="custom", shuffle_control=0, algorithm="zstd")
+qsave(x, "mydat.qs", preset = "custom", shuffle_control = 0, algorithm = "zstd")
 cat( "Compression Ratio: ", as.numeric(object.size(x)) / file.info("mydat.qs")$size, "\n" )
 # Compression Ratio:  1.479294 
 ```
@@ -208,7 +208,7 @@ Example:
 
 ``` r
 library(qs)
-x <- qserialize(c(1,2,3))
+x <- qserialize(c(1, 2, 3))
 qdeserialize(x)
 [1] 1 2 3
 ```
@@ -261,7 +261,7 @@ library(Rcpp)
 sourceCpp("test.cpp")
 # save file using Rcpp interface
 test()
-# read in file create through Rcpp interface
+# read in file created through Rcpp interface
 qread("/tmp/myfile.qs")
 [1] 1 2 3
 ```
