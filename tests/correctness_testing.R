@@ -507,7 +507,7 @@ if (utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
 }
 
 cat("tests done\n")
-rm(list = setdiff(ls(), "total_time", "do_gc"))
+rm(list = setdiff(ls(), c("total_time", "do_gc")))
 do_gc()
 total_time <- Sys.time() - total_time
 print(total_time)
