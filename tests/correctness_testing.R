@@ -7,6 +7,14 @@ suppressMessages(library(qs))
 suppressMessages(library(stringfish))
 options(warn = 1)
 
+do_gc <- function() {
+  if (utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
+    gc(full = TRUE)
+  } else {
+    gc()
+  }
+}
+
 # because sourceCpp uses setwd, we need absolute path to R_TESTS when run within R CMD check
 R_TESTS <- Sys.getenv("R_TESTS") # startup.Rs
 if (nzchar(R_TESTS)) {
@@ -21,7 +29,6 @@ c("un]'BAAA@QRtHACAAAAAAA+>nAAAv7#aT)JXC:JAR%*QaAh72AB'B'vw5pac6M<xR5V+cWn+KxIBy
   "TYww=2?PA~!09BKVaX]Kr1Xt[O&{gzkTc9KbV=<uAA+ivS![q)L4F#n5'*XTy2YPl?+(1Szz:4klMBs?9Bk9!wKDZV'mx*Qb#CLRs6Sd1[5HYHk;:H2d{CZt|=iTU2EwD&=pD(:wGGm_$H$WNFG'g9aOTl4q^IQd",
   "KCA4q>Z>Lku@C8Iy")))
 if (nzchar(R_TESTS)) Sys.setenv(R_TESTS = R_TESTS)
-
 
 args <- commandArgs(T)
 if (nzchar(R_TESTS) || ((length(args) > 0) && args[1] == "check")) { # do fewer tests within R CMD check so it completes within a reasonable amount of time
@@ -191,7 +198,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("strings: %s, %s s",tp, signif(mean(time), 4)))
@@ -211,7 +218,7 @@ for (q in 1:reps) {
       time[i] <- Sys.time()
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time), 4)))
@@ -232,7 +239,7 @@ for (q in 1:reps) {
         time[i] <- Sys.time()
         z <- qread_rand(file = myfile)
         time[i] <- Sys.time() - time[i]
-        gc()
+        do_gc()
         stopifnot(identical(z, x1))
       }
       printCarriage(sprintf("Stringfish: %s, %s s",tp, signif(mean(time), 4)))
@@ -250,7 +257,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Integers: %s, %s s",tp, signif(mean(time), 4)))
@@ -267,7 +274,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Numeric: %s, %s s",tp, signif(mean(time), 4)))
@@ -284,7 +291,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Logical: %s, %s s",tp, signif(mean(time),4)))
@@ -300,7 +307,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("List: %s, %s s",tp, signif(mean(time),4)))
@@ -312,7 +319,7 @@ for (q in 1:reps) {
     x1 <- data.frame(str = x1,num = runif(1:1000), stringsAsFactors = F)
     qsave_rand(x1, file = myfile)
     z <- qread_rand(file = myfile)
-    gc()
+    do_gc()
     stopifnot(identical(z, x1))
   }
   cat("Data.frame test")
@@ -323,7 +330,7 @@ for (q in 1:reps) {
     x1 <- data.table(str = x1,num = runif(1:1e6))
     qsave_rand(x1, file = myfile)
     z <- qread_rand(file = myfile)
-    gc()
+    do_gc()
     stopifnot(all(z == x1))
   }
   cat("Data.table test")
@@ -335,7 +342,7 @@ for (q in 1:reps) {
     x1 <- tibble(str = x1,num = runif(1:1e6))
     qsave_rand(x1, file = myfile)
     z <- qread_rand(file = myfile)
-    gc()
+    do_gc()
     stopifnot(identical(z, x1))
   }
   cat("Tibble test")
@@ -354,7 +361,7 @@ for (q in 1:reps) {
       x1 <- c(x1, x2, x3, x4)
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage("Encoding test")
@@ -376,7 +383,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Complex: %s, %s s",tp, signif(mean(time), 4)))
@@ -392,7 +399,7 @@ for (q in 1:reps) {
       qsave_rand(x1, file = myfile)
       z <- qread_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
-      gc()
+      do_gc()
       stopifnot(identical(z, x1))
     }
     printCarriage(sprintf("Factors: %s, %s s",tp, signif(mean(time), 4)))
@@ -410,7 +417,7 @@ for (q in 1:reps) {
     qsave_rand(x1, file = myfile)
     z <- qread_rand(file = myfile)
     time[i] <- Sys.time() - time[i]
-    gc()
+    do_gc()
     stopifnot(identical(z, x1))
   }
   printCarriage(sprintf("Random objects: %s s", signif(mean(time), 4)))
@@ -428,7 +435,7 @@ for (q in 1:reps) {
     qsave_rand(x1, file = myfile)
     z <- qread_rand(file = myfile)
     time[i] <- Sys.time() - time[i]
-    gc()
+    do_gc()
     stopifnot(identical(z, x1))
   }
   printCarriage(sprintf("Nested attributes: %s s", signif(mean(time), 4)))
@@ -442,7 +449,7 @@ for (q in 1:reps) {
     qsave_rand(x1, file = myfile)
     z <- qread_rand(file = myfile)
     time[i] <- Sys.time() - time[i]
-    gc()
+    do_gc()
     stopifnot(identical(z, x1))
   }
   printCarriage(sprintf("Alt rep integer: %s s", signif(mean(time), 4)))
@@ -463,7 +470,7 @@ for (q in 1:reps) {
     stopifnot(identical(z[["b"]], x1[["b"]]))
     stopifnot(identical(z[["c"]], x1[["c"]]))
     time[i] <- Sys.time() - time[i]
-    gc()
+    do_gc()
   }
   printCarriage(sprintf("Environment test: %s s", signif(mean(time), 4)))
   cat("\n")
@@ -476,7 +483,7 @@ for (q in 1:reps) {
     z <- qread_rand(file = myfile)
     stopifnot(identical(z, x1))
     time[i] <- Sys.time() - time[i]
-    gc()
+    do_gc()
   }
   printCarriage(sprintf("nested tibble test: %s s", signif(mean(time), 4)))
   cat("\n")
@@ -501,6 +508,6 @@ if (utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
 
 cat("tests done\n")
 rm(list = setdiff(ls(), "total_time"))
-gc(full = TRUE)
+do_gc()
 total_time <- Sys.time() - total_time
 print(total_time)
