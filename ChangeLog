@@ -1,5 +1,5 @@
 Version 0.25.2 (2021-11-6)
-   * Update documentation and fix typos (thanks to @salim-b) 
+   * Update documentation and fix typos (thanks to @salim-b)
    * Update autoconf to version 2.6.9 (autoupdate; autoreconf --warnings=obsolete)
    * Include tests/ folder in build/check process
    * Add `encode_source` and `decode_source` -- helper functions for inlining files and documents

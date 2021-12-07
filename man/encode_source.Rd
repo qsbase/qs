@@ -4,18 +4,29 @@
 \alias{encode_source}
 \title{Encode and compress a file or string}
 \usage{
-encode_source(file = NULL, string = NULL, width = 120)
+encode_source(x = NULL, file = NULL, width = 120)
 }
 \arguments{
-\item{file}{The file to encode (if \code{string} is not NULL)}
+\item{x}{The object to encode (if \code{file} is not NULL)}
 
-\item{string}{The string to encode (if \code{file} is not NULL)}
+\item{file}{The file to encode (if \code{x} is not NULL)}
 
 \item{width}{The output will be broken up into individual strings, with \code{width} being the longest allowable string.}
 }
 \value{
-A character vector in base91 representing the compressed original file or string.
+A character vector in base91 representing the compressed original file or object.
 }
 \description{
 A helper function for encoding and compressing a file or string to ASCII using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
+}
+\details{
+The \code{\link[=encode_source]{encode_source()}} and \code{\link[=decode_source]{decode_source()}} functions are useful for storing small amounts of data or text inline to a .R or .Rmd file.
+}
+\examples{
+set.seed(1); data <- sample(500)
+result <- encode_source(data)
+# Note: the result string is not guaranteed to be consistent between qs or zstd versions
+#       but will always properly decode regardless
+print(result)
+result <- decode_source(result) # [1]  1  2  3  4  5  6  7  8  9 10
 }

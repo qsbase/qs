@@ -9,10 +9,10 @@ check: $(BUILD)
 	R CMD check --as-cran $<
 
 check-rhub: $(BUILD)
-	Rscript -e 'rhub::check("$(BUILD)", platform = c("ubuntu-gcc-devel", "windows-x86_64-devel", "solaris-x86-patched", "macos-m1-bigsur-release"))'
+	Rscript -e 'rhub::check("$(BUILD)", platform = c("ubuntu-gcc-devel", "windows-x86_64-devel", "solaris-x86-patched", "solaris-x86-patched-ods", "macos-m1-bigsur-release"))'
 
 check-solaris: $(BUILD)
-	Rscript -e 'rhub::check("$(BUILD)", platform = c("solaris-x86-patched"))'
+	Rscript -e 'rhub::check("$(BUILD)", platform = c("solaris-x86-patched", "solaris-x86-patched-ods"))'
 
 check-m1: $(BUILD)
 	Rscript -e 'rhub::check("$(BUILD)", platform = c("macos-m1-bigsur-release"))'

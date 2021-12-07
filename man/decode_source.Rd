@@ -10,8 +10,11 @@ decode_source(string)
 \item{string}{A string to decode.}
 }
 \value{
-The original (decoded) string.
+The original (decoded) object.
 }
 \description{
 A helper function for encoding and compressing a file or string to ASCII using \code{\link[=base91_encode]{base91_encode()}} and \code{\link[=qserialize]{qserialize()}} with the highest compression level.
+}
+\seealso{
+\code{\link[=encode_source]{encode_source()}} for more details.
 }

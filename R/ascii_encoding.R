@@ -82,21 +82,31 @@ base91_decode <- function(encoded_string) {
 #' Encode and compress a file or string
 #'
 #' A helper function for encoding and compressing a file or string to ASCII using [base91_encode()] and [qserialize()] with the highest compression level.
+#' 
+#' The [encode_source()] and [decode_source()] functions are useful for storing small amounts of data or text inline to a .R or .Rmd file.  
 #'
-#' @param file The file to encode (if `string` is not NULL)
-#' @param string The string to encode (if `file` is not NULL)
+#' @param x The object to encode (if `file` is not NULL)
+#' @param file The file to encode (if `x` is not NULL)
 #' @param width The output will be broken up into individual strings, with `width` being the longest allowable string.
 #'
-#' @return A character vector in base91 representing the compressed original file or string.
+#' @return A character vector in base91 representing the compressed original file or object.
 #' @export
-encode_source <- function(file = NULL, string = NULL, width = 120) {
+#' 
+#' @examples
+#' set.seed(1); data <- sample(500)
+#' result <- encode_source(data)
+#' # Note: the result string is not guaranteed to be consistent between qs or zstd versions
+#' #       but will always properly decode regardless
+#' print(result)
+#' result <- decode_source(result) # [1]  1  2  3  4  5  6  7  8  9 10
+encode_source <- function(x = NULL, file = NULL, width = 120) {
   if (!is.null(file)) {
     n <- file.info(file)$size
     x <- readChar(con = file, nchars = n, useBytes = TRUE)
-  } else if (!is.null(string)) {
-    x <- string
+  } else if (!is.null(x)) {
+    # nothing
   } else {
-    stop("either file or string must not be NULL.")
+    stop("either file or x must not be NULL.")
   }
   x <- qserialize(x, preset = "custom", algorithm = "zstd", compress_level = 22)
   x <- base91_encode(x, "'")
@@ -113,7 +123,8 @@ encode_source <- function(file = NULL, string = NULL, width = 120) {
 #'
 #' @param string A string to decode.
 #'
-#' @return The original (decoded) string.
+#' @seealso [encode_source()] for more details. 
+#' @return The original (decoded) object. 
 #' @export
 decode_source <- function(string) {
   x <- paste0(string, collapse = "")
