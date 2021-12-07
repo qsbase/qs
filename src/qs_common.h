@@ -39,6 +39,7 @@ https://github.com/traversc/qs
 #include <vector>
 #include <climits>
 #include <cstdint>
+#include <unordered_map>
 
 // platform specific headers
 #ifdef _WIN32
