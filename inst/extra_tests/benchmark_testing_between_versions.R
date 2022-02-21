@@ -1,5 +1,5 @@
-library(qs12)
-library(qs131)
+# library(qs12)
+# library(qs131)
 library(qs141)
 library(qs151)
 library(qs161)
@@ -11,7 +11,12 @@ library(qs212)
 library(qs236)
 library(qs241)
 library(qs)
+
+
 library(dplyr)
+library(patchwork)
+library(ggplot2)
+
 
 dataframeGen <- function() {
   nr <- 1e6
@@ -25,7 +30,7 @@ listGen <- function() {
   as.list(sample(1e6))
 }
 
-grid <- expand.grid(ver = c(22:25), data = c("list", "dataframe"), 
+grid <- expand.grid(ver = c(21:25), data = c("list", "dataframe"), 
                     preset = c("uncompressed", "fast", "balanced", "high", "archive"), 
                     reps=1:20, stringsAsFactors = F) %>% sample_frac(1)
 
@@ -117,8 +122,6 @@ gs <- grid %>% group_by(data, ver, preset) %>%
             median_write_time = median(write_time)) %>% as.data.frame
 print(gs)
 
-library(patchwork)
-library(ggplot2)
 
 g1 <- ggplot(grid, aes(x = preset, fill = as.factor(ver), group=as.factor(ver), y = read_time)) +
   geom_bar(stat = "summary", fun.y = "mean", position = "dodge", color = "black") +

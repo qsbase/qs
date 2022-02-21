@@ -1,4 +1,8 @@
-Version 0.25.2 (2021-11-6)
+Version 0.25.3 (2022-2-20)
+   * Update zstd to 1.5.2
+   * Use more accurate language in configure script (request from CRAN)
+
+Version 0.25.2 (2021-12-6)
    * Update documentation and fix typos (thanks to @salim-b)
    * Update autoconf to version 2.6.9 (autoupdate; autoreconf --warnings=obsolete)
    * Include tests/ folder in build/check process

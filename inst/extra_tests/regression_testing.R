@@ -1,17 +1,17 @@
 if(F) {
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.12.tar.gz", "qs12") # zstd block compress only
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.13.1.tar.gz", "qs131") # zstd block compress only
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.14.1.tar.gz", "qs141") # zstd and lz4 block compress, byte shuffling
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.19.1.tar.gz", "qs191") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.20.2.tar.gz", "qs202") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.21.2.tar.gz", "qs212") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.12.tar.gz", "qs12") # zstd block compress only
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.13.1.tar.gz", "qs131") # zstd block compress only
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.14.1.tar.gz", "qs141") # zstd and lz4 block compress, byte shuffling
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.17.3.tar.gz", "qs173") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.18.3.tar.gz", "qs183") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.19.1.tar.gz", "qs191") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.20.2.tar.gz", "qs202") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.21.2.tar.gz", "qs212") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.22.1.tar.gz", "qs221") # zstd, lz4, lz4hc block compress, zstd_stream compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.23.6.tar.gz", "qs236") # zstd, lz4, lz4hc block compress, zstd_stream compress
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/qs_0.24.1.tar.gz", "qs241") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.24.1.tar.gz", "qs241") # zstd, lz4, lz4hc block compress, zstd_stream compress
   
   # Earlier version cannot read zstd_stream from 0.17.1+ due to additional checksum at end of file
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions

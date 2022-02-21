@@ -27,7 +27,7 @@
 #include "qs_serialization_stream.h"
 #include "qs_deserialization_stream.h"
 #include "extra_functions.h"
-  
+
 /*
  * headers:
  * qs_common.h -> qs_serialize_common.h -> qs_serialization.h -> qs_functions.cpp
