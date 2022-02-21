@@ -1,5 +1,6 @@
 Version 0.25.3 (2022-2-20)
-   * Update zstd to 1.5.2
+   * Update zstd to 1.5.2 and single file library
+   * Use of Rcpp strict headers; this and the above improve compilation speed considerably
    * Use more accurate language in configure script (request from CRAN)
 
 Version 0.25.2 (2021-12-6)

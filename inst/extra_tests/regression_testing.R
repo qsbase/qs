@@ -1,6 +1,6 @@
 if(F) {
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.12.tar.gz", "qs12") # zstd block compress only
-  trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.13.1.tar.gz", "qs131") # zstd block compress only
+  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.12.tar.gz", "qs12") # zstd block compress only
+  # trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.13.1.tar.gz", "qs131") # zstd block compress only
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.14.1.tar.gz", "qs141") # zstd and lz4 block compress, byte shuffling
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.15.1.tar.gz", "qs151") # zstd, lz4, lz4hc block compress
   trqwe::install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.16.1.tar.gz", "qs161") # zstd, lz4, lz4hc block compress, zstd_stream compress

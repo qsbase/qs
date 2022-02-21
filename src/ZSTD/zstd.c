@@ -644,14 +644,14 @@ extern "C" {
 #endif
 
 /* disable warnings */
-#ifdef _MSC_VER    /* Visual Studio */
-#  include <intrin.h>                    /* For Visual 2005 */
-#  pragma warning(disable : 4100)        /* disable: C4100: unreferenced formal parameter */
-#  pragma warning(disable : 4127)        /* disable: C4127: conditional expression is constant */
-#  pragma warning(disable : 4204)        /* disable: C4204: non-constant aggregate initializer */
-#  pragma warning(disable : 4214)        /* disable: C4214: non-int bitfields */
-#  pragma warning(disable : 4324)        /* disable: C4324: padded structure */
-#endif
+// #ifdef _MSC_VER    /* Visual Studio */
+// #  include <intrin.h>                    /* For Visual 2005 */
+// #  pragma warning(disable : 4100)        /* disable: C4100: unreferenced formal parameter */
+// #  pragma warning(disable : 4127)        /* disable: C4127: conditional expression is constant */
+// #  pragma warning(disable : 4204)        /* disable: C4204: non-constant aggregate initializer */
+// #  pragma warning(disable : 4214)        /* disable: C4214: non-int bitfields */
+// #  pragma warning(disable : 4324)        /* disable: C4324: padded structure */
+// #endif
 
 /*Like DYNAMIC_BMI2 but for compile time determination of BMI2 support*/
 #ifndef STATIC_BMI2
@@ -8449,9 +8449,9 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) { return ZSTD_
 /* *************************************
 *  Compiler Specific Options
 ***************************************/
-#ifdef _MSC_VER /* Visual Studio warning fix */
-#  pragma warning(disable : 4127) /* disable: C4127: conditional expression is constant */
-#endif
+// #ifdef _MSC_VER /* Visual Studio warning fix */
+// #  pragma warning(disable : 4127) /* disable: C4127: conditional expression is constant */
+// #endif
 
 #if XXH_NO_INLINE_HINTS  /* disable inlining hints */
 #  if defined(__GNUC__) || defined(__clang__)
@@ -13384,9 +13384,9 @@ int POOL_tryAdd(POOL_ctx* ctx, POOL_function function, void* opaque);
 /**** ended inlining pool.h ****/
 
 /* ======   Compiler specifics   ====== */
-#if defined(_MSC_VER)
-#  pragma warning(disable : 4204)        /* disable: C4204: non-constant aggregate initializer */
-#endif
+// #if defined(_MSC_VER)
+// #  pragma warning(disable : 4204)        /* disable: C4204: non-constant aggregate initializer */
+// #endif
 
 
 #ifdef ZSTD_MULTITHREAD
@@ -14828,9 +14828,9 @@ size_t HIST_count(unsigned* count, unsigned* maxSymbolValuePtr,
 /* **************************************************************
 *  Compiler specifics
 ****************************************************************/
-#ifdef _MSC_VER    /* Visual Studio */
-#  pragma warning(disable : 4127)        /* disable: C4127: conditional expression is constant */
-#endif
+// #ifdef _MSC_VER    /* Visual Studio */
+// #  pragma warning(disable : 4127)        /* disable: C4127: conditional expression is constant */
+// #endif
 
 
 /* **************************************************************
@@ -32350,9 +32350,9 @@ size_t ZSTD_compressBlock_btultra_extDict(
 
 
 /* ======   Compiler specifics   ====== */
-#if defined(_MSC_VER)
-#  pragma warning(disable : 4204)   /* disable: C4204: non-constant aggregate initializer */
-#endif
+// #if defined(_MSC_VER)
+// #  pragma warning(disable : 4204)   /* disable: C4204: non-constant aggregate initializer */
+// #endif
 
 
 /* ======   Constants   ====== */
@@ -44256,14 +44256,14 @@ ZDICTLIB_API size_t ZDICT_optimizeTrainFromBuffer_cover(
  */
 
 /*- Compiler specifics -*/
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-#endif
+// #ifdef __clang__
+// #pragma clang diagnostic ignored "-Wshorten-64-to-32"
+// #endif
 
-#if defined(_MSC_VER)
-#  pragma warning(disable : 4244)
-#  pragma warning(disable : 4127)    /* C4127 : Condition expression is constant */
-#endif
+// #if defined(_MSC_VER)
+// #  pragma warning(disable : 4244)
+// #  pragma warning(disable : 4127)    /* C4127 : Condition expression is constant */
+// #endif
 
 
 /*- Dependencies -*/
@@ -47003,6 +47003,9 @@ ZDICT_optimizeTrainFromBuffer_fastCover(
 *  Compiler Options
 ****************************************/
 /* Unix Large Files support (>4GB) */
+#ifdef _FILE_OFFSET_BITS /* TC: this macro was already defined on rhub solaris as 32, but needs to be 64 */
+#  undef _FILE_OFFSET_BITS
+#endif
 #define _FILE_OFFSET_BITS 64
 #if (defined(__sun__) && (!defined(__LP64__)))   /* Sun Solaris 32-bits requires specific definitions */
 #  ifndef _LARGEFILE_SOURCE
