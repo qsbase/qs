@@ -844,17 +844,23 @@ uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint
   std::array<char,4> temp;
   uint64_t remaining_bytes = read_allow(myFile, temp.data(), 4);
   if(remaining_bytes != 0) {
+    uint64_t remaining_bytes2 = read_allow(myFile, temp.data(), 4);
+    while(remaining_bytes2 != 0) {
+      remaining_bytes += remaining_bytes2;
+      remaining_bytes2 = read_allow(myFile, temp.data(), 4);
+    }
+    std::string msg = "end of file not reached, " + std::to_string(remaining_bytes) + " bytes remaining";
     if(strict) {
-      throw std::runtime_error("end of file not reached");
+      throw std::runtime_error(msg.c_str());
     } else {
-      Rcerr << "Warning: end of file not reached, data may be corrupted";
+      Rcerr << "Warning: " << msg << std::endl;
     }
   }
   if((qm.clength != 0) && (computed_length != 0) && (computed_length != qm.clength)) {
     if(strict) {
       throw std::runtime_error("computed object length does not match recorded object length");
     } else {
-      Rcerr << "Warning: computed object length does not match recorded object length, data may be corrupted";
+      Rcerr << "Warning: computed object length does not match recorded object length, data may be corrupted" << std::endl;
     }
   }
   if(qm.check_hash) {

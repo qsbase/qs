@@ -7,6 +7,8 @@
 
 #include <qs_common.h>
 
+// #define QS_DEBUG
+
 #ifdef QS_DEBUG
 std::string qtypestr(qstype x) {
   const std::string enum_strings[] = { 
@@ -366,7 +368,7 @@ SEXP processBlock(T * const sobj) {
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
 #ifdef QS_DEBUG
-      std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+      std::cout << "pairlist name string " << r_string_len << " " << (int)string_encoding << std::endl;
 #endif
       if(r_string_len != NA_STRING_LENGTH) {
         std::string temp_tag_string;
@@ -423,7 +425,7 @@ SEXP processBlock(T * const sobj) {
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
 #ifdef QS_DEBUG
-      std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+      std::cout << "pairlist name string " << r_string_len << " " << (int)string_encoding << std::endl;
 #endif
       if(r_string_len != NA_STRING_LENGTH) {
         temp_tag_string.resize(r_string_len);
@@ -491,7 +493,8 @@ SEXP processBlock(T * const sobj) {
   }
     break;
   case qstype::S4:
-    obj = PROTECT(Rf_allocS4Object()); pt++;
+    // obj = PROTECT(Rf_allocS4Object()); pt++; // S4 object may not have S4 flag
+    obj = PROTECT(Rf_allocSExp(S4SXP)); pt++;
     break;
   case qstype::LIST: 
     obj = PROTECT(Rf_allocVector(VECSXP, r_array_len)); pt++;
@@ -545,7 +548,7 @@ SEXP processBlock(T * const sobj) {
         cetype_t string_encoding;
         sobj->readStringHeader(r_string_len, string_encoding);
 #ifdef QS_DEBUG
-        std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
+        std::cout << "string " << r_string_len << " " << (int)string_encoding << " ";
 #endif
         if(r_string_len == NA_STRING_LENGTH) {
           ref[i] = sfstring(NA_STRING);
@@ -556,8 +559,14 @@ SEXP processBlock(T * const sobj) {
             ref[i] = sfstring(r_string_len);
             sobj->getBlockData(&ref[i].sdata[0], r_string_len);
             ref[i].check_if_native_is_ascii(string_encoding);
+#ifdef QS_DEBUG
+            std::cout << ref[i].sdata;
+#endif
           }
         }
+#ifdef QS_DEBUG
+        std::cout << std::endl;
+#endif
       }
     } else {
 #endif
@@ -590,14 +599,14 @@ SEXP processBlock(T * const sobj) {
     uint32_t r_string_len;
     cetype_t string_encoding;
     sobj->readStringHeader(r_string_len, string_encoding);
-#ifdef QS_DEBUG
-    std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
-#endif
     // symbols cannot be NA or zero length
     if(r_string_len > sobj->temp_string.size()) {
       sobj->temp_string.resize(r_string_len);
     }
     sobj->getBlockData(&sobj->temp_string[0], r_string_len);
+#ifdef QS_DEBUG
+    std::cout << "sym string " << r_string_len << " " << (int)string_encoding << " "  << std::string(sobj->temp_string.data(), r_string_len) << std::endl;
+#endif
     obj = PROTECT(Rf_mkCharLenCE(sobj->temp_string.data(), r_string_len, string_encoding)); pt++;
     obj = Rf_installChar(obj); //Rf_installTrChar in R 4.0.0
   }
@@ -621,11 +630,11 @@ SEXP processBlock(T * const sobj) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
-#ifdef QS_DEBUG
-      std::cout << "string " << r_string_len << " " << (int)string_encoding << std::endl;
-#endif
       temp_attribute_string.resize(r_string_len);
       sobj->getBlockData(&temp_attribute_string[0], r_string_len);
+#ifdef QS_DEBUG
+      std::cout << "attr string " << r_string_len << " " << (int)string_encoding << " "  << temp_attribute_string << std::endl;
+#endif
       // Is protect needed here?  
       // I believe it is not, since SET_TAG/SETCAR shouldn't allocate and serialize.c doesn't protect either
       // What about IS_CHARACTER?
