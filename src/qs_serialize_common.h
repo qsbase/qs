@@ -427,7 +427,7 @@ void writeObject(T * const sobj, SEXP x) {
   {
     if(x == R_MissingArg || x == R_UnboundValue || TYPEOF(PRINTNAME(x)) != CHARSXP) { // some special cases to handle1
       Protect_Tracker pt = Protect_Tracker();
-      SEXP xserialized = PROTECT(serializeToRaw(x)); pt++;
+      SEXP xserialized = PROTECT(serializeToRaw(x,Rf_ScalarInteger(2))); pt++;
       uint64_t xs_size = Rf_xlength(xserialized);
       writeHeader_common(qstype::RSERIALIZED, xs_size, sobj);
       sobj->push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);
@@ -545,7 +545,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(x == R_GlobalEnv || x == R_BaseEnv || x == R_EmptyEnv || 
                       R_IsNamespaceEnv(x) || R_IsPackageEnv(x)) {
       Protect_Tracker pt = Protect_Tracker();
-      SEXP xserialized = PROTECT(serializeToRaw(x)); pt++;
+      SEXP xserialized = PROTECT(serializeToRaw(x,Rf_ScalarInteger(2))); pt++;
       uint64_t xs_size = Rf_xlength(xserialized);
       writeHeader_common(qstype::RSERIALIZED, xs_size, sobj);
       sobj->push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);
@@ -640,7 +640,7 @@ void writeObject(T * const sobj, SEXP x) {
   default:
   {
     Protect_Tracker pt = Protect_Tracker();
-    SEXP xserialized = PROTECT(serializeToRaw(x)); pt++;
+    SEXP xserialized = PROTECT(serializeToRaw(x,Rf_ScalarInteger(2))); pt++;
     uint64_t xs_size = Rf_xlength(xserialized);
     writeHeader_common(qstype::RSERIALIZED, xs_size, sobj);
     sobj->push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);
