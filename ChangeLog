@@ -1,3 +1,7 @@
+Version 0.25.4 (2022-8-9)
+   * Brief hotfix due to changes in RApiSerialize: specify R serialization version = 2
+   * Add back `importFrom(Rcpp, evalCpp)` statement to NAMESPACE file
+
 Version 0.25.3 (2022-2-20)
    * Update zstd to 1.5.2 and single file library
    * Use of Rcpp strict headers; this and the above improve compilation speed considerably
