@@ -1,3 +1,7 @@
+Version 0.25.5 (2023-1-2)
+   * Add function `qread_url`, a helper function that reads `qs` objects from the internet (https://github.com/traversc/qs/issues/49)
+   *
+
 Version 0.25.4 (2022-8-9)
    * Brief hotfix due to changes in RApiSerialize: specify R serialization version = 2
    * Add back `importFrom(Rcpp, evalCpp)` statement to NAMESPACE file
@@ -58,7 +62,7 @@ Version 0.21.2 (2020-3-8)
 
 Version 0.21.1 (2020-2-6)
    * Fix for active bindings in R6/environments (https://github.com/traversc/qs/issues/29)
-   * Correct several documentation errors (https://github.com/traversc/qs/issues/28) 
+   * Correct several documentation errors (https://github.com/traversc/qs/issues/28)
    * Fix for incorrect serialization of "names" attribute in S4 Raster class (https://github.com/traversc/qs/issues/27)
 
 Version 0.20.2 (2019-12-1)
@@ -91,7 +95,7 @@ Version 0.18.2 (2019-7-19)
 
 Version 0.18.1 (2019-7-14)
    * Revised header format in order to include more information -- files created by 0.18.1 cannot by read by earlier versions
-   * Remove R version restriction.  Previously, `qs` required R >= 3.5.0.  R alt-rep functionality will not be used in earlier versions.  
+   * Remove R version restriction.  Previously, `qs` required R >= 3.5.0.  R alt-rep functionality will not be used in earlier versions.
 
 Version 0.17.3 (2019-7-8)
    * Fixed unprotected variable issue found by rchk (https://github.com/kalibera/rchk)
@@ -125,7 +129,7 @@ Version 0.16.2 (2019-6-15)
 
 Version 0.16.1 (2019-5-15)
 
-   * Support for zstd streaming interface.  As opposed to block compression routines, streaming compression offers better compression ratio but is not as fast 
+   * Support for zstd streaming interface.  As opposed to block compression routines, streaming compression offers better compression ratio but is not as fast
    * Re-factor configure script to not be so messy
    * Changed file suffixes in examples from "q" to "qs" (https://github.com/traversc/qs/issues/5)
    * (Not included) brotli compression library was evaluated, but did not offer better performance compared to zstd on average
