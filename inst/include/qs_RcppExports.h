@@ -464,6 +464,26 @@ namespace qs {
         return Rcpp::as<SEXP >(rcpp_result_gen);
     }
 
+    inline SEXP c_qattributes(const std::string& file, const bool use_alt_rep = false, const bool strict = false, const int nthreads = 1) {
+        typedef SEXP(*Ptr_c_qattributes)(SEXP,SEXP,SEXP,SEXP);
+        static Ptr_c_qattributes p_c_qattributes = NULL;
+        if (p_c_qattributes == NULL) {
+            validateSignature("SEXP(*c_qattributes)(const std::string&,const bool,const bool,const int)");
+            p_c_qattributes = (Ptr_c_qattributes)R_GetCCallable("qs", "_qs_c_qattributes");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_c_qattributes(Shield<SEXP>(Rcpp::wrap(file)), Shield<SEXP>(Rcpp::wrap(use_alt_rep)), Shield<SEXP>(Rcpp::wrap(strict)), Shield<SEXP>(Rcpp::wrap(nthreads)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
     inline SEXP c_qread(const std::string& file, const bool use_alt_rep, const bool strict, const int nthreads) {
         typedef SEXP(*Ptr_c_qread)(SEXP,SEXP,SEXP,SEXP);
         static Ptr_c_qread p_c_qread = NULL;

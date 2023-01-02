@@ -1,19 +1,19 @@
 /* qs - Quick Serialization of R Objects
   Copyright (C) 2019-present Travers Ching
-  
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
+
  You can contact the author at:
  https://github.com/traversc/qs
 */
@@ -27,6 +27,8 @@
 #include "qs_serialization_stream.h"
 #include "qs_deserialization_stream.h"
 #include "extra_functions.h"
+
+#define FILE_OPEN_ERR_MSG "Failed to open file. \n- Does the directory exist?\n - Do you have file permissions?\n- Is the file name too long? (usually 255 chars)"
 
 /*
  * headers:
@@ -47,17 +49,17 @@ bool is_big_endian() {
   uint32_t i;
   char c[4];
 } bint = {0x01020304};
-  return bint.c[0] == 1; 
+  return bint.c[0] == 1;
 }
 
 // [[Rcpp::export(rng = false, invisible=true)]]
-double qsave(SEXP const x, const std::string & file, const std::string preset="high", const std::string algorithm="zstd", 
+double qsave(SEXP const x, const std::string & file, const std::string preset="high", const std::string algorithm="zstd",
                const int compress_level=4L, const int shuffle_control=15L, const bool check_hash=true, const int nthreads=1) {
   std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
-  myFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   if(!myFile) {
-    throw std::runtime_error("Failed to open " + file + ". Check file path.");
+    throw std::runtime_error(FILE_OPEN_ERR_MSG);
   }
+  myFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   std::streampos origin = myFile.tellp();
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
   qm.writeToFile(myFile);
@@ -138,14 +140,14 @@ double qsave(SEXP const x, const std::string & file, const std::string preset="h
 }
 
 // [[Rcpp::export(rng = false)]]
-double c_qsave(SEXP const x, const std::string & file, const std::string preset, const std::string algorithm, 
+double c_qsave(SEXP const x, const std::string & file, const std::string preset, const std::string algorithm,
              const int compress_level, const int shuffle_control, const bool check_hash, const int nthreads) {
   return qsave(x, file, preset, algorithm, compress_level, shuffle_control,check_hash, nthreads);
 }
 
 
 // [[Rcpp::export(rng = false, invisible=true)]]
-double qsave_fd(SEXP const x, const int fd, const std::string preset="high", const std::string algorithm="zstd", 
+double qsave_fd(SEXP const x, const int fd, const std::string preset="high", const std::string algorithm="zstd",
                   const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
   fd_wrapper myFile(fd);
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
@@ -185,7 +187,7 @@ double qsave_fd(SEXP const x, const int fd, const std::string preset="high", con
 }
 
 // [[Rcpp::export(rng = false, invisible=true)]]
-double qsave_handle(SEXP const x, SEXP const handle, const std::string preset="high", 
+double qsave_handle(SEXP const x, SEXP const handle, const std::string preset="high",
                     const std::string algorithm="zstd", const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
 #ifdef _WIN32
   HANDLE h = R_ExternalPtrAddr(handle);
@@ -229,7 +231,7 @@ double qsave_handle(SEXP const x, SEXP const handle, const std::string preset="h
 }
 
 // [[Rcpp::export(rng = false)]]
-RawVector qserialize(SEXP const x, const std::string preset="high", const std::string algorithm="zstd", 
+RawVector qserialize(SEXP const x, const std::string preset="high", const std::string algorithm="zstd",
                      const int compress_level=4L, const int shuffle_control=15, const bool check_hash=true) {
   vec_wrapper myFile;
   QsMetadata qm(preset, algorithm, compress_level, shuffle_control, check_hash);
@@ -277,7 +279,7 @@ RawVector qserialize(SEXP const x, const std::string preset="high", const std::s
 }
 
 // [[Rcpp::export(rng = false)]]
-RawVector c_qserialize(SEXP const x, const std::string preset, const std::string algorithm, 
+RawVector c_qserialize(SEXP const x, const std::string preset, const std::string algorithm,
                      const int compress_level, const int shuffle_control, const bool check_hash) {
   return qserialize(x, preset, algorithm, compress_level, shuffle_control, check_hash);
 }
@@ -285,10 +287,10 @@ RawVector c_qserialize(SEXP const x, const std::string preset, const std::string
 // [[Rcpp::export(rng = false)]]
 SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
-  myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
   if(!myFile) {
-    throw std::runtime_error("Failed to open " + file + ". Check file path.");
+    throw std::runtime_error(FILE_OPEN_ERR_MSG);
   }
+  myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
   Protect_Tracker pt = Protect_Tracker();
   QsMetadata qm = QsMetadata::create(myFile);
   if(qm.compress_algorithm == 3) { // zstd_stream
@@ -333,6 +335,68 @@ SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool st
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(processBlock(&dc)); pt++;
+        dc.dtc.finish();
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
+        myFile.close();
+        return ret;
+      } else {
+        throw std::runtime_error("Invalid compression algorithm in file");
+      }
+    }
+  }
+}
+
+// [[Rcpp::export(rng = false)]]
+SEXP c_qattributes(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
+  std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
+  if(!myFile) {
+    throw std::runtime_error(FILE_OPEN_ERR_MSG);
+  }
+  myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
+  Protect_Tracker pt = Protect_Tracker();
+  QsMetadata qm = QsMetadata::create(myFile);
+  if(qm.compress_algorithm == 3) { // zstd_stream
+    ZSTD_streamRead<std::ifstream> sr(myFile, qm);
+    Data_Context_Stream<ZSTD_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(processAttributes(&dc)); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    myFile.close();
+    return ret;
+  } else if(qm.compress_algorithm == 4) { // uncompressed
+    uncompressed_streamRead<std::ifstream> sr(myFile, qm);
+    Data_Context_Stream<uncompressed_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
+    SEXP ret = PROTECT(processAttributes(&dc)); pt++;
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    myFile.close();
+    return ret;
+  } else {
+    if(nthreads <= 1 || qm.clength == 0) {
+      if(qm.compress_algorithm == 0) {
+        Data_Context<std::ifstream, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
+        SEXP ret = PROTECT(processAttributes(&dc)); pt++;
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
+        myFile.close();
+        return ret;
+      } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+        Data_Context<std::ifstream, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
+        SEXP ret = PROTECT(processAttributes(&dc)); pt++;
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
+        myFile.close();
+        return ret;
+      } else {
+        throw std::runtime_error("Invalid compression algorithm in file");
+      }
+    } else {
+      if(qm.compress_algorithm == 0) {
+        Data_Context_MT<zstd_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
+        SEXP ret = PROTECT(processAttributes(&dc)); pt++;
+        dc.dtc.finish();
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
+        myFile.close();
+        return ret;
+      } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
+        Data_Context_MT<lz4_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
+        SEXP ret = PROTECT(processAttributes(&dc)); pt++;
         dc.dtc.finish();
         validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
         myFile.close();
@@ -500,10 +564,10 @@ SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
 // [[Rcpp::export(rng = false)]]
 RObject qdump(const std::string & file) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
-  myFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   if(!myFile) {
-    throw std::runtime_error("Failed to open file");
+    throw std::runtime_error(FILE_OPEN_ERR_MSG);
   }
+  myFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   QsMetadata qm = QsMetadata::create(myFile);
   List outvec;
   dumpMetadata(outvec, qm);
@@ -519,7 +583,7 @@ RObject qdump(const std::string & file) {
     myFile.read(inp, readable_bytes);
     auto zstream = zstd_decompress_stream_simple(totalsize, inp, readable_bytes);
     bool is_error = zstream.decompress();
-    
+
     // append results
     outvec["readable_bytes"] = std::to_string(readable_bytes);
     outvec["decompressed_size"] = std::to_string(totalsize);
@@ -748,7 +812,7 @@ bool closeWinMapView(SEXP const pointer) {
 //   uint8_t* xdata = reinterpret_cast<uint8_t*>(RAW(x));
 //   std::vector<unsigned char> ret(zsize);
 //   uint8_t* retdata = reinterpret_cast<uint8_t*>(ret.data());
-//   BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, 
+//   BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
 //                                 x.size(), xdata, &zsize, retdata);
 //   ret.resize(zsize);
 //   return ret;

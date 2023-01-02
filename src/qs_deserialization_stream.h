@@ -1,19 +1,19 @@
 /* qs - Quick Serialization of R Objects
  Copyright (C) 2019-present Travers Ching
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
+
  You can contact the author at:
  https://github.com/traversc/qs
  */
@@ -41,8 +41,8 @@ struct ZSTD_streamRead {
   ZSTD_DStream* zds;
   std::array<char, 4> hash_reserve;
   bool end_of_decompression = false;
-  
-  ZSTD_streamRead(stream_reader & mf, QsMetadata qm) : 
+
+  ZSTD_streamRead(stream_reader & mf, QsMetadata qm) :
     qm(qm), myFile(mf) {
     zds = ZSTD_createDStream();
     ZSTD_initDStream(zds);
@@ -81,7 +81,7 @@ struct ZSTD_streamRead {
         std::memmove(hash_reserve.data(), hash_reserve.data() + length, RESERVE_SIZE - length);
         read_check(myFile, hash_reserve.data() +  RESERVE_SIZE - length, length);
       }
-      
+
       // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
       return length;
     } else { // !exact -- we can't assume that "length" bytes are left in myFile; there could even be zero bytes left
@@ -101,7 +101,7 @@ struct ZSTD_streamRead {
           size_t temp_size = read_allow(myFile, temp_buffer.data(), RESERVE_SIZE);
           std::memcpy(hash_reserve.data(), dst + n_bufferable - (RESERVE_SIZE - temp_size), RESERVE_SIZE - temp_size);
           std::memcpy(hash_reserve.data() + RESERVE_SIZE - temp_size, temp_buffer.data(), temp_size);
-          
+
           // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
           return n_bufferable - (RESERVE_SIZE - temp_size);
         }
@@ -112,7 +112,7 @@ struct ZSTD_streamRead {
         std::memcpy(dst, hash_reserve.data(), return_value);
         std::memmove(hash_reserve.data(), hash_reserve.data() + return_value, RESERVE_SIZE - return_value);
         std::memcpy(hash_reserve.data() + (RESERVE_SIZE - return_value), temp_buffer.data(), return_value);
-        
+
         // for(unsigned int i=0; i < 4; i++) std::cout << std::hex << (int)reinterpret_cast<uint8_t &>(hash_reserve.data()[i]) << " "; std::cout << std::endl;
         return return_value;
       }
@@ -138,7 +138,7 @@ struct ZSTD_streamRead {
     // if((qm.clength != 0) & (decompressed_bytes_read >= qm.clength)) return;
     char * ptr = outblock.data();
     if(blocksize > blockoffset) {
-      std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset); 
+      std::memmove(ptr, ptr + blockoffset, blocksize - blockoffset);
       zout.pos = blocksize - blockoffset;
     } else {
       zout.pos = 0;
@@ -207,13 +207,13 @@ struct uncompressed_streamRead {
   uint64_t decompressed_bytes_read = 0; // same as total bytes read since no compression
   xxhash_env xenv; // default constructor
   std::array<char, 4> hash_reserve;
-  uncompressed_streamRead(stream_reader & _con, QsMetadata qm) : 
+  uncompressed_streamRead(stream_reader & _con, QsMetadata qm) :
     qm(qm), con(_con) {
     if(qm.check_hash) {
       read_check(con, hash_reserve.data(), RESERVE_SIZE);
     }
   }
-  
+
   // fread with updating hash as necessary
   size_t read_update(char * dst, size_t length, bool exact=false) {
     if(!qm.check_hash) {
@@ -276,7 +276,7 @@ struct uncompressed_streamRead {
       }
     }
   }
-  
+
   void getBlock() {
     char * ptr = outblock.data();
     uint64_t block_offset;
@@ -310,7 +310,7 @@ struct uncompressed_streamRead {
 };
 
 
-template <class DestreamClass> 
+template <class DestreamClass>
 struct Data_Context_Stream {
   QsMetadata qm;
   DestreamClass & dsc;
@@ -321,10 +321,10 @@ struct Data_Context_Stream {
   uint64_t & block_size; // dsc.blocksize
   char * data_ptr;
   std::string temp_string = std::string(256, '\0');
-  
+
   Data_Context_Stream(DestreamClass & d, QsMetadata q, bool use_alt_rep) : qm(q), dsc(d), use_alt_rep_bool(use_alt_rep),
     shuffleblock(std::vector<uint8_t>(256)), data_offset(d.blockoffset), block_size(d.blocksize), data_ptr(d.outblock.data()) {}
-  
+
   void getBlock() {
     dsc.getBlock();
   }
@@ -342,6 +342,20 @@ struct Data_Context_Stream {
   void readFlags(int & packed_flags) {
     if(data_offset + BLOCKRESERVE >= block_size) getBlock();
     readFlags_common(packed_flags, data_offset, data_ptr);
+  }
+  char * tempString(uint64_t data_size) {
+    temp_string.resize(data_size);
+    return &temp_string[0];
+  }
+  char * tempBlock(uint64_t data_size) {
+    if(data_size > shuffleblock.size()) shuffleblock.resize(data_size);
+    return reinterpret_cast<char*>(shuffleblock.data());
+  }
+  char * tempString() {
+    return &temp_string[0];
+  }
+  char * tempBlock() {
+    return reinterpret_cast<char*>(shuffleblock.data());
   }
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {
     // std::cout << data_size << " get shuffle block\n";

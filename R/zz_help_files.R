@@ -159,6 +159,62 @@ NULL
 #' identical(w, w2) # returns true
 NULL
 
+#' qattributes
+#'
+#' Reads the attributes of an object serialized to disk.
+#'
+#' Equivalent to:
+#'
+#' `attributes(qread(file))`
+#'
+#' But more efficient. Attributes are stored towards the end of the file.
+#' This function will read through
+#' the contents of the file (without de-serializing the object itself),
+#' and then de-serializes the attributes only.
+#'
+#' Because it is necessary to read through the file, pulling out attributes could
+#' take a long time if the file is large. However, it should be much faster than
+#' de-serializing the entire object first.
+#'
+#' @usage qattributes(file, use_alt_rep=FALSE, strict=FALSE, nthreads=1)
+#'
+#' @inherit qread params
+#'
+#' @return the attributes fo the serialized object.
+#'
+#' @export
+#'
+#' @examples
+#'
+#' file <- tempfile()
+#' qsave(mtcars, file)
+#'
+#' attr1 <- qattributes(file)
+#' attr2 <- attributes(qread(file))
+#'
+#' print(attr1)
+#' # $names
+#' # [1] "IAU Name"      "Designation"   "Const."        "#"             "WDS_J"         "Vmag"          "RA(J2000)"     "Dec(J2000)"    "Approval Date"
+#'
+#' # $row.names
+#' # [1] 1 2 3 4 5
+#
+#' # $class
+#' # [1] "data.frame"
+#'
+#' identical(attr1, attr2) # TRUE
+#'
+qattributes <- function(file, use_alt_rep = FALSE, strict = FALSE, nthreads = 1L) {
+  output <- .Call(`_qs_c_qattributes`, file, use_alt_rep, strict, nthreads)
+  rownames_attr <- output[["row.names"]]
+  # special case for how R stores compact rownames
+  # see src/main/attrib.c
+  if(is.integer(rownames_attr) && length(rownames_attr == 2L) && is.na(rownames_attr[1L])) {
+    output[["row.names"]] <- seq(1L, abs(rownames_attr[2L]))
+  }
+  output
+}
+
 #' qsave_fd
 #'
 #' Saves an object to a file descriptor.

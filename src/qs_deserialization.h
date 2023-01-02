@@ -1,19 +1,19 @@
 /* qs - Quick Serialization of R Objects
  Copyright (C) 2019-present Travers Ching
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
+
  You can contact the author at:
  https://github.com/traversc/qs
  */
@@ -25,16 +25,16 @@
 // de-serialization functions
 ////////////////////////////////////////////////////////////////
 
-template <class stream_reader, class decompress_env> 
+template <class stream_reader, class decompress_env>
 struct Data_Context {
   QsMetadata qm;
   stream_reader & myFile;
   bool use_alt_rep_bool;
-  
+
   decompress_env denv; // default constructor
   xxhash_env xenv; // default constructor
   std::unordered_map<uint32_t, SEXP> object_ref_hash;
-  
+
   std::vector<char> zblock = std::vector<char>(denv.compressBound(BLOCKSIZE));
   std::vector<char> block = std::vector<char>(BLOCKSIZE);
   std::vector<uint8_t> shuffleblock = std::vector<uint8_t>(256);
@@ -42,10 +42,10 @@ struct Data_Context {
   uint64_t blocks_read = 0;
   uint64_t block_size = 0;
   std::string temp_string = std::string(256, '\0');
-  
-  Data_Context(stream_reader & mf, QsMetadata qm, bool use_alt_rep) : 
+
+  Data_Context(stream_reader & mf, QsMetadata qm, bool use_alt_rep) :
     qm(qm), myFile(mf), use_alt_rep_bool(use_alt_rep) {}
-  
+
   void readHeader(qstype & object_type, uint64_t & r_array_len) {
     if(data_offset >= block_size) decompress_block();
     char* header = block.data();
@@ -102,6 +102,20 @@ struct Data_Context {
         }
       }
     }
+  }
+  char * tempString(uint64_t data_size) {
+    temp_string.resize(data_size);
+    return &temp_string[0];
+  }
+  char * tempBlock(uint64_t data_size) {
+    if(data_size > shuffleblock.size()) shuffleblock.resize(data_size);
+    return reinterpret_cast<char*>(shuffleblock.data());
+  }
+  char * tempString() {
+    return &temp_string[0];
+  }
+  char * tempBlock() {
+    return reinterpret_cast<char*>(shuffleblock.data());
   }
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {
     if(data_size >= MIN_SHUFFLE_ELEMENTS) {

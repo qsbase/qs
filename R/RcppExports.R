@@ -89,6 +89,10 @@ qread <- function(file, use_alt_rep = FALSE, strict = FALSE, nthreads = 1L) {
     .Call(`_qs_qread`, file, use_alt_rep, strict, nthreads)
 }
 
+c_qattributes <- function(file, use_alt_rep = FALSE, strict = FALSE, nthreads = 1L) {
+    .Call(`_qs_c_qattributes`, file, use_alt_rep, strict, nthreads)
+}
+
 c_qread <- function(file, use_alt_rep, strict, nthreads) {
     .Call(`_qs_c_qread`, file, use_alt_rep, strict, nthreads)
 }

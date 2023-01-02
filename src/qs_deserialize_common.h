@@ -11,7 +11,7 @@
 
 #ifdef QS_DEBUG
 std::string qtypestr(qstype x) {
-  const std::string enum_strings[] = { 
+  const std::string enum_strings[] = {
     "NUMERIC", "INTEGER", "LOGICAL", "CHARACTER", "NIL", "LIST", "COMPLEX", "RAW", "PAIRLIST", "LANG", "CLOS", "PROM", "DOT", "SYM",
     "PAIRLIST_WF", "LANG_WF", "CLOS_WF", "PROM_WF", "DOT_WF",
     "S4", "S4FLAG", "LOCKED_ENV", "UNLOCKED_ENV", "REFERENCE",
@@ -37,7 +37,7 @@ inline void readHeader_common(qstype & object_type, uint64_t & r_array_len, uint
       object_type = qstype::S4;
       return;
     case pairlist_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::PAIRLIST;
       return;
@@ -58,42 +58,42 @@ inline void readHeader_common(qstype & object_type, uint64_t & r_array_len, uint
       object_type = qstype::DOT;
       return;
     case pairlist_wf_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::PAIRLIST_WF;
       return;
     case clos_wf_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::CLOS_WF;
       return;
     case lang_wf_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::LANG_WF;
       return;
     case prom_wf_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::PROM_WF;
       return;
     case dot_wf_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::DOT_WF;
       return;
     case unlocked_env_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::UNLOCKED_ENV;
       return;
     case locked_env_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::LOCKED_ENV;
       return;
     case reference_object_header:
-      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2); 
+      r_array_len = unaligned_cast<uint32_t>(header, data_offset+2);
       data_offset += 6;
       object_type = qstype::REFERENCE;
       return;
@@ -297,7 +297,7 @@ inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, 
   case string_enc_bytes:
     ce_enc = CE_BYTES; break;
   }
-  
+
   if((reinterpret_cast<const uint8_t*>(header)[data_offset] & 0x20) == string_header_5) {
     r_string_len = *reinterpret_cast<const uint8_t*>(header+data_offset) & 0x1F ;
     data_offset += 1;
@@ -322,7 +322,7 @@ inline void readStringHeader_common(uint32_t & r_string_len, cetype_t & ce_enc, 
       data_offset += 1;
       return;
     }
-  } 
+  }
   throw std::runtime_error("something went wrong (reading string header)");
 }
 inline void readFlags_common(int & packed_flags, uint64_t & data_offset, const char * const header) {
@@ -371,10 +371,8 @@ SEXP processBlock(T * const sobj) {
       std::cout << "pairlist name string " << r_string_len << " " << (int)string_encoding << std::endl;
 #endif
       if(r_string_len != NA_STRING_LENGTH) {
-        std::string temp_tag_string;
-        temp_tag_string.resize(r_string_len);
-        sobj->getBlockData(&temp_tag_string[0], r_string_len);
-        SET_TAG(obj_i, Rf_install(temp_tag_string.c_str()));
+        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        SET_TAG(obj_i, Rf_install(sobj->tempString()));
       }
       SETCAR(obj_i, processBlock(sobj));
       obj_i = CDR(obj_i);
@@ -387,21 +385,21 @@ SEXP processBlock(T * const sobj) {
   case qstype::DOT:
   {
     switch(obj_type) {
-    case qstype::LANG:
-      PROTECT(obj = Rf_allocSExp(LANGSXP)); pt++;
-      break;
-    case qstype::CLOS:
-      PROTECT(obj = Rf_allocSExp(CLOSXP)); pt++;
-      break;
-    case qstype::PROM:
-      PROTECT(obj = Rf_allocSExp(PROMSXP)); pt++;
-      break;
-    case qstype::DOT:
-      PROTECT(obj = Rf_allocSExp(DOTSXP)); pt++;
-      break;
-    default:
-      throw std::runtime_error("."); // add default to hush compiler warnings
-    }
+  case qstype::LANG:
+    PROTECT(obj = Rf_allocSExp(LANGSXP)); pt++;
+    break;
+  case qstype::CLOS:
+    PROTECT(obj = Rf_allocSExp(CLOSXP)); pt++;
+    break;
+  case qstype::PROM:
+    PROTECT(obj = Rf_allocSExp(PROMSXP)); pt++;
+    break;
+  case qstype::DOT:
+    PROTECT(obj = Rf_allocSExp(DOTSXP)); pt++;
+    break;
+  default:
+    throw std::runtime_error("."); // add default to hush compiler warnings
+  }
     SET_TAG(obj, processBlock(sobj));
     SETCAR(obj, processBlock(sobj));
     SETCDR(obj, processBlock(sobj));
@@ -414,10 +412,8 @@ SEXP processBlock(T * const sobj) {
     break;
   case qstype::PAIRLIST_WF:
   {
-    // unpack_pods(reinterpret_cast<char*>(&r_array_len), flags, mlen);
     obj = PROTECT(Rf_allocList(r_array_len)); pt++;
     SEXP obj_i = obj;
-    std::string temp_tag_string;
     for(uint64_t i=0; i<r_array_len; i++) {
       int packed_flags;
       sobj->readFlags(packed_flags);
@@ -428,9 +424,8 @@ SEXP processBlock(T * const sobj) {
       std::cout << "pairlist name string " << r_string_len << " " << (int)string_encoding << std::endl;
 #endif
       if(r_string_len != NA_STRING_LENGTH) {
-        temp_tag_string.resize(r_string_len);
-        sobj->getBlockData(&temp_tag_string[0], r_string_len);
-        SET_TAG(obj_i, Rf_install(temp_tag_string.c_str()));
+        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        SET_TAG(obj_i, Rf_install(sobj->tempString()));
       }
       SETCAR(obj_i, processBlock(sobj));
       unpackFlags(obj_i, packed_flags);
@@ -444,21 +439,21 @@ SEXP processBlock(T * const sobj) {
   case qstype::DOT_WF:
   {
     switch(obj_type) {
-    case qstype::LANG_WF:
-      PROTECT(obj = Rf_allocSExp(LANGSXP)); pt++;
-      break;
-    case qstype::CLOS_WF:
-      PROTECT(obj = Rf_allocSExp(CLOSXP)); pt++;
-      break;
-    case qstype::PROM_WF:
-      PROTECT(obj = Rf_allocSExp(PROMSXP)); pt++;
-      break;
-    case qstype::DOT_WF:
-      PROTECT(obj = Rf_allocSExp(DOTSXP)); pt++;
-      break;
-    default:
-      throw std::runtime_error("."); // add default to hush compiler warnings
-    }
+  case qstype::LANG_WF:
+    PROTECT(obj = Rf_allocSExp(LANGSXP)); pt++;
+    break;
+  case qstype::CLOS_WF:
+    PROTECT(obj = Rf_allocSExp(CLOSXP)); pt++;
+    break;
+  case qstype::PROM_WF:
+    PROTECT(obj = Rf_allocSExp(PROMSXP)); pt++;
+    break;
+  case qstype::DOT_WF:
+    PROTECT(obj = Rf_allocSExp(DOTSXP)); pt++;
+    break;
+  default:
+    throw std::runtime_error("."); // add default to hush compiler warnings
+  }
     SET_TAG(obj, processBlock(sobj));
     SETCAR(obj, processBlock(sobj));
     SETCDR(obj, processBlock(sobj));
@@ -496,7 +491,7 @@ SEXP processBlock(T * const sobj) {
     // obj = PROTECT(Rf_allocS4Object()); pt++; // S4 object may not have S4 flag
     obj = PROTECT(Rf_allocSExp(S4SXP)); pt++;
     break;
-  case qstype::LIST: 
+  case qstype::LIST:
     obj = PROTECT(Rf_allocVector(VECSXP, r_array_len)); pt++;
     for(uint64_t i=0; i<r_array_len; i++) {
       SET_VECTOR_ELT(obj, i, processBlock(sobj));
@@ -581,13 +576,11 @@ SEXP processBlock(T * const sobj) {
         if(r_string_len == NA_STRING_LENGTH) {
           SET_STRING_ELT(obj, i, NA_STRING);
         } else if(r_string_len == 0) {
-          SET_STRING_ELT(obj, i, Rf_mkCharLen("", 0));
+          SET_STRING_ELT(obj, i, R_BlankString);
         } else if(r_string_len > 0) {
-          if(r_string_len > sobj->temp_string.size()) {
-            sobj->temp_string.resize(r_string_len);
-          }
-          sobj->getBlockData(&sobj->temp_string[0], r_string_len);
-          SET_STRING_ELT(obj, i, Rf_mkCharLenCE(sobj->temp_string.data(), r_string_len, string_encoding));
+          sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+          std::cout << std::string(sobj->tempString()) << std::endl;
+          SET_STRING_ELT(obj, i, Rf_mkCharLenCE(sobj->tempString(), r_string_len, string_encoding));
         }
       }
 #ifdef USE_ALT_REP
@@ -600,17 +593,16 @@ SEXP processBlock(T * const sobj) {
     cetype_t string_encoding;
     sobj->readStringHeader(r_string_len, string_encoding);
     // symbols cannot be NA or zero length
-    if(r_string_len > sobj->temp_string.size()) {
-      sobj->temp_string.resize(r_string_len);
-    }
-    sobj->getBlockData(&sobj->temp_string[0], r_string_len);
+    sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
 #ifdef QS_DEBUG
     std::cout << "sym string " << r_string_len << " " << (int)string_encoding << " "  << std::string(sobj->temp_string.data(), r_string_len) << std::endl;
 #endif
-    obj = PROTECT(Rf_mkCharLenCE(sobj->temp_string.data(), r_string_len, string_encoding)); pt++;
+    // there is some difference between Rf_installChar and Rf_install, as Rf_installChar will translate to native encoding
+    // Use PROTECT since serialize.c does; not clear if necessary
+    obj = PROTECT(Rf_mkCharLenCE(sobj->tempString(), r_string_len, string_encoding)); pt++;
     obj = Rf_installChar(obj); //Rf_installTrChar in R 4.0.0
   }
-  break;
+    break;
   case qstype::RSERIALIZED:
   {
     SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
@@ -625,21 +617,19 @@ SEXP processBlock(T * const sobj) {
   if(number_of_attributes > 0) {
     SEXP attrib_pairlist = PROTECT(Rf_allocList(number_of_attributes)); pt++;
     SEXP aptr = attrib_pairlist;
-    std::string temp_attribute_string;
     for(uint64_t i=0; i<number_of_attributes; i++) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
-      temp_attribute_string.resize(r_string_len);
-      sobj->getBlockData(&temp_attribute_string[0], r_string_len);
+      sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
 #ifdef QS_DEBUG
-      std::cout << "attr string " << r_string_len << " " << (int)string_encoding << " "  << temp_attribute_string << std::endl;
+      std::cout << "attr string " << r_string_len << " " << (int)string_encoding << " "  << sobj->temp_string << std::endl;
 #endif
-      // Is protect needed here?  
+      // Is protect needed here?
       // I believe it is not, since SET_TAG/SETCAR shouldn't allocate and serialize.c doesn't protect either
       // What about IS_CHARACTER?
-      SET_TAG(aptr, Rf_install(temp_attribute_string.c_str()));
-      if(temp_attribute_string == "class") {
+      SET_TAG(aptr, Rf_install(sobj->tempString()));
+      if( strcmp(sobj->tempString(), "class") == 0 ) {
         SEXP aobj = PROTECT(processBlock(sobj)); pt++;
         if((IS_CHARACTER(aobj)) & (Rf_xlength(aobj) >= 1)) {
           SET_OBJECT(obj, 1);
@@ -657,6 +647,175 @@ SEXP processBlock(T * const sobj) {
     // SET_OBJECT(obj, 1); // this flag seems kind of pointless
   }
   return obj;
+}
+
+
+// This function reads through the data but does not return the R object, only it's attributes
+//
+// It is modified from the main processBlock function.
+// There are too many changes to make compile-time template switching nice,
+// so this function needs to be kept in sync with any changes in the original function, manually.
+//
+// Modifications from processBlock function:
+// * remove DEBUG statements
+// * Don't create R objects, but we do need to pass through them and process their headers
+// * Use sobj->shuffleblock and sobj->temp_string to write data temporarily to
+// * Since this is called recursively, there is a flag get_attr (otherwise return R_nilValue)
+// Used for qattributes function
+template <class T>
+SEXP processAttributes(T * const sobj, const bool get_attr = true) {
+  qstype obj_type;
+  uint64_t r_array_len;
+  uint64_t number_of_attributes = 0;
+  bool s4_flag = false;
+  sobj->readHeader(obj_type, r_array_len);
+  if(obj_type == qstype::S4FLAG) {
+    s4_flag = true;
+    sobj->readHeader(obj_type, r_array_len);
+  }
+  if(obj_type == qstype::ATTRIBUTE) {
+    number_of_attributes = r_array_len;
+    sobj->readHeader(obj_type, r_array_len);
+  }
+  Protect_Tracker pt = Protect_Tracker();
+  switch(obj_type) {
+  case qstype::REFERENCE:
+    // the first object in a qs object can't be a reference, since there's nothing
+    // before it to reference
+    return R_NilValue;
+  case qstype::PAIRLIST:
+  {
+    for(uint64_t i=0; i<r_array_len; i++) {
+      uint32_t r_string_len;
+      cetype_t string_encoding;
+      sobj->readStringHeader(r_string_len, string_encoding);
+      if(r_string_len != NA_STRING_LENGTH) {
+        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+      }
+      processAttributes(sobj, false);
+    }
+  }
+    break;
+  case qstype::LANG:
+  case qstype::CLOS:
+  case qstype::PROM:
+  case qstype::DOT:
+    processAttributes(sobj, false); // TAG
+    processAttributes(sobj, false); // CAR
+    processAttributes(sobj, false); // CDR
+    break;
+  case qstype::PAIRLIST_WF:
+  {
+    for(uint64_t i=0; i<r_array_len; i++) {
+      int packed_flags;
+      sobj->readFlags(packed_flags);
+      uint32_t r_string_len;
+      cetype_t string_encoding;
+      sobj->readStringHeader(r_string_len, string_encoding);
+      if(r_string_len != NA_STRING_LENGTH) {
+        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+      }
+      processAttributes(sobj, false); // CAR
+    }
+  }
+    break;
+  case qstype::LANG_WF:
+  case qstype::CLOS_WF:
+  case qstype::PROM_WF:
+  case qstype::DOT_WF:
+    processAttributes(sobj, false); // TAG
+    processAttributes(sobj, false); // CAR
+    processAttributes(sobj, false); // CDR
+    break;
+  case qstype::UNLOCKED_ENV:
+  case qstype::LOCKED_ENV:
+    processAttributes(sobj, false); // ENCLOS
+    processAttributes(sobj, false); // FRAME
+    processAttributes(sobj, false); // HASHTAB
+    break;
+  case qstype::S4:
+    break;
+  case qstype::LIST:
+    for(uint64_t i=0; i<r_array_len; i++) {
+      processAttributes(sobj, false);
+    }
+    break;
+  case qstype::NUMERIC:
+    sobj->getBlockData(sobj->tempBlock(r_array_len*8), r_array_len*8);
+    break;
+  case qstype::INTEGER:
+    sobj->getBlockData(sobj->tempBlock(r_array_len*4), r_array_len*4);
+    break;
+  case qstype::LOGICAL:
+    sobj->getBlockData(sobj->tempBlock(r_array_len*4), r_array_len*4);
+    break;
+  case qstype::COMPLEX:
+    sobj->getBlockData(sobj->tempBlock(r_array_len*16), r_array_len*16);
+    break;
+  case qstype::RAW:
+    sobj->getBlockData(sobj->tempBlock(r_array_len), r_array_len);
+    break;
+  case qstype::CHARACTER:
+    for(uint64_t i=0; i < r_array_len; i++) {
+      uint32_t r_string_len;
+      cetype_t string_encoding;
+      sobj->readStringHeader(r_string_len, string_encoding);
+      if(r_string_len != NA_STRING_LENGTH) {
+        if(r_string_len != 0) {
+          sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        }
+      }
+    }
+    break;
+  case qstype::SYM:
+  {
+    uint32_t r_string_len;
+    cetype_t string_encoding;
+    sobj->readStringHeader(r_string_len, string_encoding);
+    // symbols cannot be NA or zero length
+    sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+  }
+    break;
+  case qstype::RSERIALIZED:
+  {
+    // if the object is R-serialized, then the attributes are stored within the
+    // R-serialized object, rather than the qs object
+    SEXP obj_data = PROTECT(Rf_allocVector(RAWSXP, r_array_len)); pt++;
+    sobj->getBlockData(reinterpret_cast<char*>(RAW(obj_data)), r_array_len);
+    SEXP obj = unserializeFromRaw(obj_data); // no need to PROTECT, ATTRIB doesn't allocate
+    return Rf_PairToVectorList(ATTRIB(obj)); // pairlist, needs to be converted to a regular list
+  }
+  default: // also NILSXP
+    return R_NilValue;
+  }
+  if(get_attr) {
+    if(number_of_attributes > 0) {
+      // process attributes as a list, c.f. attributes(x)
+      SEXP names = PROTECT(Rf_allocVector(STRSXP, number_of_attributes)); pt++;
+      SEXP values = PROTECT(Rf_allocVector(VECSXP, number_of_attributes)); pt++;
+      for(uint64_t i=0; i<number_of_attributes; i++) {
+        uint32_t r_string_len;
+        cetype_t string_encoding;
+        sobj->readStringHeader(r_string_len, string_encoding);
+        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        SET_STRING_ELT(names, i, Rf_mkCharLen(sobj->tempString(), r_string_len));
+        SET_VECTOR_ELT(values, i, processBlock(sobj)); // processBlock instead of processAttributes
+      }
+      Rf_setAttrib(values, R_NamesSymbol, names);
+      return values;
+    }
+  } else {
+    if(number_of_attributes > 0) {
+      for(uint64_t i=0; i<number_of_attributes; i++) {
+        uint32_t r_string_len;
+        cetype_t string_encoding;
+        sobj->readStringHeader(r_string_len, string_encoding);
+        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        processAttributes(sobj, false);
+      }
+    }
+  }
+  return R_NilValue;
 }
 
 #endif
