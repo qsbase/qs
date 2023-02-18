@@ -20,7 +20,6 @@ std::string qtypestr(qstype x) {
 }
 #endif
 
-
 inline void readHeader_common(qstype & object_type, uint64_t & r_array_len, uint64_t & data_offset, const char * const header) {
   uint8_t hd = reinterpret_cast<const uint8_t*>(header)[data_offset];
   switch(hd) {
@@ -371,8 +370,7 @@ SEXP processBlock(T * const sobj) {
       std::cout << "pairlist name string " << r_string_len << " " << (int)string_encoding << std::endl;
 #endif
       if(r_string_len != NA_STRING_LENGTH) {
-        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
-        SET_TAG(obj_i, Rf_install(sobj->tempString()));
+        SET_TAG(obj_i, Rf_install(sobj->getString(r_string_len).c_str()));
       }
       SETCAR(obj_i, processBlock(sobj));
       obj_i = CDR(obj_i);
@@ -424,8 +422,7 @@ SEXP processBlock(T * const sobj) {
       std::cout << "pairlist name string " << r_string_len << " " << (int)string_encoding << std::endl;
 #endif
       if(r_string_len != NA_STRING_LENGTH) {
-        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
-        SET_TAG(obj_i, Rf_install(sobj->tempString()));
+        SET_TAG(obj_i, Rf_install(sobj->getString(r_string_len).c_str()));
       }
       SETCAR(obj_i, processBlock(sobj));
       unpackFlags(obj_i, packed_flags);
@@ -566,6 +563,10 @@ SEXP processBlock(T * const sobj) {
     } else {
 #endif
       obj = PROTECT(Rf_allocVector(STRSXP, r_array_len)); pt++;
+      // for long character vectors, re-using a temporary string is faster
+      // we also don't need to always resize to have a trailing \0,
+      // since we pass in the string length. This is an important perf optimization
+      std::string temp_string;
       for(uint64_t i=0; i<r_array_len; i++) {
         uint32_t r_string_len;
         cetype_t string_encoding;
@@ -578,9 +579,9 @@ SEXP processBlock(T * const sobj) {
         } else if(r_string_len == 0) {
           SET_STRING_ELT(obj, i, R_BlankString);
         } else if(r_string_len > 0) {
-          sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
-          std::cout << std::string(sobj->tempString()) << std::endl;
-          SET_STRING_ELT(obj, i, Rf_mkCharLenCE(sobj->tempString(), r_string_len, string_encoding));
+          if(r_string_len > temp_string.size()) temp_string.resize(r_string_len);
+          sobj->getBlockData(&temp_string[0], r_string_len);
+          SET_STRING_ELT(obj, i, Rf_mkCharLenCE(temp_string.c_str(), r_string_len, string_encoding));
         }
       }
 #ifdef USE_ALT_REP
@@ -593,13 +594,12 @@ SEXP processBlock(T * const sobj) {
     cetype_t string_encoding;
     sobj->readStringHeader(r_string_len, string_encoding);
     // symbols cannot be NA or zero length
-    sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
 #ifdef QS_DEBUG
-    std::cout << "sym string " << r_string_len << " " << (int)string_encoding << " "  << std::string(sobj->temp_string.data(), r_string_len) << std::endl;
+    std::cout << "sym string " << r_string_len << " " << (int)string_encoding << " " << std::endl;
 #endif
     // there is some difference between Rf_installChar and Rf_install, as Rf_installChar will translate to native encoding
     // Use PROTECT since serialize.c does; not clear if necessary
-    obj = PROTECT(Rf_mkCharLenCE(sobj->tempString(), r_string_len, string_encoding)); pt++;
+    obj = PROTECT(Rf_mkCharLenCE(sobj->getString(r_string_len).c_str(), r_string_len, string_encoding)); pt++;
     obj = Rf_installChar(obj); //Rf_installTrChar in R 4.0.0
   }
     break;
@@ -621,15 +621,15 @@ SEXP processBlock(T * const sobj) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
-      sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+      std::string attr_string = sobj->getString(r_string_len);
 #ifdef QS_DEBUG
-      std::cout << "attr string " << r_string_len << " " << (int)string_encoding << " "  << sobj->temp_string << std::endl;
+      std::cout << "attr string " << r_string_len << " " << (int)string_encoding << " "  << attr_string << std::endl;
 #endif
       // Is protect needed here?
       // I believe it is not, since SET_TAG/SETCAR shouldn't allocate and serialize.c doesn't protect either
       // What about IS_CHARACTER?
-      SET_TAG(aptr, Rf_install(sobj->tempString()));
-      if( strcmp(sobj->tempString(), "class") == 0 ) {
+      SET_TAG(aptr, Rf_install(attr_string.c_str()));
+      if( strcmp(attr_string.c_str(), "class") == 0 ) {
         SEXP aobj = PROTECT(processBlock(sobj)); pt++;
         if((IS_CHARACTER(aobj)) & (Rf_xlength(aobj) >= 1)) {
           SET_OBJECT(obj, 1);
@@ -659,7 +659,7 @@ SEXP processBlock(T * const sobj) {
 // Modifications from processBlock function:
 // * remove DEBUG statements
 // * Don't create R objects, but we do need to pass through them and process their headers
-// * Use sobj->shuffleblock and sobj->temp_string to write data temporarily to
+// * Use sobj->shuffleblock to write data temporarily to
 // * Since this is called recursively, there is a flag get_attr (otherwise return R_nilValue)
 // Used for qattributes function
 template <class T>
@@ -690,7 +690,7 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
       if(r_string_len != NA_STRING_LENGTH) {
-        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        sobj->getString(r_string_len);
       }
       processAttributes(sobj, false);
     }
@@ -713,7 +713,7 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
       if(r_string_len != NA_STRING_LENGTH) {
-        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        sobj->getString(r_string_len);
       }
       processAttributes(sobj, false); // CAR
     }
@@ -756,16 +756,20 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
     sobj->getBlockData(sobj->tempBlock(r_array_len), r_array_len);
     break;
   case qstype::CHARACTER:
+  {
+    std::string temp_string;
     for(uint64_t i=0; i < r_array_len; i++) {
       uint32_t r_string_len;
       cetype_t string_encoding;
       sobj->readStringHeader(r_string_len, string_encoding);
       if(r_string_len != NA_STRING_LENGTH) {
         if(r_string_len != 0) {
-          sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+          if(r_string_len > temp_string.size()) temp_string.resize(r_string_len);
+          sobj->getBlockData(&temp_string[0], r_string_len);
         }
       }
     }
+  }
     break;
   case qstype::SYM:
   {
@@ -773,7 +777,7 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
     cetype_t string_encoding;
     sobj->readStringHeader(r_string_len, string_encoding);
     // symbols cannot be NA or zero length
-    sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+    sobj->getString(r_string_len);
   }
     break;
   case qstype::RSERIALIZED:
@@ -797,8 +801,7 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
         uint32_t r_string_len;
         cetype_t string_encoding;
         sobj->readStringHeader(r_string_len, string_encoding);
-        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
-        SET_STRING_ELT(names, i, Rf_mkCharLen(sobj->tempString(), r_string_len));
+        SET_STRING_ELT(names, i, Rf_mkCharLen(sobj->getString(r_string_len).c_str(), r_string_len));
         SET_VECTOR_ELT(values, i, processBlock(sobj)); // processBlock instead of processAttributes
       }
       Rf_setAttrib(values, R_NamesSymbol, names);
@@ -810,7 +813,7 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
         uint32_t r_string_len;
         cetype_t string_encoding;
         sobj->readStringHeader(r_string_len, string_encoding);
-        sobj->getBlockData(sobj->tempString(r_string_len), r_string_len);
+        sobj->getString(r_string_len);
         processAttributes(sobj, false);
       }
     }

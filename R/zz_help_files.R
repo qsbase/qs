@@ -194,7 +194,7 @@ NULL
 #'
 #' print(attr1)
 #' # $names
-#' # [1] "IAU Name"      "Designation"   "Const."        "#"             "WDS_J"         "Vmag"          "RA(J2000)"     "Dec(J2000)"    "Approval Date"
+#' # [1] "IAU Name"      "Designation"   "Const." ...
 #'
 #' # $row.names
 #' # [1] 1 2 3 4 5

@@ -1,3 +1,3 @@
 .onAttach <- function(libname, pkgname) {
-  packageStartupMessage("qs ", packageVersion("qs"))
+  packageStartupMessage("qs ", utils::packageVersion("qs"))
 }

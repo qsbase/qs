@@ -28,7 +28,8 @@
 #include "qs_deserialization_stream.h"
 #include "extra_functions.h"
 
-#define FILE_OPEN_ERR_MSG "Failed to open file. \n- Does the directory exist?\n - Do you have file permissions?\n- Is the file name too long? (usually 255 chars)"
+#define FILE_SAVE_ERR_MSG "Failed to open file for writing. \n- Does the directory exist?\n - Do you have file permissions?\n- Is the file name long? (usually 255 chars)"
+#define FILE_READ_ERR_MSG "Failed to open file for reading. \n- Does the file exist?\n - Do you have file permissions?\n- Is the file name long? (usually 255 chars)"
 
 /*
  * headers:
@@ -57,7 +58,7 @@ double qsave(SEXP const x, const std::string & file, const std::string preset="h
                const int compress_level=4L, const int shuffle_control=15L, const bool check_hash=true, const int nthreads=1) {
   std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error(FILE_OPEN_ERR_MSG);
+    throw std::runtime_error(FILE_SAVE_ERR_MSG);
   }
   myFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   std::streampos origin = myFile.tellp();
@@ -288,7 +289,7 @@ RawVector c_qserialize(SEXP const x, const std::string preset, const std::string
 SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error(FILE_OPEN_ERR_MSG);
+    throw std::runtime_error(FILE_READ_ERR_MSG);
   }
   myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
   Protect_Tracker pt = Protect_Tracker();
@@ -350,7 +351,7 @@ SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool st
 SEXP c_qattributes(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error(FILE_OPEN_ERR_MSG);
+    throw std::runtime_error(FILE_READ_ERR_MSG);
   }
   myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
   Protect_Tracker pt = Protect_Tracker();
@@ -565,7 +566,7 @@ SEXP c_qdeserialize(SEXP const x, const bool use_alt_rep, const bool strict) {
 RObject qdump(const std::string & file) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error(FILE_OPEN_ERR_MSG);
+    throw std::runtime_error(FILE_READ_ERR_MSG);
   }
   myFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   QsMetadata qm = QsMetadata::create(myFile);

@@ -41,7 +41,6 @@ struct Data_Context {
   uint64_t data_offset = 0;
   uint64_t blocks_read = 0;
   uint64_t block_size = 0;
-  std::string temp_string = std::string(256, '\0');
 
   Data_Context(stream_reader & mf, QsMetadata qm, bool use_alt_rep) :
     qm(qm), myFile(mf), use_alt_rep_bool(use_alt_rep) {}
@@ -103,19 +102,18 @@ struct Data_Context {
       }
     }
   }
-  char * tempString(uint64_t data_size) {
-    temp_string.resize(data_size);
-    return &temp_string[0];
-  }
   char * tempBlock(uint64_t data_size) {
     if(data_size > shuffleblock.size()) shuffleblock.resize(data_size);
     return reinterpret_cast<char*>(shuffleblock.data());
   }
-  char * tempString() {
-    return &temp_string[0];
-  }
   char * tempBlock() {
     return reinterpret_cast<char*>(shuffleblock.data());
+  }
+  std::string getString(uint64_t data_size) {
+    std::string temp_string;
+    temp_string.resize(data_size);
+    getBlockData(&temp_string[0], data_size);
+    return temp_string;
   }
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {
     if(data_size >= MIN_SHUFFLE_ELEMENTS) {

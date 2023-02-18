@@ -32,19 +32,12 @@ if (nzchar(R_TESTS)) Sys.setenv(R_TESTS = R_TESTS)
 
 args <- commandArgs(T)
 if (nzchar(R_TESTS) || ((length(args) > 0) && args[1] == "check")) { # do fewer tests within R CMD check so it completes within a reasonable amount of time
-  mode <- "filestream"
   reps <- 2
   test_points <- c(0, 1, 2, 4, 8, 2^5 - 1, 2^5 + 1, 2^5, 2^8 - 1, 2^8 + 1, 2^8, 2^16 - 1, 2^16 + 1, 2^16, 1e6)
   test_points_slow <- c(0, 1, 2, 4, 8, 2^5 - 1, 2^5 + 1, 2^5, 2^8 - 1, 2^8 + 1, 2^8, 2^16 - 1, 2^16 + 1, 2^16) # for Character Vector, stringfish and list
   max_size <- 1e6
 } else {
-  if (length(args) == 0) {
-    mode <- "filestream"
-    reps <- 3
-  } else {
-    mode <- args[1] # fd, memory, HANDLE
-    reps <- as.numeric(args[2])
-  }
+  reps <- 3
   test_points <- c(0, 1, 2, 4, 8, 2^5 - 1, 2^5 + 1, 2^5, 2^8 - 1, 2^8 + 1, 2^8, 2^16 - 1, 2^16 + 1, 2^16, 1e6, 1e7)
   test_points_slow <- test_points
   max_size <- 1e7
@@ -123,8 +116,12 @@ printCarriage <- function(x) {
   cat(x, "\r")
 }
 
-serialize_identical <- function(x1, x2) {
-  identical(serialize(x1, NULL), serialize(x2, NULL))
+attributes_serialize_identical <- function(attributes, full_object) {
+  identical(serialize(attributes(full_object), NULL), serialize(attributes, NULL))
+}
+
+attributes_identical <- function(attributes, full_object) {
+  identical(attributes, attributes(full_object))
 }
 
 ################################################################################################
@@ -136,61 +133,20 @@ qsave_rand <- function(x, file) {
   sc <- sample(0:15,1)
   cl <- sample(10,1)
   ch <- sample(c(T,F),1)
-  if (mode == "filestream") {
-    qsave(x, file = file, preset = "custom", algorithm = alg,
-        compress_level = cl, shuffle_control = sc, nthreads = nt, check_hash = ch)
-  } else if (mode == "fd") {
-    fd <- qs:::openFd(myfile, "w")
-    qsave_fd(x, fd, preset = "custom", algorithm = alg,
-          compress_level = cl, shuffle_control = sc, check_hash = ch)
-    qs:::closeFd(fd)
-  } else if (mode == "handle") {
-    h <- qs:::openHandle(myfile, "w")
-    qsave_handle(x, h, preset = "custom", algorithm = alg,
-             compress_level = cl, shuffle_control = sc, check_hash = ch)
-    qs:::closeHandle(h)
-  } else if (mode == "memory") {
-    .sobj <<- qserialize(x, preset = "custom", algorithm = alg,
-                         compress_level = cl, shuffle_control = sc, check_hash = ch)
-  } else {
-    stop(paste0("wrong write-mode selected: ", mode))
-  }
+  qsave(x, file = file, preset = "custom", algorithm = alg,
+      compress_level = cl, shuffle_control = sc, nthreads = nt, check_hash = ch)
 }
 
-qread_rand <- function(file) {
+qattributes_rand <- function(file) {
   ar <- sample(c(T,F),1)
   nt <- sample(5,1)
-  if (mode == "filestream") {
-    x <- qread(file, use_alt_rep = ar, nthreads = nt, strict = T)
-  } else if (mode == "fd") {
-    if (sample(2,1) == 1) {
-      fd <- qs:::openFd(myfile, "r")
-      x <- qread_fd(fd, use_alt_rep = ar, strict = T)
-      qs:::closeFd(fd)
-    } else {
-      x <- qread(file, use_alt_rep = ar, nthreads = nt, strict = T)
-    }
-  } else if (mode == "handle") {
-    if (sample(2,1) == 1) {
-      h <- qs:::openHandle(myfile, "r")
-      x <- qread_handle(h, use_alt_rep = ar, strict = T)
-      qs:::closeHandle(h)
-    } else {
-      x <- qread(file, use_alt_rep = ar, nthreads = nt, strict = T)
-    }
-  } else if (mode == "memory") {
-    x <- qdeserialize(.sobj, use_alt_rep = ar, strict = T)
-  } else {
-    stop(paste0("wrong read-mode selected: ", mode))
-  }
-  return(x)
+  qattributes(file, use_alt_rep = ar, nthreads = nt, strict = T)
 }
 
 ################################################################################################
 
 for (q in 1:reps) {
   cat("Rep",  q, "of", reps, "\n")
-
   # String correctness
   time <- vector("numeric", length = 3)
   for (tp in test_points) {
@@ -199,10 +155,10 @@ for (q in 1:reps) {
       x1 <- c(NA, "", x1)
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("strings: %s, %s s",tp, signif(mean(time), 4)))
   }
@@ -219,10 +175,10 @@ for (q in 1:reps) {
       x1 <- c(NA, "", x1)
       qsave_rand(x1, file = myfile)
       time[i] <- Sys.time()
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("Character Vectors: %s, %s s",tp, signif(mean(time), 4)))
   }
@@ -240,10 +196,10 @@ for (q in 1:reps) {
         x1 <- stringfish::convert_to_sf(x1)
         qsave_rand(x1, file = myfile)
         time[i] <- Sys.time()
-        z <- qread_rand(file = myfile)
+        z <- qattributes_rand(file = myfile)
         time[i] <- Sys.time() - time[i]
         do_gc()
-        stopifnot(identical(z, x1))
+        stopifnot(attributes_identical(z, x1))
       }
       printCarriage(sprintf("Stringfish: %s, %s s",tp, signif(mean(time), 4)))
     }
@@ -258,10 +214,10 @@ for (q in 1:reps) {
       x1 <- c(NA, x1)
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("Integers: %s, %s s",tp, signif(mean(time), 4)))
   }
@@ -275,10 +231,10 @@ for (q in 1:reps) {
       x1 <- c(NA, x1)
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("Numeric: %s, %s s",tp, signif(mean(time), 4)))
   }
@@ -292,10 +248,10 @@ for (q in 1:reps) {
       x1 <- sample(c(T, F, NA), replace = T, size = tp)
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("Logical: %s, %s s",tp, signif(mean(time),4)))
   }
@@ -308,10 +264,10 @@ for (q in 1:reps) {
       x1 <- generateList(sample(1:4, replace = T, size = tp))
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("List: %s, %s s",tp, signif(mean(time),4)))
   }
@@ -321,9 +277,9 @@ for (q in 1:reps) {
     x1 <- rep( replicate(1000, { rep(letters, length.out = 2^7 + sample(10, size = 1)) %>% paste(collapse = "") }), length.out = 1e6 )
     x1 <- data.frame(str = x1,num = runif(1:1000), stringsAsFactors = F)
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
+    z <- qattributes_rand(file = myfile)
     do_gc()
-    stopifnot(identical(z, x1))
+    stopifnot(attributes_identical(z, x1))
   }
   cat("Data.frame test")
   cat("\n")
@@ -332,21 +288,20 @@ for (q in 1:reps) {
     x1 <- rep( replicate(1000, { rep(letters, length.out = 2^7 + sample(10, size = 1)) %>% paste(collapse = "") }), length.out = 1e6 )
     x1 <- data.table(str = x1,num = runif(1:1e6))
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
+    z <- qattributes_rand(file = myfile)
     do_gc()
-    stopifnot(all(z == x1))
+    stopifnot(attributes_serialize_identical(z, x1))
   }
   cat("Data.table test")
   cat("\n")
 
   for (i in 1:3) {
-
     x1 <- rep( replicate(1000, { rep(letters, length.out = 2^7 + sample(10, size = 1)) %>% paste(collapse = "") }), length.out = 1e6 )
     x1 <- tibble(str = x1,num = runif(1:1e6))
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
+    z <- qattributes_rand(file = myfile)
     do_gc()
-    stopifnot(identical(z, x1))
+    stopifnot(attributes_identical(z, x1))
   }
   cat("Tibble test")
   cat("\n")
@@ -354,7 +309,6 @@ for (q in 1:reps) {
   # Encoding test
   if (Sys.info()[['sysname']] != "Windows") {
     for (i in 1:3) {
-
       x1 <- "己所不欲，勿施于人" # utf 8
       x2 <- x1
       Encoding(x2) <- "latin1"
@@ -363,9 +317,9 @@ for (q in 1:reps) {
       x4 <- rep(x1, x2, length.out = 1e4) %>% paste(collapse = ";")
       x1 <- c(x1, x2, x3, x4)
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage("Encoding test")
   } else {
@@ -377,17 +331,16 @@ for (q in 1:reps) {
   time <- vector("numeric", length = 3)
   for (tp in test_points) {
     for (i in 1:3) {
-
       re <- rnorm(tp)
       im <- runif(tp)
       x1 <- complex(real = re, imaginary = im)
       x1 <- c(NA_complex_, x1)
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("Complex: %s, %s s",tp, signif(mean(time), 4)))
   }
@@ -400,10 +353,10 @@ for (q in 1:reps) {
       x1 <- factor(rep(letters, length.out = tp), levels = sample(letters), ordered = TRUE)
       time[i] <- Sys.time()
       qsave_rand(x1, file = myfile)
-      z <- qread_rand(file = myfile)
+      z <- qattributes_rand(file = myfile)
       time[i] <- Sys.time() - time[i]
       do_gc()
-      stopifnot(identical(z, x1))
+      stopifnot(attributes_identical(z, x1))
     }
     printCarriage(sprintf("Factors: %s, %s s",tp, signif(mean(time), 4)))
   }
@@ -418,10 +371,10 @@ for (q in 1:reps) {
     printCarriage(sprintf("Random objects: %s bytes", object.size(x1) %>% as.numeric))
     time[i] <- Sys.time()
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
+    z <- qattributes_rand(file = myfile)
     time[i] <- Sys.time() - time[i]
     do_gc()
-    stopifnot(identical(z, x1))
+    stopifnot(attributes_identical(z, x1))
   }
   printCarriage(sprintf("Random objects: %s s", signif(mean(time), 4)))
   cat("\n")
@@ -435,11 +388,13 @@ for (q in 1:reps) {
       attr(x1[[i]], letters[i]) <- x1[[i + 1]]
     }
     time[i] <- Sys.time()
-    qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
-    time[i] <- Sys.time() - time[i]
-    do_gc()
-    stopifnot(identical(z, x1))
+    for(j in 1:length(x1)) {
+      qsave_rand(x1[[j]], file = myfile)
+      z <- qattributes_rand(file = myfile)
+      time[i] <- Sys.time() - time[i]
+      do_gc()
+      stopifnot(attributes_identical(z, x1[[j]]))
+    }
   }
   printCarriage(sprintf("Nested attributes: %s s", signif(mean(time), 4)))
   cat("\n")
@@ -450,10 +405,10 @@ for (q in 1:reps) {
     x1 <- 1:max_size
     time[i] <- Sys.time()
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
+    z <- qattributes_rand(file = myfile)
     time[i] <- Sys.time() - time[i]
     do_gc()
-    stopifnot(identical(z, x1))
+    stopifnot(attributes_identical(z, x1))
   }
   printCarriage(sprintf("Alt rep integer: %s s", signif(mean(time), 4)))
   cat("\n")
@@ -468,10 +423,10 @@ for (q in 1:reps) {
     x1[["c"]] <- stringfish::random_strings(1e4, vector_mode = "normal")
     time[i] <- Sys.time()
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
-    stopifnot(identical(z[["a"]], x1[["a"]]))
-    stopifnot(identical(z[["b"]], x1[["b"]]))
-    stopifnot(identical(z[["c"]], x1[["c"]]))
+    z <- qattributes_rand(file = myfile)
+    stopifnot(attributes_identical(z[["a"]], x1[["a"]]))
+    stopifnot(attributes_identical(z[["b"]], x1[["b"]]))
+    stopifnot(attributes_identical(z[["c"]], x1[["c"]]))
     time[i] <- Sys.time() - time[i]
     do_gc()
   }
@@ -483,30 +438,13 @@ for (q in 1:reps) {
     x1 <- nested_tibble()
     time[i] <- Sys.time()
     qsave_rand(x1, file = myfile)
-    z <- qread_rand(file = myfile)
-    stopifnot(identical(z, x1))
+    z <- qattributes_rand(file = myfile)
+    stopifnot(attributes_identical(z, x1))
     time[i] <- Sys.time() - time[i]
     do_gc()
   }
   printCarriage(sprintf("nested tibble test: %s s", signif(mean(time), 4)))
   cat("\n")
-}
-
-################################################################################################
-# some one off tests
-
-# test 1: alt rep implementation
-# https://github.com/traversc/qs/issues/9
-
-# stringfish character vectors -- require R > 3.5.0
-if (utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {
-  x <- data.table(x = 1:26, y = letters)
-  qsave(x, file = myfile)
-  xu <- qread(myfile, use_alt_rep = T)
-  data.table::setnames(xu, 1, "a")
-  stopifnot(identical(c("a", "y"), colnames(xu)))
-  data.table::setnames(xu, 2, "b")
-  stopifnot(identical(c("a", "b"), colnames(xu)))
 }
 
 cat("tests done\n")

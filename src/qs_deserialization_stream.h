@@ -320,7 +320,6 @@ struct Data_Context_Stream {
   uint64_t & data_offset; // dsc.blockoffset
   uint64_t & block_size; // dsc.blocksize
   char * data_ptr;
-  std::string temp_string = std::string(256, '\0');
 
   Data_Context_Stream(DestreamClass & d, QsMetadata q, bool use_alt_rep) : qm(q), dsc(d), use_alt_rep_bool(use_alt_rep),
     shuffleblock(std::vector<uint8_t>(256)), data_offset(d.blockoffset), block_size(d.blocksize), data_ptr(d.outblock.data()) {}
@@ -343,19 +342,18 @@ struct Data_Context_Stream {
     if(data_offset + BLOCKRESERVE >= block_size) getBlock();
     readFlags_common(packed_flags, data_offset, data_ptr);
   }
-  char * tempString(uint64_t data_size) {
-    temp_string.resize(data_size);
-    return &temp_string[0];
-  }
   char * tempBlock(uint64_t data_size) {
     if(data_size > shuffleblock.size()) shuffleblock.resize(data_size);
     return reinterpret_cast<char*>(shuffleblock.data());
   }
-  char * tempString() {
-    return &temp_string[0];
-  }
   char * tempBlock() {
     return reinterpret_cast<char*>(shuffleblock.data());
+  }
+  std::string getString(uint64_t data_size) {
+    std::string temp_string;
+    temp_string.resize(data_size);
+    getBlockData(&temp_string[0], data_size);
+    return temp_string;
   }
   void getShuffleBlockData(char* outp, uint64_t data_size, uint64_t bytesoftype) {
     // std::cout << data_size << " get shuffle block\n";
