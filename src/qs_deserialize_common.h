@@ -667,10 +667,10 @@ SEXP processAttributes(T * const sobj, const bool get_attr = true) {
   qstype obj_type;
   uint64_t r_array_len;
   uint64_t number_of_attributes = 0;
-  bool s4_flag = false;
+  // bool s4_flag = false; // unused
   sobj->readHeader(obj_type, r_array_len);
   if(obj_type == qstype::S4FLAG) {
-    s4_flag = true;
+    // s4_flag = true;
     sobj->readHeader(obj_type, r_array_len);
   }
   if(obj_type == qstype::ATTRIBUTE) {

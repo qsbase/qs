@@ -16,7 +16,7 @@ base91_encode(rawdata, quote_character = "\\"")
 A string representation of the raw vector.
 }
 \description{
-Encodes binary data (a raw vector) as ASCII text using \href{http://base91.sourceforge.net/}{basE91 encoding format}.
+Encodes binary data (a raw vector) as ASCII text using \href{https://base91.sourceforge.net/}{basE91 encoding format}.
 }
 \details{
 basE91 (capital E for stylization) is a binary to ASCII encoding format created by Joachim Henke in 2005.
@@ -26,5 +26,5 @@ The original encoding does include double quote characters, which are less than 
 you can use the \code{quote_character} parameter to substitute dash or single quote.
 }
 \references{
-http://base91.sourceforge.net/
+https://base91.sourceforge.net/
 }

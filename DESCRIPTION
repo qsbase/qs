@@ -2,7 +2,7 @@ Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
 Version: 0.25.5
-Date: 2023-2-18
+Date: 2023-2-21
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),
@@ -20,7 +20,6 @@ License: GPL-3
 LazyData: true
 Biarch: true
 Depends: R (>= 3.0.2)
-SystemRequirements: C++11
 Imports: 
     Rcpp, RApiSerialize (>= 0.1.1), stringfish (>= 0.15.1)
 LinkingTo: Rcpp, RApiSerialize, stringfish

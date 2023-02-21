@@ -1,6 +1,6 @@
-Version 0.25.5 (2023-1-2)
+Version 0.25.5 (2023-2-20)
    * Add function `qread_url`, a helper function that reads `qs` objects from the internet (https://github.com/traversc/qs/issues/49)
-   *
+   * Add `qattributes` function for extracting attributes of a saved object
 
 Version 0.25.4 (2022-8-9)
    * Brief hotfix due to changes in RApiSerialize: specify R serialization version = 2

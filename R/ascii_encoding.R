@@ -35,7 +35,7 @@ NULL
 
 #' basE91 Encoding
 #'
-#' Encodes binary data (a raw vector) as ASCII text using [basE91 encoding format](http://base91.sourceforge.net/).
+#' Encodes binary data (a raw vector) as ASCII text using [basE91 encoding format](https://base91.sourceforge.net/).
 #'
 #' basE91 (capital E for stylization) is a binary to ASCII encoding format created by Joachim Henke in 2005.
 #' The overhead (extra bytes used relative to binary) is 22.97% on average. In comparison, base 64 encoding has an overhead of 33.33%.
@@ -49,7 +49,7 @@ NULL
 #'
 #' @return A string representation of the raw vector.
 #' @export
-#' @references http://base91.sourceforge.net/
+#' @references https://base91.sourceforge.net/
 base91_encode <- function(rawdata, quote_character = "\"") {
   if (!quote_character %in% c("\"", "'", "-")) {
     stop("quote_character must be a dash, single quote or double quote.")
@@ -82,8 +82,8 @@ base91_decode <- function(encoded_string) {
 #' Encode and compress a file or string
 #'
 #' A helper function for encoding and compressing a file or string to ASCII using [base91_encode()] and [qserialize()] with the highest compression level.
-#' 
-#' The [encode_source()] and [decode_source()] functions are useful for storing small amounts of data or text inline to a .R or .Rmd file.  
+#'
+#' The [encode_source()] and [decode_source()] functions are useful for storing small amounts of data or text inline to a .R or .Rmd file.
 #'
 #' @param x The object to encode (if `file` is not NULL)
 #' @param file The file to encode (if `x` is not NULL)
@@ -91,7 +91,7 @@ base91_decode <- function(encoded_string) {
 #'
 #' @return A character vector in base91 representing the compressed original file or object.
 #' @export
-#' 
+#'
 #' @examples
 #' set.seed(1); data <- sample(500)
 #' result <- encode_source(data)
@@ -123,8 +123,8 @@ encode_source <- function(x = NULL, file = NULL, width = 120) {
 #'
 #' @param string A string to decode.
 #'
-#' @seealso [encode_source()] for more details. 
-#' @return The original (decoded) object. 
+#' @seealso [encode_source()] for more details.
+#' @return The original (decoded) object.
 #' @export
 decode_source <- function(string) {
   x <- paste0(string, collapse = "")

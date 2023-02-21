@@ -7,8 +7,14 @@ suppressMessages(library(sf))
 suppressMessages(library(nanotime))
 suppressMessages(library(R6))
 suppressMessages(library(raster))
-# suppressMessages(library(trqwe))
 options(warn=1)
+
+mcreadRDS <- function(file,mc.cores=min(parallel::detectCores(),4)) {
+  con <- pipe(paste0("pigz -d -c -p",mc.cores," ",file))
+  object <- readRDS(file = con)
+  close(con)
+  return(object)
+}
 
 if (Sys.info()[['sysname']] != "Windows") {
   myfile <- tempfile()
@@ -84,9 +90,9 @@ for(i in 1:10) {
   df <- mtcars %>% sample_n(1e5, replace=T)
   vars <- c("hp", "drat", "wt", "qsec")
   var <- sample(vars, 1)
-  g1 <- ggplot(df, aes(x = mpg, y = !!as.symbol(var), color = factor(cyl))) + 
-    geom_smooth(formula = y ~ x + x^2 + x^3, method="lm") + 
-    geom_point(data=df %>% sample_n(1000)) + 
+  g1 <- ggplot(df, aes(x = mpg, y = !!as.symbol(var), color = factor(cyl))) +
+    geom_smooth(formula = y ~ x + x^2 + x^3, method="lm") +
+    geom_point(data=df %>% sample_n(1000)) +
     scale_color_viridis_d()
   qsave_rand(g1, myfile)
   g2 <- qread_rand(myfile)
@@ -100,9 +106,9 @@ rm(df, g1, g2, gb1, gb2)
 gc()
 
 print("starmap ggplot")
-g1 <- ggplot(starnames, 
-       aes(x = `RA(J2000)`, y=`Dec(J2000)`, 
-           color = `Const.`)) + geom_point(show.legend=F) + 
+g1 <- ggplot(starnames,
+       aes(x = `RA(J2000)`, y=`Dec(J2000)`,
+           color = `Const.`)) + geom_point(show.legend=F) +
   geom_text(aes(label = `IAU Name`), show.legend=F)
 for(i in 1:10) {
   qsave_rand(g1, myfile)
@@ -142,8 +148,8 @@ gc()
 # Data is private, so not uploaded online
 print("github.com/traversc/qs/issues/14 (this takes a long time)")
 if (Sys.info()[['sysname']] != "Windows") {
-  system("cat ~/N/R_stuff/qs_extended_tests/issue_14_data.rds > /dev/null")
-  r <- mcreadRDS("~/N/R_stuff/qs_extended_tests/issue_14_data.rds")
+  system("cat /mnt/n/R_stuff/qs_extended_tests/issue_14_data.rds > /dev/null")
+  r <- mcreadRDS("/mnt/n/R_stuff/qs_extended_tests/issue_14_data.rds")
 } else {
   r <- readRDS("N:/R_stuff/qs_extended_tests/issue_14_data.rds")
 }
@@ -251,7 +257,7 @@ stopifnot(is.numeric(x2$r))
 print("https://github.com/traversc/qs/issues/43")
 for(i in 1:200) {
   a <- paste0(rep(".", i), collapse = "")
-  x <- list(a = a, # a= '....................................................................', 
+  x <- list(a = a, # a= '....................................................................',
             b= cbind(integer(246722), as.data.frame(matrix(data=0, nrow=246722, ncol=8))))
   x2 <- qs::qdeserialize(qs::qserialize(x))
   stopifnot(identical(x, x2))
