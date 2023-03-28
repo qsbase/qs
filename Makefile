@@ -17,6 +17,9 @@ check-solaris: $(BUILD)
 check-m1: $(BUILD)
 	Rscript -e 'rhub::check("$(BUILD)", platform = c("macos-m1-bigsur-release"))'
 
+reconf:
+	autoreconf -fi
+
 build:
 	find . -type d -exec chmod 755 {} \;
 	find . -type f -exec chmod 644 {} \;
@@ -52,9 +55,10 @@ install:
 	# R CMD INSTALL $(BUILD) --configure-args="--with-simd=AVX2 --with-lz4-force-compile"
 
 vignette:
-	Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_format='all')"
-	mv vignettes/vignette.md README.md
-	sed -r -i 's/\((.+)\.png/\(vignettes\/\1\.png/' README.md
+	Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_format='html_vignette')"
+	IS_GITHUB=Yes Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_file='../README.md', output_format='github_document')"; unset IS_GITHUB
+	# mv vignettes/vignette.md README.md
+	# sed -r -i 's/\((.+)\.png/\(vignettes\/\1\.png/' README.md
 
 test:
 	Rscript tests/qsavemload_testing.R
