@@ -1,6 +1,6 @@
 Version 0.25.6 (2023-3-26)
    * Fix unit tests for big endian system (https://github.com/traversc/qs/issues/77)
-   * Check for GCC and add `-latomic` flag required before GCC 4.9 (https://github.com/traversc/qs/issues/76)
+   * Check for GCC and add `-latomic` flag which is sometimes required (https://github.com/traversc/qs/issues/76)
 
 Version 0.25.5 (2023-2-20)
    * Add function `qread_url`, a helper function that reads `qs` objects from the internet (https://github.com/traversc/qs/issues/49)

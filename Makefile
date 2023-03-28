@@ -18,7 +18,6 @@ check-m1: $(BUILD)
 	Rscript -e 'rhub::check("$(BUILD)", platform = c("macos-m1-bigsur-release"))'
 
 build:
-	autoconf
 	find . -type d -exec chmod 755 {} \;
 	find . -type f -exec chmod 644 {} \;
 	chmod 755 cleanup
@@ -35,7 +34,6 @@ build:
 	R CMD build .
 
 install:
-	autoconf
 	find . -type f -exec chmod 644 {} \;
 	find . -type d -exec chmod 755 {} \;
 	chmod 755 cleanup

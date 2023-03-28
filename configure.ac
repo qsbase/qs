@@ -2,6 +2,13 @@ AC_INIT([qs],[0.25.6],[traversc@gmail.com])
 AC_PATH_PROG([PKGCONF],[pkg-config],[],[$PATH:/usr/local/bin:ext/bin:ext:/sw/bin:/opt/bin:/opt/local/bin])
 
 ########################################################
+AC_LANG(C++)
+: ${R_HOME=`R RHOME`}
+PATH_TO_CPP_COMPILER=`"${R_HOME}/bin/R" CMD config CXX`
+AC_PROG_CXX([$PATH_TO_CPP_COMPILER])
+echo "C++ compiler: $PATH_TO_CPP_COMPILER"
+
+########################################################
 ### Configure args
 
 AC_ARG_WITH([zstd-force-compile],
@@ -53,15 +60,10 @@ echo $(($MAJOR*100000+$MINOR*100+$RELEASE))
 ########################################################
 #### Compiler specific flags
 
-# Check for the system compiler; Note: AC_PROG_CC not reliable for clang
-R_HOME=`R RHOME`
-CXX=$(echo `"${R_HOME}/bin/R" CMD config CXX` | cut -d' ' -f1)
+AX_COMPILER_VENDOR
 
-echo "R CXX compiler: $CXX"
-
-if test xx$CXX = "xxg++"; then
-  echo "gcc detected"
-  COMPILER_SPECIFIC_LIBS="-latomic" # required before GCC 4.9
+if test xx$ax_cv_cxx_compiler_vendor = "xxgnu"; then
+  COMPILER_SPECIFIC_LIBS="-latomic"
 else
   COMPILER_SPECIFIC_LIBS=""
 fi
