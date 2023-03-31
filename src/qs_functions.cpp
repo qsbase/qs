@@ -28,8 +28,8 @@
 #include "qs_deserialization_stream.h"
 #include "extra_functions.h"
 
-#define FILE_SAVE_ERR_MSG "Failed to open file for writing. \n- Does the directory exist?\n - Do you have file permissions?\n- Is the file name long? (usually 255 chars)"
-#define FILE_READ_ERR_MSG "Failed to open file for reading. \n- Does the file exist?\n - Do you have file permissions?\n- Is the file name long? (usually 255 chars)"
+#define FILE_SAVE_ERR_MSG "Failed to open for writing. Does the directory exist? Do you have file permissions? Is the file name long? (>255 chars)"
+#define FILE_READ_ERR_MSG "Failed to open for reading. Does the file exist? Do you have file permissions? Is the file name long? (>255 chars)"
 
 /*
  * headers:
@@ -58,7 +58,7 @@ double qsave(SEXP const x, const std::string & file, const std::string preset="h
                const int compress_level=4L, const int shuffle_control=15L, const bool check_hash=true, const int nthreads=1) {
   std::ofstream myFile(R_ExpandFileName(file.c_str()), std::ios::out | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error(FILE_SAVE_ERR_MSG);
+    throw std::runtime_error("For file " + file + ": " + FILE_SAVE_ERR_MSG);
   }
   myFile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   std::streampos origin = myFile.tellp();
@@ -289,7 +289,7 @@ RawVector c_qserialize(SEXP const x, const std::string preset, const std::string
 SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool strict=false, const int nthreads=1) {
   std::ifstream myFile(R_ExpandFileName(file.c_str()), std::ios::in | std::ios::binary);
   if(!myFile) {
-    throw std::runtime_error(FILE_READ_ERR_MSG);
+    throw std::runtime_error("For file " + file + ": " + FILE_READ_ERR_MSG);
   }
   myFile.exceptions(std::ifstream::badbit); // do not check failbit, it is set when eof is checked in validate_data
   Protect_Tracker pt = Protect_Tracker();
@@ -298,14 +298,14 @@ SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool st
     ZSTD_streamRead<std::ifstream> sr(myFile, qm);
     Data_Context_Stream<ZSTD_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
     SEXP ret = PROTECT(processBlock(&dc)); pt++;
-    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict, file);
     myFile.close();
     return ret;
   } else if(qm.compress_algorithm == 4) { // uncompressed
     uncompressed_streamRead<std::ifstream> sr(myFile, qm);
     Data_Context_Stream<uncompressed_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
     SEXP ret = PROTECT(processBlock(&dc)); pt++;
-    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict, file);
     myFile.close();
     return ret;
   } else {
@@ -313,13 +313,13 @@ SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool st
       if(qm.compress_algorithm == 0) {
         Data_Context<std::ifstream, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(processBlock(&dc)); pt++;
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict, file);
         myFile.close();
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context<std::ifstream, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(processBlock(&dc)); pt++;
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict, file);
         myFile.close();
         return ret;
       } else {
@@ -330,14 +330,14 @@ SEXP qread(const std::string & file, const bool use_alt_rep=false, const bool st
         Data_Context_MT<zstd_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(processBlock(&dc)); pt++;
         dc.dtc.finish();
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict, file);
         myFile.close();
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(processBlock(&dc)); pt++;
         dc.dtc.finish();
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict, file);
         myFile.close();
         return ret;
       } else {
@@ -360,14 +360,14 @@ SEXP c_qattributes(const std::string & file, const bool use_alt_rep=false, const
     ZSTD_streamRead<std::ifstream> sr(myFile, qm);
     Data_Context_Stream<ZSTD_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
     SEXP ret = PROTECT(processAttributes(&dc)); pt++;
-    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict, file);
     myFile.close();
     return ret;
   } else if(qm.compress_algorithm == 4) { // uncompressed
     uncompressed_streamRead<std::ifstream> sr(myFile, qm);
     Data_Context_Stream<uncompressed_streamRead<std::ifstream>> dc(sr, qm, use_alt_rep);
     SEXP ret = PROTECT(processAttributes(&dc)); pt++;
-    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict);
+    validate_data(qm, myFile, *reinterpret_cast<uint32_t*>(dc.dsc.hash_reserve.data()), dc.dsc.xenv.digest(), dc.dsc.decompressed_bytes_read, strict, file);
     myFile.close();
     return ret;
   } else {
@@ -375,13 +375,13 @@ SEXP c_qattributes(const std::string & file, const bool use_alt_rep=false, const
       if(qm.compress_algorithm == 0) {
         Data_Context<std::ifstream, zstd_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(processAttributes(&dc)); pt++;
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict, file);
         myFile.close();
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context<std::ifstream, lz4_decompress_env> dc(myFile, qm, use_alt_rep);
         SEXP ret = PROTECT(processAttributes(&dc)); pt++;
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), dc.blocks_read, strict, file);
         myFile.close();
         return ret;
       } else {
@@ -392,14 +392,14 @@ SEXP c_qattributes(const std::string & file, const bool use_alt_rep=false, const
         Data_Context_MT<zstd_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(processAttributes(&dc)); pt++;
         dc.dtc.finish();
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict, file);
         myFile.close();
         return ret;
       } else if(qm.compress_algorithm == 1 || qm.compress_algorithm == 2) {
         Data_Context_MT<lz4_decompress_env> dc(myFile, qm, use_alt_rep, nthreads);
         SEXP ret = PROTECT(processAttributes(&dc)); pt++;
         dc.dtc.finish();
-        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict);
+        validate_data(qm, myFile, qm.check_hash ? readSize4(myFile) : 0, dc.xenv.digest(), 0, strict, file);
         myFile.close();
         return ret;
       } else {

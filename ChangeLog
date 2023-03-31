@@ -1,4 +1,5 @@
 Version 0.25.6 (2023-3-26)
+   * Add filenames to error messages (https://github.com/traversc/qs/issues/75)
    * Fix unit tests for big endian system (https://github.com/traversc/qs/issues/77)
    * Check for GCC and add `-latomic` flag which is sometimes required (https://github.com/traversc/qs/issues/76)
 

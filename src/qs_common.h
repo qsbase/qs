@@ -5,12 +5,12 @@
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -109,25 +109,25 @@ static constexpr uint64_t MAX_SAFE_INTEGER = 9007199254740991ULL; // 2^53-1 -- t
 static const std::array<uint8_t,4> magic_bits = {0x0B,0x0E,0x0A,0x0C};
 static const std::array<uint8_t,4> empty_bits = {0,0,0,0};
 
-static constexpr uint8_t list_header_5 = 0x20_u8; 
+static constexpr uint8_t list_header_5 = 0x20_u8;
 static constexpr uint8_t list_header_8 = 0x01_u8;
 static constexpr uint8_t list_header_16 = 0x02_u8;
 static constexpr uint8_t list_header_32 = 0x03_u8;
 static constexpr uint8_t list_header_64 = 0x04_u8;
 
-static constexpr uint8_t numeric_header_5 = 0x40_u8; 
+static constexpr uint8_t numeric_header_5 = 0x40_u8;
 static constexpr uint8_t numeric_header_8 = 0x05_u8;
 static constexpr uint8_t numeric_header_16 = 0x06_u8;
 static constexpr uint8_t numeric_header_32 = 0x07_u8;
 static constexpr uint8_t numeric_header_64 = 0x08_u8;
 
-static constexpr uint8_t integer_header_5 = 0x60_u8; 
+static constexpr uint8_t integer_header_5 = 0x60_u8;
 static constexpr uint8_t integer_header_8 = 0x09_u8;
 static constexpr uint8_t integer_header_16 = 0x0A_u8;
 static constexpr uint8_t integer_header_32 = 0x0B_u8;
 static constexpr uint8_t integer_header_64 = 0x0C_u8;
 
-static constexpr uint8_t logical_header_5 = 0x80_u8; 
+static constexpr uint8_t logical_header_5 = 0x80_u8;
 static constexpr uint8_t logical_header_8 = 0x0D_u8;
 static constexpr uint8_t logical_header_16 = 0x0E_u8;
 static constexpr uint8_t logical_header_32 = 0x0F_u8;
@@ -136,22 +136,22 @@ static constexpr uint8_t logical_header_64 = 0x10_u8;
 static constexpr uint8_t raw_header_32 = 0x17_u8;
 static constexpr uint8_t raw_header_64 = 0x18_u8;
 
-static constexpr uint8_t null_header = 0x00_u8; 
-static constexpr uint8_t sym_header = 0x1D_u8; 
+static constexpr uint8_t null_header = 0x00_u8;
+static constexpr uint8_t sym_header = 0x1D_u8;
 
-static constexpr uint8_t character_header_5 = 0xA0_u8; 
+static constexpr uint8_t character_header_5 = 0xA0_u8;
 static constexpr uint8_t character_header_8 = 0x11_u8;
 static constexpr uint8_t character_header_16 = 0x12_u8;
 static constexpr uint8_t character_header_32 = 0x13_u8;
 static constexpr uint8_t character_header_64 = 0x14_u8;
 
 static constexpr uint8_t string_header_NA = 0x0F_u8;
-static constexpr uint8_t string_header_5 = 0x20_u8; 
+static constexpr uint8_t string_header_5 = 0x20_u8;
 static constexpr uint8_t string_header_8 = 0x01_u8;
 static constexpr uint8_t string_header_16 = 0x02_u8;
 static constexpr uint8_t string_header_32 = 0x03_u8;
 
-static constexpr uint8_t string_enc_native = 0x00_u8; 
+static constexpr uint8_t string_enc_native = 0x00_u8;
 static constexpr uint8_t string_enc_utf8 = 0x40_u8;
 static constexpr uint8_t string_enc_latin1 = 0x80_u8;
 static constexpr uint8_t string_enc_bytes = 0xC0_u8;
@@ -203,10 +203,10 @@ static constexpr uint8_t dot_wf_header = 0x15_u8;
 // static constexpr std::array<uint8_t,2> dot_headerr_with_ext {{ extension_header, dot_header }};
 
 // static constexpr std::array<uint8_t,2> unlocked_env_header_with_ext {{ extension_header, unlocked_env_header }};
-// static constexpr std::array<uint8_t,2> locked_env_header_with_ext {{ extension_header, locked_env_header }}; 
-// static constexpr std::array<uint8_t,2> reference_object_header_with_ext {{ extension_header, reference_object_header }}; 
+// static constexpr std::array<uint8_t,2> locked_env_header_with_ext {{ extension_header, locked_env_header }};
+// static constexpr std::array<uint8_t,2> reference_object_header_with_ext {{ extension_header, reference_object_header }};
 
-// can package env or global env etc lock status be changed?  
+// can package env or global env etc lock status be changed?
 // Technically yes, but even R serialization doesn't capture that information
 // They are captured by a special hook and contents are not serialized
 // static constexpr uint8_t package_env_header_32 = 0x06_u8;
@@ -276,11 +276,11 @@ inline bool isSeekable(std::ifstream & myFile) {
 //   return return_value;
 // }
 // inline void writeSizeToCon8(Rconnection con, uint64_t x) {
-//   uint64_t x_temp = static_cast<uint64_t>(x); 
+//   uint64_t x_temp = static_cast<uint64_t>(x);
 //   write_check(reinterpret_cast<char*>(&x_temp),8, con);
 // }
 // inline void writeSizeToCon4(Rconnection con, uint64_t x) {
-//   uint32_t x_temp = static_cast<uint32_t>(x); 
+//   uint32_t x_temp = static_cast<uint32_t>(x);
 //   write_check(reinterpret_cast<char*>(&x_temp),4, con);
 //   }
 // inline uint32_t readSize4(Rconnection con) {
@@ -600,12 +600,12 @@ inline bool isSeekable(handle_wrapper & myFile) {
 
 template <class stream_writer>
 inline void writeSize8(stream_writer & myFile, const uint64_t x) {
-  auto x_temp = static_cast<uint64_t>(x); 
+  auto x_temp = static_cast<uint64_t>(x);
   write_check(myFile, reinterpret_cast<char*>(&x_temp),8);
 }
 template <class stream_writer>
 inline void writeSize4(stream_writer & myFile, const uint64_t x) {
-  auto x_temp = static_cast<uint32_t>(x); 
+  auto x_temp = static_cast<uint32_t>(x);
   write_check(myFile, reinterpret_cast<char*>(&x_temp),4);
 }
 
@@ -660,7 +660,7 @@ struct QsMetadata {
   bool cplx_shuffle;
 
   //constructor from qsave
-  QsMetadata(const std::string & preset, const std::string & algorithm, const int compress_level, int shuffle_control, const bool check_hash) : 
+  QsMetadata(const std::string & preset, const std::string & algorithm, const int compress_level, int shuffle_control, const bool check_hash) :
     clength(0), check_hash(check_hash), endian(is_big_endian()) {
     if(preset == "fast") {
       compress_algorithm = static_cast<uint8_t>(compalg::lz4);
@@ -715,7 +715,7 @@ struct QsMetadata {
     cplx_shuffle = shuffle_control & 0x08;
     format_version = CURRENT_FORMAT_VER;
   }
-  
+
   // 0x0B0E0A0C
   static bool checkMagicNumber(const std::array<uint8_t, 4> & reserve_bits) {
     if(reserve_bits[0] != magic_bits[0]) return false;
@@ -724,7 +724,7 @@ struct QsMetadata {
     if(reserve_bits[3] != magic_bits[3]) return false;
     return true;
   }
-  
+
   QsMetadata(const uint64_t clength,
              const bool check_hash,
              const uint8_t endian,
@@ -734,11 +734,11 @@ struct QsMetadata {
              const bool lgl_shuffle,
              const bool int_shuffle,
              const bool real_shuffle,
-             const bool cplx_shuffle) : 
-    clength(clength), check_hash(check_hash), endian(endian), compress_algorithm(compress_algorithm), 
-    compress_level(compress_level), format_version(format_version), lgl_shuffle(lgl_shuffle), int_shuffle(int_shuffle), 
+             const bool cplx_shuffle) :
+    clength(clength), check_hash(check_hash), endian(endian), compress_algorithm(compress_algorithm),
+    compress_level(compress_level), format_version(format_version), lgl_shuffle(lgl_shuffle), int_shuffle(int_shuffle),
     real_shuffle(real_shuffle), cplx_shuffle(cplx_shuffle) {}
-  
+
   // constructor from q_read
   template <class stream_reader>
   static QsMetadata create(stream_reader & myFile) {
@@ -775,7 +775,7 @@ struct QsMetadata {
             real_shuffle,
             cplx_shuffle};
   }
-  
+
   // version 2
   template <class stream_writer>
   void writeToFile(stream_writer & myFile) {
@@ -804,7 +804,7 @@ size_t LZ4_compressBound_fun(size_t srcSize) {
 size_t LZ4_compress_fun( void* dst, size_t dstCapacity,
                          const void* src, size_t srcSize,
                          int compressionLevel) {
-  return LZ4_compress_fast(reinterpret_cast<char*>(const_cast<void*>(src)), 
+  return LZ4_compress_fast(reinterpret_cast<char*>(const_cast<void*>(src)),
                            reinterpret_cast<char*>(const_cast<void*>(dst)),
                            static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
 }
@@ -812,14 +812,14 @@ size_t LZ4_compress_fun( void* dst, size_t dstCapacity,
 size_t LZ4_compress_HC_fun( void* dst, size_t dstCapacity,
                             const void* src, size_t srcSize,
                             int compressionLevel) {
-  return LZ4_compress_HC(reinterpret_cast<char*>(const_cast<void*>(src)), 
+  return LZ4_compress_HC(reinterpret_cast<char*>(const_cast<void*>(src)),
                          reinterpret_cast<char*>(const_cast<void*>(dst)),
                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
 }
 
 size_t LZ4_decompress_fun( void* dst, size_t dstCapacity,
                            const void* src, size_t compressedSize) {
-  int ret = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)), 
+  int ret = LZ4_decompress_safe(reinterpret_cast<char*>(const_cast<void*>(src)),
                                 reinterpret_cast<char*>(const_cast<void*>(dst)),
                                 static_cast<int>(compressedSize), static_cast<int>(dstCapacity));
   if(ret < 0) {
@@ -838,8 +838,9 @@ unsigned LZ4_isError_fun(size_t retval) {
 }
 
 template <class stream_reader>
-uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint32_t recorded_hash, 
-                       const uint32_t computed_hash, const uint64_t computed_length, const bool strict) {
+uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint32_t recorded_hash,
+                       const uint32_t computed_hash, const uint64_t computed_length, const bool strict,
+                       const std::string & file = "") {
   // destructively check EOF -- cannot putback data
   std::array<char,4> temp;
   uint64_t remaining_bytes = read_allow(myFile, temp.data(), 4);
@@ -849,7 +850,10 @@ uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint
       remaining_bytes += remaining_bytes2;
       remaining_bytes2 = read_allow(myFile, temp.data(), 4);
     }
-    std::string msg = "end of file not reached, " + std::to_string(remaining_bytes) + " bytes remaining";
+    std::string msg = "End of file not reached, " + std::to_string(remaining_bytes) + " bytes remaining";
+    if(file != "") {
+      msg = "In file " + file + ": " + msg;
+    }
     if(strict) {
       throw std::runtime_error(msg.c_str());
     } else {
@@ -857,19 +861,27 @@ uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint
     }
   }
   if((qm.clength != 0) && (computed_length != 0) && (computed_length != qm.clength)) {
+    std::string msg = "Computed object length does not match recorded object length";
+    if(file != "") {
+      msg = "In file " + file + ": " + msg;
+    }
     if(strict) {
-      throw std::runtime_error("computed object length does not match recorded object length");
+      throw std::runtime_error(msg);
     } else {
-      Rcerr << "Warning: computed object length does not match recorded object length, data may be corrupted" << std::endl;
+      Rcerr << "Warning: " << msg << std::endl;
     }
   }
   if(qm.check_hash) {
     if(computed_hash != recorded_hash) {
+      std::string msg = "Hash checksum does not match (Recorded, Computed) (" +
+        std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted";
+      if(file != "") {
+        msg = "In file " + file + ": " + msg;
+      }
       if(strict) {
-        throw std::runtime_error("Warning: hash checksum does not match (Recorded, Computed) (" + 
-                                 std::to_string(recorded_hash) + "," + std::to_string(computed_hash) + "), data may be corrupted");
+        throw std::runtime_error(msg);
       } else {
-        Rcerr << "Warning: hash checksum does not match (Recorded, Computed) (" << recorded_hash << "," << computed_hash << "), data may be corrupted" << std::endl;
+        Rcerr << "Warning: " << msg << std::endl;
       }
     }
     return recorded_hash;
@@ -881,12 +893,12 @@ uint32_t validate_data(const QsMetadata & qm, stream_reader & myFile, const uint
 // protection handling using RAII should have no issues with longjmp
 // ref: https://developer.r-project.org/Blog/public/2019/03/28/use-of-c---in-packages/
 // "R restores the protection stack depth before taking a long jump,
-// so if a C++ destructor includes say UNPROTECT(1) call to restore 
-// the protection stack depth, it does not matter it is not executed, 
+// so if a C++ destructor includes say UNPROTECT(1) call to restore
+// the protection stack depth, it does not matter it is not executed,
 // because R will do that automatically."
-// 
-// There is also a limit of 10,000 on the protection stack.  
-// Theoretically, we'd need to track it globally to be 100% error proof.  
+//
+// There is also a limit of 10,000 on the protection stack.
+// Theoretically, we'd need to track it globally to be 100% error proof.
 // Realistically, it should never occur in this package as you'd need a list with depth 10,000.
 // Ref: https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Garbage-Collection
 struct Protect_Tracker {
@@ -981,7 +993,7 @@ struct lz4_compress_env {
   uint64_t compress( char * dst, int dstCapacity,
                    const char * src, int srcSize,
                    int compressionLevel) {
-    // return LZ4_compress_fast_extState(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
+    // return LZ4_compress_fast_extState(state, reinterpret_cast<char*>(const_cast<void*>(src)),
     //                          reinterpret_cast<char*>(const_cast<void*>(dst)),
     //                          static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
     int return_value = LZ4_compress_fast(src, dst, srcSize, dstCapacity, compressionLevel);
@@ -1004,7 +1016,7 @@ struct lz4hc_compress_env {
                    const char * src, int srcSize,
                    int compressionLevel) {
     // xenv.update(src, srcSize);
-    // return LZ4_compress_HC_extStateHC(state, reinterpret_cast<char*>(const_cast<void*>(src)), 
+    // return LZ4_compress_HC_extStateHC(state, reinterpret_cast<char*>(const_cast<void*>(src)),
     //                                   reinterpret_cast<char*>(const_cast<void*>(dst)),
     //                                   static_cast<int>(srcSize), static_cast<int>(dstCapacity), compressionLevel);
     int return_value = LZ4_compress_HC(src, dst, srcSize, dstCapacity, compressionLevel);
@@ -1120,7 +1132,7 @@ struct zstd_decompress_stream_simple {
     zin.size = insize;
     zds = ZSTD_createDStream();
   }
-  
+
   bool decompress() {
     uint64_t return_value = ZSTD_decompressStream(zds, &zout, &zin);
     if(ZSTD_isError(return_value)) return true;
@@ -1204,7 +1216,7 @@ void unpackFlags(SEXP obj, int flags) {
 }
 
 // from serialize.c // memory.c -- unclear what this does, but might be necessary.  Not available in R 3.6
-/* 
+/*
 void R_expand_binding_value(SEXP b)
 {
 #if BOXED_BINDING_CELLS
