@@ -56,7 +56,7 @@ install:
 
 vignette:
 	Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_format='html_vignette')"
-	IS_GITHUB=Yes Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_file='../README.md', output_format='github_document')"; unset IS_GITHUB
+	IS_GITHUB=Yes Rscript -e "rmarkdown::render(input='vignettes/vignette.rmd', output_file='../README.md', output_format=rmarkdown::github_document(html_preview=FALSE))"; unset IS_GITHUB
 	# mv vignettes/vignette.md README.md
 	# sed -r -i 's/\((.+)\.png/\(vignettes\/\1\.png/' README.md
 
