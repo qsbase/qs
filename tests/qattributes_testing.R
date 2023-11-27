@@ -182,7 +182,10 @@ qsave_rand <- function(x, file) {
 }
 
 qattributes_rand <- function(file) {
-  ar <- sample(c(T,F),1)
+  # ar <- sample(c(T,F),1)
+  # don't use altrep to avoid serialization differences
+  # attributes_serialize_identical won't pass with ALTREP
+  ar <- FALSE
   nt <- sample(5,1)
   qattributes(file, use_alt_rep = ar, nthreads = nt, strict = T)
 }

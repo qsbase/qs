@@ -167,10 +167,6 @@ printCarriage <- function(x) {
   cat(x, "\r")
 }
 
-serialize_identical <- function(x1, x2) {
-  identical(serialize(x1, NULL), serialize(x2, NULL))
-}
-
 ################################################################################################
 
 qsave_rand <- function(x, file) {
