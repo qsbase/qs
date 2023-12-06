@@ -1,3 +1,6 @@
+Version 0.25.7 (2023-12-05)
+   * Minor fix for CRAN checks (see https://github.com/RcppCore/Rcpp/issues/1287)
+
 Version 0.25.6 (2023-11-27)
    * Fix tests to account for ALTREP serialization
    * Add filenames to error messages (https://github.com/traversc/qs/issues/75)

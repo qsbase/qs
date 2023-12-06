@@ -163,5 +163,5 @@ closeWinMapView <- function(pointer) {
 
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
-    .Call('_qs_RcppExport_registerCCallable', PACKAGE = 'qs')
+    .Call(`_qs_RcppExport_registerCCallable`)
 })
