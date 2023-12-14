@@ -824,6 +824,64 @@ namespace qs {
         return Rcpp::as<bool >(rcpp_result_gen);
     }
 
+    inline void register_altrep_class(const std::string& classname, const std::string& pkgname) {
+        typedef SEXP(*Ptr_register_altrep_class)(SEXP,SEXP);
+        static Ptr_register_altrep_class p_register_altrep_class = NULL;
+        if (p_register_altrep_class == NULL) {
+            validateSignature("void(*register_altrep_class)(const std::string&,const std::string&)");
+            p_register_altrep_class = (Ptr_register_altrep_class)R_GetCCallable("qs", "_qs_register_altrep_class");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_register_altrep_class(Shield<SEXP>(Rcpp::wrap(classname)), Shield<SEXP>(Rcpp::wrap(pkgname)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+    }
+
+    inline void unregister_altrep_class(const std::string& classname, const std::string& pkgname) {
+        typedef SEXP(*Ptr_unregister_altrep_class)(SEXP,SEXP);
+        static Ptr_unregister_altrep_class p_unregister_altrep_class = NULL;
+        if (p_unregister_altrep_class == NULL) {
+            validateSignature("void(*unregister_altrep_class)(const std::string&,const std::string&)");
+            p_unregister_altrep_class = (Ptr_unregister_altrep_class)R_GetCCallable("qs", "_qs_unregister_altrep_class");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_unregister_altrep_class(Shield<SEXP>(Rcpp::wrap(classname)), Shield<SEXP>(Rcpp::wrap(pkgname)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+    }
+
+    inline SEXP get_altrep_class_info(SEXP obj) {
+        typedef SEXP(*Ptr_get_altrep_class_info)(SEXP);
+        static Ptr_get_altrep_class_info p_get_altrep_class_info = NULL;
+        if (p_get_altrep_class_info == NULL) {
+            validateSignature("SEXP(*get_altrep_class_info)(SEXP)");
+            p_get_altrep_class_info = (Ptr_get_altrep_class_info)R_GetCCallable("qs", "_qs_get_altrep_class_info");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_get_altrep_class_info(Shield<SEXP>(Rcpp::wrap(obj)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<SEXP >(rcpp_result_gen);
+    }
+
 }
 
 #endif // RCPP_qs_RCPPEXPORTS_H_GEN_

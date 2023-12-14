@@ -161,6 +161,18 @@ closeWinMapView <- function(pointer) {
     .Call(`_qs_closeWinMapView`, pointer)
 }
 
+register_altrep_class <- function(classname, pkgname) {
+    invisible(.Call(`_qs_register_altrep_class`, classname, pkgname))
+}
+
+unregister_altrep_class <- function(classname, pkgname) {
+    invisible(.Call(`_qs_unregister_altrep_class`, classname, pkgname))
+}
+
+get_altrep_class_info <- function(obj) {
+    .Call(`_qs_get_altrep_class_info`, obj)
+}
+
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
     .Call(`_qs_RcppExport_registerCCallable`)

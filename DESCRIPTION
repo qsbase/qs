@@ -1,8 +1,8 @@
 Package: qs
 Type: Package
 Title: Quick Serialization of R Objects
-Version: 0.25.7
-Date: 2023-12-05
+Version: 0.26.0
+Date: 2023-12-13
 Authors@R: c(
     person("Travers", "Ching", email = "traversc@gmail.com", role = c("aut", "cre", "cph")),
     person("Yann", "Collet", role = c("ctb", "cph"), comment = "Yann Collet is the author of the bundled zstd, lz4 and xxHash code"),
@@ -22,7 +22,7 @@ Biarch: true
 Depends: R (>= 3.0.2)
 Imports: 
     Rcpp, RApiSerialize (>= 0.1.1), stringfish (>= 0.15.1)
-LinkingTo: Rcpp, RApiSerialize, stringfish
+LinkingTo: Rcpp, RApiSerialize, stringfish, BH
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

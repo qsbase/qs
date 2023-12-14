@@ -540,3 +540,53 @@ NULL
 #' @examples
 #' data(starnames)
 "starnames"
+
+
+#' Register ALTREP class for serialization
+#'
+#' Register an ALTREP class to serialize using base R serialization. 
+#'
+#' @usage register_altrep_class(classname, pkgname)
+#'
+#' @param classname The ALTREP class name
+#' @param pkgname The package the ALTREP class comes from
+#'
+#' @export
+#' @name register_altrep_class
+#'
+#' @examples
+#' register_altrep_class("compact_intseq", "base")
+NULL
+
+#' Unegister ALTREP class for serialization
+#'
+#' Unegister an ALTREP class to not use base R serialization. 
+#'
+#' @usage unregister_altrep_class(classname, pkgname)
+#'
+#' @param classname The ALTREP class name
+#' @param pkgname The package the ALTREP class comes from
+#'
+#' @export
+#' @name unregister_altrep_class
+#'
+#' @examples
+#' unregister_altrep_class("compact_intseq", "base")
+NULL
+
+#' Get the class information of an ALTREP object
+#'
+#' Gets the formal name of the class and package of an ALTREP object
+#'
+#' @usage get_altrep_class_info(obj)
+#'
+#' @param obj The ALTREP class name
+#' @return The class information (class name and package name) of an ALTREP object, a character vector of length two. 
+#' If the object is not an ALTREP object, returns NULL. 
+#' 
+#' @export
+#' @name get_altrep_class_info
+#'
+#' @examples
+#' get_altrep_class_info(1:5)
+NULL

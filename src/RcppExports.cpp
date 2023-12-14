@@ -1398,6 +1398,105 @@ RcppExport SEXP _qs_closeWinMapView(SEXP pointerSEXP) {
     UNPROTECT(1);
     return rcpp_result_gen;
 }
+// register_altrep_class
+void register_altrep_class(const std::string& classname, const std::string& pkgname);
+static SEXP _qs_register_altrep_class_try(SEXP classnameSEXP, SEXP pkgnameSEXP) {
+BEGIN_RCPP
+    Rcpp::traits::input_parameter< const std::string& >::type classname(classnameSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type pkgname(pkgnameSEXP);
+    register_altrep_class(classname, pkgname);
+    return R_NilValue;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_register_altrep_class(SEXP classnameSEXP, SEXP pkgnameSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_register_altrep_class_try(classnameSEXP, pkgnameSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error("%s", CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// unregister_altrep_class
+void unregister_altrep_class(const std::string& classname, const std::string& pkgname);
+static SEXP _qs_unregister_altrep_class_try(SEXP classnameSEXP, SEXP pkgnameSEXP) {
+BEGIN_RCPP
+    Rcpp::traits::input_parameter< const std::string& >::type classname(classnameSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type pkgname(pkgnameSEXP);
+    unregister_altrep_class(classname, pkgname);
+    return R_NilValue;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_unregister_altrep_class(SEXP classnameSEXP, SEXP pkgnameSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_unregister_altrep_class_try(classnameSEXP, pkgnameSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error("%s", CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
+// get_altrep_class_info
+SEXP get_altrep_class_info(SEXP obj);
+static SEXP _qs_get_altrep_class_info_try(SEXP objSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type obj(objSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_altrep_class_info(obj));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_get_altrep_class_info(SEXP objSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_get_altrep_class_info_try(objSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error("%s", CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 
 // validate (ensure exported C++ functions exist before calling them)
 static int _qs_RcppExport_validate(const char* sig) { 
@@ -1443,6 +1542,9 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("SEXP(*openWinFileMapping)(SEXP const,const double)");
         signatures.insert("SEXP(*openWinMapView)(SEXP const,const double)");
         signatures.insert("bool(*closeWinMapView)(SEXP const)");
+        signatures.insert("void(*register_altrep_class)(const std::string&,const std::string&)");
+        signatures.insert("void(*unregister_altrep_class)(const std::string&,const std::string&)");
+        signatures.insert("SEXP(*get_altrep_class_info)(SEXP)");
     }
     return signatures.find(sig) != signatures.end();
 }
@@ -1489,6 +1591,9 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_openWinFileMapping", (DL_FUNC)_qs_openWinFileMapping_try);
     R_RegisterCCallable("qs", "_qs_openWinMapView", (DL_FUNC)_qs_openWinMapView_try);
     R_RegisterCCallable("qs", "_qs_closeWinMapView", (DL_FUNC)_qs_closeWinMapView_try);
+    R_RegisterCCallable("qs", "_qs_register_altrep_class", (DL_FUNC)_qs_register_altrep_class_try);
+    R_RegisterCCallable("qs", "_qs_unregister_altrep_class", (DL_FUNC)_qs_unregister_altrep_class_try);
+    R_RegisterCCallable("qs", "_qs_get_altrep_class_info", (DL_FUNC)_qs_get_altrep_class_info_try);
     R_RegisterCCallable("qs", "_qs_RcppExport_validate", (DL_FUNC)_qs_RcppExport_validate);
     return R_NilValue;
 }
@@ -1534,6 +1639,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_openWinFileMapping", (DL_FUNC) &_qs_openWinFileMapping, 2},
     {"_qs_openWinMapView", (DL_FUNC) &_qs_openWinMapView, 2},
     {"_qs_closeWinMapView", (DL_FUNC) &_qs_closeWinMapView, 1},
+    {"_qs_register_altrep_class", (DL_FUNC) &_qs_register_altrep_class, 2},
+    {"_qs_unregister_altrep_class", (DL_FUNC) &_qs_unregister_altrep_class, 2},
+    {"_qs_get_altrep_class_info", (DL_FUNC) &_qs_get_altrep_class_info, 1},
     {"_qs_RcppExport_registerCCallable", (DL_FUNC) &_qs_RcppExport_registerCCallable, 0},
     {NULL, NULL, 0}
 };

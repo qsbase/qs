@@ -40,6 +40,8 @@ https://github.com/traversc/qs
 #include <climits>
 #include <cstdint>
 #include <unordered_map>
+#include <unordered_set>
+#include <boost/functional/hash.hpp> // hash for altrep_registry
 
 // platform specific headers
 #ifdef _WIN32

@@ -7,6 +7,11 @@
 
 #include <qs_common.h>
 
+static std::unordered_set<
+  std::pair<std::string, std::string>,
+  boost::hash<std::pair<std::string, std::string>>
+  > altrep_registry;
+
 struct CountToObjectMap {
   uint32_t index = 0;
   std::unordered_map<SEXP, uint32_t> map;
@@ -15,21 +20,6 @@ struct CountToObjectMap {
     map.emplace(x, index);
   }
 };
-
-#ifdef USE_ALT_REP
-// should this be defined in the stringfish package instead?
-bool is_unmaterialized_sf_vector(const SEXP obj) {
-  if(!ALTREP(obj)) return false;
-  SEXP pclass = ATTRIB(ALTREP_CLASS(obj));
-  const char * classname = CHAR(PRINTNAME(CAR(pclass)));
-  if(std::strcmp( classname, "__sf_vec__") != 0) return false;
-  if(DATAPTR_OR_NULL(obj) == nullptr) {
-    return true;
-  } else {
-    return false;
-  }
-}
-#endif
 
 template <class T>
 void writeHeader_common(const qstype object_type, const uint64_t length, T * const sobj) {
@@ -368,6 +358,47 @@ void writeObject(T * const sobj, SEXP x) {
   std::vector<SEXP> attrs; // attribute objects and names; r-serialized, env-references and NULLs don't have attributes, so process inline
   std::vector<SEXP> anames; // just declare attribute variables for convienence here
   auto xtype = TYPEOF(x);
+
+#ifdef USE_ALT_REP
+  if (ALTREP(x)) {
+    SEXP info = ATTRIB(ALTREP_CLASS(x));
+    const char * classname = CHAR(PRINTNAME(CAR(info)));
+    const char * pkgname = CHAR(PRINTNAME(CADR(info)));
+    if((std::strcmp(classname, "__sf_vec__") == 0) && (DATAPTR_OR_NULL(x) == nullptr)) { // special case, unmaterialized SF vector
+      getAttributes(x, attrs, anames);
+      if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
+      uint64_t dl = Rf_xlength(x);
+      writeHeader_common(qstype::CHARACTER, dl, sobj);
+      auto & ref = sf_vec_data_ref(x);
+      for(uint64_t i=0; i<dl; i++) {
+        switch(ref[i].encoding) {
+        case cetype_t_ext::CE_NA:
+          sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
+          break;
+        case cetype_t_ext::CE_ASCII:
+          writeStringHeader_common(ref[i].sdata.size(), CE_NATIVE, sobj);
+          sobj->push_contiguous(ref[i].sdata.c_str(), ref[i].sdata.size());
+          break;
+        default:
+          writeStringHeader_common(ref[i].sdata.size(), static_cast<cetype_t>(ref[i].encoding), sobj);
+          sobj->push_contiguous(ref[i].sdata.c_str(), ref[i].sdata.size());
+          break;
+        }
+      }
+      writeAttributes(sobj, attrs, anames);
+      return;
+    } else if( altrep_registry.find(std::make_pair(classname, pkgname)) != altrep_registry.end() ) {
+      Protect_Tracker pt = Protect_Tracker();
+      SEXP xserialized = PROTECT(serializeToRaw(x,Rf_ScalarInteger(3))); pt++;
+      uint64_t xs_size = Rf_xlength(xserialized);
+      writeHeader_common(qstype::RSERIALIZED, xs_size, sobj);
+      sobj->push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);
+      return;
+    }
+    // else do nothing, fall through to non-ALTREP cases
+  }
+#endif
+
   if(IS_S4_OBJECT(x)) writeS4Flag_common(sobj);
   switch(xtype) {
   case NILSXP:
@@ -385,41 +416,17 @@ void writeObject(T * const sobj, SEXP x) {
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
     uint64_t dl = Rf_xlength(x);
     writeHeader_common(qstype::CHARACTER, dl, sobj);
-#ifdef USE_ALT_REP
-    if(is_unmaterialized_sf_vector(x)) {
-      auto & ref = sf_vec_data_ref(x);
-      for(uint64_t i=0; i<dl; i++) {
-        switch(ref[i].encoding) {
-        case cetype_t_ext::CE_NA:
-          sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
-          break;
-        case cetype_t_ext::CE_ASCII:
-          writeStringHeader_common(ref[i].sdata.size(), CE_NATIVE, sobj);
-          sobj->push_contiguous(ref[i].sdata.c_str(), ref[i].sdata.size());
-          break;
-        default:
-          writeStringHeader_common(ref[i].sdata.size(), static_cast<cetype_t>(ref[i].encoding), sobj);
-          sobj->push_contiguous(ref[i].sdata.c_str(), ref[i].sdata.size());
-          break;
-        }
+    SEXP * xptr = STRING_PTR(x);
+    for(uint64_t i=0; i<dl; i++) {
+      SEXP xi = xptr[i]; // STRING_ELT(x, i);
+      if(xi == NA_STRING) {
+        sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
+      } else {
+        uint32_t di = LENGTH(xi);
+        writeStringHeader_common(di, Rf_getCharCE(xi), sobj);
+        sobj->push_contiguous(CHAR(xi), di);
       }
-    } else {
-#endif
-      SEXP * xptr = STRING_PTR(x);
-      for(uint64_t i=0; i<dl; i++) {
-        SEXP xi = xptr[i]; // STRING_ELT(x, i);
-        if(xi == NA_STRING) {
-          sobj->push_pod_noncontiguous(string_header_NA); // header is only 1 byte, but use noncontiguous for consistency
-        } else {
-          uint32_t di = LENGTH(xi);
-          writeStringHeader_common(di, Rf_getCharCE(xi), sobj);
-          sobj->push_contiguous(CHAR(xi), di);
-        }
-      }
-#ifdef USE_ALT_REP
     }
-#endif
-
     writeAttributes(sobj, attrs, anames);
     return;
   }

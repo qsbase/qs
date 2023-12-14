@@ -807,6 +807,43 @@ bool closeWinMapView(SEXP const pointer) {
 #endif
 }
 
+// [[Rcpp::export(rng = false)]]
+void register_altrep_class(const std::string & classname, const std::string & pkgname) {
+#ifdef USE_ALT_REP
+  altrep_registry.emplace(std::make_pair(classname, pkgname));
+#else
+  throw std::runtime_error("ALTREP is not available in R < 3.5");
+#endif
+}
+
+// [[Rcpp::export(rng = false)]]
+void unregister_altrep_class(const std::string & classname, const std::string & pkgname) {
+#ifdef USE_ALT_REP
+  altrep_registry.erase(std::make_pair(classname, pkgname));
+#else
+  throw std::runtime_error("ALTREP is not available in R < 3.5");
+#endif
+}
+
+// [[Rcpp::export(rng = false)]]
+SEXP get_altrep_class_info(SEXP obj) {
+#ifdef USE_ALT_REP
+  if(ALTREP(obj)) {
+    SEXP info = ATTRIB(ALTREP_CLASS(obj));
+    const char * classname = CHAR(PRINTNAME(CAR(info)));
+    const char * pkgname = CHAR(PRINTNAME(CADR(info)));
+    CharacterVector output(2);
+    SET_STRING_ELT(output, 0, Rf_mkChar(classname));
+    SET_STRING_ELT(output, 1, Rf_mkChar(pkgname));
+    return output;
+  } else {
+    return R_NilValue;
+  }
+#else
+  throw std::runtime_error("ALTREP is not available in R < 3.5");
+#endif
+}
+
 
 // std::vector<unsigned char> brotli_compress_raw(RawVector x, int compress_level) {
 //   uint64_t zsize = BrotliEncoderMaxCompressedSize(x.size());
