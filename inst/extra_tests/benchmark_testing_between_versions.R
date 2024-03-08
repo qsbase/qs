@@ -1,4 +1,4 @@
-library(qs253)
+library(qs257)
 library(qs)
 
 
@@ -33,8 +33,8 @@ for(i in 1:nrow(grid)) {
     x <- dataframeGen()
   }
   if(grid$ver[i] == "25") {
-    save <- function(...) qs253::qsave(..., check_hash = F)
-    read <- qs253::qread
+    save <- function(...) qs257::qsave(..., check_hash = F)
+    read <- qs257::qread
   } else if(grid$ver[i] == "26") {
     save <- function(...) qs::qsave(..., check_hash = F)
     read <- qs::qread

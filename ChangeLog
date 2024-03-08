@@ -1,3 +1,7 @@
+Version 0.26.1 (2024-03-07)
+   * Add ALTREP serialization
+   * Minor bug fix (strict aliasing rules)
+
 Version 0.25.7 (2023-12-05)
    * Minor fix for CRAN checks (see https://github.com/RcppCore/Rcpp/issues/1287)
 

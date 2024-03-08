@@ -55,9 +55,9 @@ if(F) {
   # install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.22.1.tar.gz", "qs221") # zstd, lz4, lz4hc block compress, zstd_stream compress
   # install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.23.6.tar.gz", "qs236") # zstd, lz4, lz4hc block compress, zstd_stream compress
   # install_as_name("https://cran.r-project.org/src/contrib/Archive/qs/qs_0.24.1.tar.gz", "qs241") # zstd, lz4, lz4hc block compress, zstd_stream compress
-
+  # install_as_name("https://cran.r-project.org/src/contrib/qs_0.25.7.tar.gz", "qs257")
   # Only qs +0.25 can be installed on R 4.2 due to changes in C API
-  install_as_name(pkg = "https://cran.r-project.org/src/contrib/Archive/qs/qs_0.25.3.tar.gz", new_name = "qs253") # zstd, lz4, lz4hc block compress, zstd_stream compress
+  install_as_name(pkg = "https://cran.r-project.org/src/contrib/Archive/qs/qs_0.25.3.tar.gz", new_name = "qs257") # zstd, lz4, lz4hc block compress, zstd_stream compress
 
   # Earlier version cannot read zstd_stream from 0.17.1+ due to additional checksum at end of file
   # qs 0.18.1 -- header version 2 -- will not be readable by earlier versions
@@ -77,8 +77,8 @@ if(F) {
   # library(qs236)
 }
 
-library(qs253)
-library(qs) # 0.26.0
+library(qs257)
+library(qs) # 0.26.1
 
 file <- tempfile()
 
@@ -144,21 +144,21 @@ test_ext_compatability <- function(save_funs, read_funs) {
 }
 
 # restart from 25.3
-qs253_lz4_save <- function(x) qs253::qsave(x, file, preset = "custom", algorithm = "lz4")
-qs253_zstd_save <- function(x) qs253::qsave(x, file, preset = "custom", algorithm = "zstd")
-qs253_zstd_stream_save <- function(x) qs253::qsave(x, file, preset = "custom", algorithm = "zstd_stream")
-qs253_zstd_stream_save_nohash <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream", check_hash = F)
-qs253_no_shuffle <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd", shuffle_control = 0)
+qs257_lz4_save <- function(x) qs257::qsave(x, file, preset = "custom", algorithm = "lz4")
+qs257_zstd_save <- function(x) qs257::qsave(x, file, preset = "custom", algorithm = "zstd")
+qs257_zstd_stream_save <- function(x) qs257::qsave(x, file, preset = "custom", algorithm = "zstd_stream")
+qs257_zstd_stream_save_nohash <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd_stream", check_hash = F)
+qs257_no_shuffle <- function(x) qs::qsave(x, file, preset = "custom", algorithm = "zstd", shuffle_control = 0)
 
-print("qs253 lz4 save"); test_compatability(qs253_lz4_save, list(qs::qread))
-print("qs253 zstd save"); test_compatability(qs253_zstd_save, list(qs::qread))
-print("qs253 zstd stream save"); test_compatability(qs253_zstd_stream_save, list(qs::qread))
-print("qs253 zstd stream save no hash"); test_compatability(qs253_zstd_stream_save_nohash, list(qs::qread))
-print("qs253 no shuffle save"); test_compatability(qs253_no_shuffle, list(qs::qread))
+print("qs257 lz4 save"); test_compatability(qs257_lz4_save, list(qs::qread))
+print("qs257 zstd save"); test_compatability(qs257_zstd_save, list(qs::qread))
+print("qs257 zstd stream save"); test_compatability(qs257_zstd_stream_save, list(qs::qread))
+print("qs257 zstd stream save no hash"); test_compatability(qs257_zstd_stream_save_nohash, list(qs::qread))
+print("qs257 no shuffle save"); test_compatability(qs257_no_shuffle, list(qs::qread))
 
 # Test new environment saving using findVarInFrame
-save_funs <- c(qs253_lz4_save, qs253_zstd_save, qs253_zstd_stream_save)
-read_funs <- c(qs253::qread, qs::qread)
+save_funs <- c(qs257_lz4_save, qs257_zstd_save, qs257_zstd_stream_save)
+read_funs <- c(qs257::qread, qs::qread)
 print("Testing new environment saving"); test_ext_compatability(save_funs, read_funs)
 
 
