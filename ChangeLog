@@ -1,3 +1,6 @@
+Version 0.26.2 (2024-03-18)
+   * Change check for requiring `-latomic` flag to use `AC_COMPILE_IFELSE` (https://github.com/traversc/qs/issues/88, https://github.com/traversc/qs/issues/91, https://github.com/traversc/qs/issues/76)
+
 Version 0.26.1 (2024-03-07)
    * Add ALTREP serialization
    * Minor bug fix (strict aliasing rules)

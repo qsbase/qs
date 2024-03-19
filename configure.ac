@@ -60,11 +60,21 @@ echo $(($MAJOR*100000+$MINOR*100+$RELEASE))
 ########################################################
 #### Compiler specific flags
 
-AX_COMPILER_VENDOR
+# Check if simple C++ program using atomic header can compile using AC_COMPILE_IFELSE
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#include <atomic>
+std::atomic<int> x{0};
+int main() {
+ x.fetch_add(1);
+ return 0;
+}
+]])], [NEED_LIBATOMIC="no"], [NEED_LIBATOMIC="yes"])
 
-if test xx$ax_cv_cxx_compiler_vendor = "xxgnu"; then
+if test xx$NEED_LIBATOMIC = "xxyes"; then
+  echo "Requires -latomic flag"
   COMPILER_SPECIFIC_LIBS="-latomic"
 else
+  echo "Does not require -latomic flag"
   COMPILER_SPECIFIC_LIBS=""
 fi
 
