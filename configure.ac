@@ -63,10 +63,18 @@ echo $(($MAJOR*100000+$MINOR*100+$RELEASE))
 # Check if simple C++ program using atomic header can compile using AC_COMPILE_IFELSE
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #include <atomic>
-std::atomic<int> x{0};
+#include <cstdint>
+std::atomic<std::uint64_t> x1{0};
+std::atomic<std::uint8_t> x2{0};
+std::atomic<char*> x3{nullptr};
+std::atomic<bool> x4{false};
 int main() {
- x.fetch_add(1);
- return 0;
+  x1.fetch_add(1);
+  x2.fetch_add(1);
+  char temp = 'a';
+  x3.store(&temp);
+  x4.store(true);
+  return 0;
 }
 ]])], [NEED_LIBATOMIC="no"], [NEED_LIBATOMIC="yes"])
 
