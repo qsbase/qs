@@ -64,6 +64,7 @@ qread_rand <- function(file) {
 # check parent env recursion
 print("check recursive environments, promises and closures")
 for(i in 1:10) {
+  print(i)
   l1 <- round(exp(runif(1,0,log(1e6))))
   l2 <- round(exp(runif(1,0,log(1e7))))
   x0 <- new.env(parent = baseenv())
@@ -74,8 +75,8 @@ for(i in 1:10) {
   x1$data <- runif(l2)
   environment(x1$f) <- x1
   parent.env(x0) <- x1
-  delayedAssign("v", c(not_a_variable, runif(1e100)), assign.env=x0, eval.env=x1)
-  delayedAssign("w", c(v, rnorm(1e100)), assign.env=x1, eval.env=x0)
+  delayedAssign("v", c(not_a_variable, runif(1e6)), assign.env=x0, eval.env=x1)
+  delayedAssign("w", c(v, rnorm(1e6)), assign.env=x1, eval.env=x0)
   qsave_rand(x1, myfile)
   x1r <- qread_rand(myfile)
   stopifnot(serialize_identical(x1, x1r))
@@ -87,6 +88,7 @@ gc()
 
 print("mtcars ggplot example")
 for(i in 1:10) {
+  print(i)
   df <- mtcars %>% sample_n(1e5, replace=T)
   vars <- c("hp", "drat", "wt", "qsec")
   var <- sample(vars, 1)

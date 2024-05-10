@@ -90,10 +90,10 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
   case qstype::NUMERIC:
     if(length < 32) {
       sobj->push_pod_noncontiguous( static_cast<uint8_t>(numeric_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
+    } else if(length < 256) {
       sobj->push_pod_noncontiguous(numeric_header_8);
       sobj->push_pod_contiguous( static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
+    } else if(length < 65536) {
       sobj->push_pod_noncontiguous(numeric_header_16);
       sobj->push_pod_contiguous( static_cast<uint16_t>(length) );
     } else if(length < 4294967296) {
@@ -107,10 +107,10 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
   case qstype::LIST:
     if(length < 32) {
       sobj->push_pod_noncontiguous( static_cast<uint8_t>(list_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
+    } else if(length < 256) {
       sobj->push_pod_noncontiguous(list_header_8);
       sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
+    } else if(length < 65536) {
       sobj->push_pod_noncontiguous(list_header_16);
       sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
     } else if(length < 4294967296) {
@@ -124,10 +124,10 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
   case qstype::INTEGER:
     if(length < 32) {
       sobj->push_pod_noncontiguous( static_cast<uint8_t>(integer_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
+    } else if(length < 256) {
       sobj->push_pod_noncontiguous(integer_header_8);
       sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
+    } else if(length < 65536) {
       sobj->push_pod_noncontiguous(integer_header_16);
       sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
     } else if(length < 4294967296) {
@@ -141,10 +141,10 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
   case qstype::LOGICAL:
     if(length < 32) {
       sobj->push_pod_noncontiguous( static_cast<uint8_t>(logical_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
+    } else if(length < 256) {
       sobj->push_pod_noncontiguous(logical_header_8);
       sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
+    } else if(length < 65536) {
       sobj->push_pod_noncontiguous(logical_header_16);
       sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
     } else if(length < 4294967296) {
@@ -167,10 +167,10 @@ void writeHeader_common(const qstype object_type, const uint64_t length, T * con
   case qstype::CHARACTER:
     if(length < 32) {
       sobj->push_pod_noncontiguous( static_cast<uint8_t>(character_header_5 | static_cast<uint8_t>(length)) );
-    } else if(length < 256) { 
+    } else if(length < 256) {
       sobj->push_pod_noncontiguous(character_header_8);
       sobj->push_pod_contiguous(static_cast<uint8_t>(length) );
-    } else if(length < 65536) { 
+    } else if(length < 65536) {
       sobj->push_pod_noncontiguous(character_header_16);
       sobj->push_pod_contiguous(static_cast<uint16_t>(length) );
     } else if(length < 4294967296) {
@@ -355,8 +355,22 @@ void writeEnvFrame(T * const sobj, SEXP rho) {
 
 template <class T>
 void writeObject(T * const sobj, SEXP x) {
+  // evaluate promises immediately
+  if(TYPEOF(x) == PROMSXP) {
+    int error_occured = 0;
+    SEXP xeval = R_tryEval(x, R_BaseEnv, &error_occured);
+    if(error_occured) {
+      writeObject(sobj, R_NilValue);
+    } else {
+      PROTECT(xeval);
+      writeObject(sobj, xeval);
+      UNPROTECT(1);
+    }
+    return;
+  }
+
   std::vector<SEXP> attrs; // attribute objects and names; r-serialized, env-references and NULLs don't have attributes, so process inline
-  std::vector<SEXP> anames; // just declare attribute variables for convienence here
+  std::vector<SEXP> anames; // just declare attribute variables for convenience here
   auto xtype = TYPEOF(x);
 
 #ifdef USE_ALT_REP
@@ -549,7 +563,7 @@ void writeObject(T * const sobj, SEXP x) {
   }
   case ENVSXP:
   {
-    if(x == R_GlobalEnv || x == R_BaseEnv || x == R_EmptyEnv || 
+    if(x == R_GlobalEnv || x == R_BaseEnv || x == R_EmptyEnv ||
                       R_IsNamespaceEnv(x) || R_IsPackageEnv(x)) {
       Protect_Tracker pt = Protect_Tracker();
       SEXP xserialized = PROTECT(serializeToRaw(x,Rf_ScalarInteger(2))); pt++;
@@ -587,7 +601,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(sobj->qm.real_shuffle) {
       sobj->shuffle_push(reinterpret_cast<char*>(REAL(x)), dl*8, 8);
     } else {
-      sobj->push_contiguous(reinterpret_cast<char*>(REAL(x)), dl*8); 
+      sobj->push_contiguous(reinterpret_cast<char*>(REAL(x)), dl*8);
     }
     writeAttributes(sobj, attrs, anames);
     return;
@@ -601,7 +615,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(sobj->qm.int_shuffle) {
       sobj->shuffle_push(reinterpret_cast<char*>(INTEGER(x)), dl*4, 4);
     } else {
-      sobj->push_contiguous(reinterpret_cast<char*>(INTEGER(x)), dl*4); 
+      sobj->push_contiguous(reinterpret_cast<char*>(INTEGER(x)), dl*4);
     }
     writeAttributes(sobj, attrs, anames);
     return;
@@ -615,7 +629,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(sobj->qm.lgl_shuffle) {
       sobj->shuffle_push(reinterpret_cast<char*>(LOGICAL(x)), dl*4, 4);
     } else {
-      sobj->push_contiguous(reinterpret_cast<char*>(LOGICAL(x)), dl*4); 
+      sobj->push_contiguous(reinterpret_cast<char*>(LOGICAL(x)), dl*4);
     }
     writeAttributes(sobj, attrs, anames);
     return;
@@ -626,7 +640,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
     uint64_t dl = Rf_xlength(x);
     writeHeader_common(qstype::RAW, dl, sobj);
-    sobj->push_contiguous(reinterpret_cast<char*>(RAW(x)), dl); 
+    sobj->push_contiguous(reinterpret_cast<char*>(RAW(x)), dl);
     writeAttributes(sobj, attrs, anames);
     return;
   }
@@ -639,7 +653,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(sobj->qm.cplx_shuffle) {
       sobj->shuffle_push(reinterpret_cast<char*>(COMPLEX(x)), dl*16, 8);
     } else {
-      sobj->push_contiguous(reinterpret_cast<char*>(COMPLEX(x)), dl*16); 
+      sobj->push_contiguous(reinterpret_cast<char*>(COMPLEX(x)), dl*16);
     }
     writeAttributes(sobj, attrs, anames);
     return;
