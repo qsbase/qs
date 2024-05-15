@@ -1,4 +1,5 @@
-Version 0.26.2 (2024-05-01)
+Version 0.26.3 (2024-05-15)
+   * When serializing, eval promises immediately (https://github.com/traversc/qs/issues/94)
    * Return NULL and issue a warning when unserializing a PROMSXP (see https://github.com/traversc/qs/issues/93)
 
 Version 0.26.2 (2024-03-18)
