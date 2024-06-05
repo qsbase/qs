@@ -1497,6 +1497,39 @@ RcppExport SEXP _qs_get_altrep_class_info(SEXP objSEXP) {
     UNPROTECT(1);
     return rcpp_result_gen;
 }
+// set_trust_promises
+bool set_trust_promises(bool value);
+static SEXP _qs_set_trust_promises_try(SEXP valueSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< bool >::type value(valueSEXP);
+    rcpp_result_gen = Rcpp::wrap(set_trust_promises(value));
+    return rcpp_result_gen;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP _qs_set_trust_promises(SEXP valueSEXP) {
+    SEXP rcpp_result_gen;
+    {
+        rcpp_result_gen = PROTECT(_qs_set_trust_promises_try(valueSEXP));
+    }
+    Rboolean rcpp_isInterrupt_gen = Rf_inherits(rcpp_result_gen, "interrupted-error");
+    if (rcpp_isInterrupt_gen) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    bool rcpp_isLongjump_gen = Rcpp::internal::isLongjumpSentinel(rcpp_result_gen);
+    if (rcpp_isLongjump_gen) {
+        Rcpp::internal::resumeJump(rcpp_result_gen);
+    }
+    Rboolean rcpp_isError_gen = Rf_inherits(rcpp_result_gen, "try-error");
+    if (rcpp_isError_gen) {
+        SEXP rcpp_msgSEXP_gen = Rf_asChar(rcpp_result_gen);
+        UNPROTECT(1);
+        Rf_error("%s", CHAR(rcpp_msgSEXP_gen));
+    }
+    UNPROTECT(1);
+    return rcpp_result_gen;
+}
 
 // validate (ensure exported C++ functions exist before calling them)
 static int _qs_RcppExport_validate(const char* sig) { 
@@ -1545,6 +1578,7 @@ static int _qs_RcppExport_validate(const char* sig) {
         signatures.insert("void(*register_altrep_class)(const std::string&,const std::string&)");
         signatures.insert("void(*unregister_altrep_class)(const std::string&,const std::string&)");
         signatures.insert("SEXP(*get_altrep_class_info)(SEXP)");
+        signatures.insert("bool(*set_trust_promises)(bool)");
     }
     return signatures.find(sig) != signatures.end();
 }
@@ -1594,6 +1628,7 @@ RcppExport SEXP _qs_RcppExport_registerCCallable() {
     R_RegisterCCallable("qs", "_qs_register_altrep_class", (DL_FUNC)_qs_register_altrep_class_try);
     R_RegisterCCallable("qs", "_qs_unregister_altrep_class", (DL_FUNC)_qs_unregister_altrep_class_try);
     R_RegisterCCallable("qs", "_qs_get_altrep_class_info", (DL_FUNC)_qs_get_altrep_class_info_try);
+    R_RegisterCCallable("qs", "_qs_set_trust_promises", (DL_FUNC)_qs_set_trust_promises_try);
     R_RegisterCCallable("qs", "_qs_RcppExport_validate", (DL_FUNC)_qs_RcppExport_validate);
     return R_NilValue;
 }
@@ -1642,6 +1677,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_qs_register_altrep_class", (DL_FUNC) &_qs_register_altrep_class, 2},
     {"_qs_unregister_altrep_class", (DL_FUNC) &_qs_unregister_altrep_class, 2},
     {"_qs_get_altrep_class_info", (DL_FUNC) &_qs_get_altrep_class_info, 1},
+    {"_qs_set_trust_promises", (DL_FUNC) &_qs_set_trust_promises, 1},
     {"_qs_RcppExport_registerCCallable", (DL_FUNC) &_qs_RcppExport_registerCCallable, 0},
     {NULL, NULL, 0}
 };

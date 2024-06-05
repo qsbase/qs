@@ -844,6 +844,13 @@ SEXP get_altrep_class_info(SEXP obj) {
 #endif
 }
 
+// [[Rcpp::export(rng = false)]]
+bool set_trust_promises(bool value) {
+  bool previous_value = trust_promises_global;
+  trust_promises_global = value;
+  return previous_value;
+}
+
 
 // std::vector<unsigned char> brotli_compress_raw(RawVector x, int compress_level) {
 //   uint64_t zsize = BrotliEncoderMaxCompressedSize(x.size());

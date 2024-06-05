@@ -590,3 +590,20 @@ NULL
 #' @examples
 #' get_altrep_class_info(1:5)
 NULL
+
+#' Allow for serialization/deserialization of promises
+#'
+#' Allow for serialization/deserialization of promises
+#'
+#' @usage set_trust_promises(value)
+#'
+#' @param value a boolean `TRUE` or `FALSE`
+#' @return The previous value of the global variable `trust_promises`
+#' 
+#' @export
+#' @name set_trust_promises
+#'
+#' @examples
+#' set_trust_promises(TRUE)
+NULL
+

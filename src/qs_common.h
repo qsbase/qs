@@ -225,6 +225,8 @@ enum class qstype {NUMERIC, INTEGER, LOGICAL, CHARACTER, NIL, LIST, COMPLEX, RAW
                    S4, S4FLAG, LOCKED_ENV, UNLOCKED_ENV, REFERENCE,
                    ATTRIBUTE, RSERIALIZED};
 
+// global variable to trust promises for both serialization and de-serialization
+static bool trust_promises_global = false;
 
 ///////////////////////////////////////////////////////
 // There are three types of output input streams -- std::ifstream/ofstream, file descriptor, windows handle

@@ -173,6 +173,10 @@ get_altrep_class_info <- function(obj) {
     .Call(`_qs_get_altrep_class_info`, obj)
 }
 
+set_trust_promises <- function(value) {
+    .Call(`_qs_set_trust_promises`, value)
+}
+
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
     .Call(`_qs_RcppExport_registerCCallable`)

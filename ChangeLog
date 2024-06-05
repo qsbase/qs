@@ -1,3 +1,6 @@
+Version 0.27.1 (2024-06-04)
+   * Add function `set_trust_promises` to allow for serialization and deserialization of PROMSXP
+
 Version 0.26.3 (2024-05-15)
    * When serializing, eval promises immediately (https://github.com/traversc/qs/issues/94)
    * Return NULL and issue a warning when unserializing a PROMSXP (see https://github.com/traversc/qs/issues/93)

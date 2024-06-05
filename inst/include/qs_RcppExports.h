@@ -882,6 +882,26 @@ namespace qs {
         return Rcpp::as<SEXP >(rcpp_result_gen);
     }
 
+    inline bool set_trust_promises(bool value) {
+        typedef SEXP(*Ptr_set_trust_promises)(SEXP);
+        static Ptr_set_trust_promises p_set_trust_promises = NULL;
+        if (p_set_trust_promises == NULL) {
+            validateSignature("bool(*set_trust_promises)(bool)");
+            p_set_trust_promises = (Ptr_set_trust_promises)R_GetCCallable("qs", "_qs_set_trust_promises");
+        }
+        RObject rcpp_result_gen;
+        {
+            rcpp_result_gen = p_set_trust_promises(Shield<SEXP>(Rcpp::wrap(value)));
+        }
+        if (rcpp_result_gen.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (Rcpp::internal::isLongjumpSentinel(rcpp_result_gen))
+            throw Rcpp::LongjumpException(rcpp_result_gen);
+        if (rcpp_result_gen.inherits("try-error"))
+            throw Rcpp::exception(Rcpp::as<std::string>(rcpp_result_gen).c_str());
+        return Rcpp::as<bool >(rcpp_result_gen);
+    }
+
 }
 
 #endif // RCPP_qs_RCPPEXPORTS_H_GEN_

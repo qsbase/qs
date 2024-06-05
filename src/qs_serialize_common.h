@@ -356,17 +356,19 @@ void writeEnvFrame(T * const sobj, SEXP rho) {
 template <class T>
 void writeObject(T * const sobj, SEXP x) {
   // evaluate promises immediately
-  if(TYPEOF(x) == PROMSXP) {
-    int error_occured = 0;
-    SEXP xeval = R_tryEval(x, R_BaseEnv, &error_occured);
-    if(error_occured) {
-      writeObject(sobj, R_NilValue);
-    } else {
-      PROTECT(xeval);
-      writeObject(sobj, xeval);
-      UNPROTECT(1);
+  if(!trust_promises_global) {
+    if(TYPEOF(x) == PROMSXP) {
+      int error_occured = 0;
+      SEXP xeval = R_tryEval(x, R_BaseEnv, &error_occured);
+      if(error_occured) {
+        writeObject(sobj, R_NilValue);
+      } else {
+        PROTECT(xeval);
+        writeObject(sobj, xeval);
+        UNPROTECT(1);
+      }
+      return;
     }
-    return;
   }
 
   std::vector<SEXP> attrs; // attribute objects and names; r-serialized, env-references and NULLs don't have attributes, so process inline
