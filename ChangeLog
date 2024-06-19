@@ -134,7 +134,7 @@ Version 0.17.1 (2019-6-24)
 Version 0.16.3 (2019-6-21)
    * Use hash checksums for checking file integrity using the `xxhash` library
       * New parameter: `qsave` -- `check_hash`, computes a checksum on the serialized data
-      * New paramter: `qread` -- `strict`, throws an error if checksum does not pre-computed value
+      * New parameter: `qread` -- `strict`, throws an error if checksum does not pre-computed value
    * `qdump` function reports checksums
    * Performance optimizations -- use C interface directly rather than Rcpp containers
       * About 180% serialization speed improvement for large lists (e.g., `as.list(runif(1e6))`)
