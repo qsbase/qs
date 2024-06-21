@@ -358,9 +358,9 @@ void writeObject(T * const sobj, SEXP x) {
   // evaluate promises immediately
   if(!trust_promises_global) {
     if(TYPEOF(x) == PROMSXP) {
-      int error_occured = 0;
-      SEXP xeval = R_tryEval(x, R_BaseEnv, &error_occured);
-      if(error_occured) {
+      int error_occurred = 0;
+      SEXP xeval = R_tryEval(x, R_BaseEnv, &error_occurred);
+      if(error_occurred) {
         writeObject(sobj, R_NilValue);
       } else {
         PROTECT(xeval);
