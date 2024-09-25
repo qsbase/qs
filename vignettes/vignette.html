@@ -14,6 +14,35 @@
 
 <title>Using qs</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -35,26 +64,27 @@
   }
 </style>
 <style type="text/css" data-origin="pandoc">
-a.sourceLine { display: inline-block; line-height: 1.25; }
-a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
 }
 @media print {
-code.sourceCode { white-space: pre-wrap; }
-a.sourceLine { text-indent: -1em; padding-left: 1em; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
-pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
-pre.numberSource a.sourceLine::before
-  { content: attr(title);
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
     position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    border: none; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -63,9 +93,9 @@ pre.numberSource a.sourceLine::before
   }
 pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
 div.sourceCode
-  {  }
+  {   }
 @media screen {
-a.sourceLine::before { text-decoration: underline; }
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; font-weight: bold; } /* Alert */
 code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
@@ -105,13 +135,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -326,18 +363,18 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p><code>qs</code> is both extremely fast and general: it can serialize any R object like <code>saveRDS</code> and is just as fast and sometimes faster than <code>fst</code>.</p>
 <div id="usage" class="section level2">
 <h2>Usage</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(qs)</a>
-<a class="sourceLine" id="cb1-2" title="2">df1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), <span class="dt">y =</span> <span class="kw">sample</span>(<span class="fl">5e6</span>), <span class="dt">z=</span><span class="kw">sample</span>(letters, <span class="fl">5e6</span>, <span class="dt">replace =</span> T))</a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="kw">qsave</span>(df1, <span class="st">&quot;myfile.qs&quot;</span>)</a>
-<a class="sourceLine" id="cb1-4" title="4">df2 &lt;-<span class="st"> </span><span class="kw">qread</span>(<span class="st">&quot;myfile.qs&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(qs)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>df1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), <span class="dt">y =</span> <span class="kw">sample</span>(<span class="fl">5e6</span>), <span class="dt">z=</span><span class="kw">sample</span>(letters, <span class="fl">5e6</span>, <span class="dt">replace =</span> T))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">qsave</span>(df1, <span class="st">&quot;myfile.qs&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>df2 &lt;-<span class="st"> </span><span class="kw">qread</span>(<span class="st">&quot;myfile.qs&quot;</span>)</span></code></pre></div>
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="co"># CRAN version</span></a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="kw">install.packages</span>(<span class="st">&quot;qs&quot;</span>)</a>
-<a class="sourceLine" id="cb2-3" title="3"></a>
-<a class="sourceLine" id="cb2-4" title="4"><span class="co"># CRAN version compile from source (recommended)</span></a>
-<a class="sourceLine" id="cb2-5" title="5">remotes<span class="op">::</span><span class="kw">install_cran</span>(<span class="st">&quot;qs&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;source&quot;</span>, <span class="dt">configure.args =</span> <span class="st">&quot;--with-simd=AVX2&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="co"># CRAN version</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">install.packages</span>(<span class="st">&quot;qs&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="co"># CRAN version compile from source (recommended)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>remotes<span class="op">::</span><span class="kw">install_cran</span>(<span class="st">&quot;qs&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;source&quot;</span>, <span class="dt">configure.args =</span> <span class="st">&quot;--with-simd=AVX2&quot;</span>)</span></code></pre></div>
 </div>
 <div id="features" class="section level2">
 <h2>Features</h2>
@@ -443,11 +480,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="summary-benchmarks" class="section level2">
 <h2>Summary Benchmarks</h2>
 <p>The following benchmarks were performed comparing <code>qs</code>, <code>fst</code> and <code>saveRDS</code>/<code>readRDS</code> in base R for serializing and de-serializing a medium sized <code>data.frame</code> with 5 million rows (approximately 115 Mb in memory):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">data.frame</span>(<span class="dt">a =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), </a>
-<a class="sourceLine" id="cb3-2" title="2">           <span class="dt">b =</span> <span class="kw">rpois</span>(<span class="fl">5e6</span>, <span class="dv">100</span>),</a>
-<a class="sourceLine" id="cb3-3" title="3">           <span class="dt">c =</span> <span class="kw">sample</span>(starnames<span class="op">$</span>IAU, <span class="fl">5e6</span>, T),</a>
-<a class="sourceLine" id="cb3-4" title="4">           <span class="dt">d =</span> <span class="kw">sample</span>(state.name, <span class="fl">5e6</span>, T),</a>
-<a class="sourceLine" id="cb3-5" title="5">           <span class="dt">stringsAsFactors =</span> F)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">data.frame</span>(<span class="dt">a =</span> <span class="kw">rnorm</span>(<span class="fl">5e6</span>), </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>           <span class="dt">b =</span> <span class="kw">rpois</span>(<span class="fl">5e6</span>, <span class="dv">100</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>           <span class="dt">c =</span> <span class="kw">sample</span>(starnames<span class="op">$</span>IAU, <span class="fl">5e6</span>, T),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>           <span class="dt">d =</span> <span class="kw">sample</span>(state.name, <span class="fl">5e6</span>, T),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>           <span class="dt">stringsAsFactors =</span> F)</span></code></pre></div>
 <p><code>qs</code> is highly parameterized and can be tuned by the user to extract as much speed and compression as possible, if desired. For simplicity, <code>qs</code> comes with 4 presets, which trades speed and compression ratio: “fast”, “balanced”, “high” and “archive”.</p>
 <p>The plots below summarize the performance of <code>saveRDS</code>, <code>qs</code> and <code>fst</code> with various parameters:</p>
 <div id="serializing" class="section level3">
@@ -473,26 +510,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h2>Byte shuffle</h2>
 <p>Byte shuffling (adopted from the Blosc meta-compression library) is a way of re-organizing data to be more amenable to compression. An integer contains four bytes and the limits of an integer in R are +/- 2^31-1. However, most real data doesn’t use anywhere near the range of possible integer values. For example, if the data were representing percentages, 0% to 100%, the first three bytes would be unused and zero.</p>
 <p>Byte shuffling rearranges the data such that all of the first bytes are blocked together, all of the second bytes are blocked together, and so on. This procedure often makes it very easy for compression algorithms to find repeated patterns and can often improve compression ratio by orders of magnitude. In the example below, shuffle compression achieves a compression ratio of over 1:1000. See <code>?qsave</code> for more details.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="co"># With byte shuffling</span></a>
-<a class="sourceLine" id="cb4-2" title="2">x &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="fl">1e8</span></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="kw">qsave</span>(x, <span class="st">&quot;mydat.qs&quot;</span>, <span class="dt">preset =</span> <span class="st">&quot;custom&quot;</span>, <span class="dt">shuffle_control =</span> <span class="dv">15</span>, <span class="dt">algorithm =</span> <span class="st">&quot;zstd&quot;</span>)</a>
-<a class="sourceLine" id="cb4-4" title="4"><span class="kw">cat</span>( <span class="st">&quot;Compression Ratio: &quot;</span>, <span class="kw">as.numeric</span>(<span class="kw">object.size</span>(x)) <span class="op">/</span><span class="st"> </span><span class="kw">file.info</span>(<span class="st">&quot;mydat.qs&quot;</span>)<span class="op">$</span>size, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span> )</a>
-<a class="sourceLine" id="cb4-5" title="5"><span class="co"># Compression Ratio:  1389.164</span></a>
-<a class="sourceLine" id="cb4-6" title="6"></a>
-<a class="sourceLine" id="cb4-7" title="7"><span class="co"># Without byte shuffling</span></a>
-<a class="sourceLine" id="cb4-8" title="8">x &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="fl">1e8</span></a>
-<a class="sourceLine" id="cb4-9" title="9"><span class="kw">qsave</span>(x, <span class="st">&quot;mydat.qs&quot;</span>, <span class="dt">preset =</span> <span class="st">&quot;custom&quot;</span>, <span class="dt">shuffle_control =</span> <span class="dv">0</span>, <span class="dt">algorithm =</span> <span class="st">&quot;zstd&quot;</span>)</a>
-<a class="sourceLine" id="cb4-10" title="10"><span class="kw">cat</span>( <span class="st">&quot;Compression Ratio: &quot;</span>, <span class="kw">as.numeric</span>(<span class="kw">object.size</span>(x)) <span class="op">/</span><span class="st"> </span><span class="kw">file.info</span>(<span class="st">&quot;mydat.qs&quot;</span>)<span class="op">$</span>size, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span> )</a>
-<a class="sourceLine" id="cb4-11" title="11"><span class="co"># Compression Ratio:  1.479294 </span></a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="co"># With byte shuffling</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>x &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="fl">1e8</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a><span class="kw">qsave</span>(x, <span class="st">&quot;mydat.qs&quot;</span>, <span class="dt">preset =</span> <span class="st">&quot;custom&quot;</span>, <span class="dt">shuffle_control =</span> <span class="dv">15</span>, <span class="dt">algorithm =</span> <span class="st">&quot;zstd&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="kw">cat</span>( <span class="st">&quot;Compression Ratio: &quot;</span>, <span class="kw">as.numeric</span>(<span class="kw">object.size</span>(x)) <span class="op">/</span><span class="st"> </span><span class="kw">file.info</span>(<span class="st">&quot;mydat.qs&quot;</span>)<span class="op">$</span>size, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span> )</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a><span class="co"># Compression Ratio:  1389.164</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a><span class="co"># Without byte shuffling</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>x &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="fl">1e8</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a><span class="kw">qsave</span>(x, <span class="st">&quot;mydat.qs&quot;</span>, <span class="dt">preset =</span> <span class="st">&quot;custom&quot;</span>, <span class="dt">shuffle_control =</span> <span class="dv">0</span>, <span class="dt">algorithm =</span> <span class="st">&quot;zstd&quot;</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a><span class="kw">cat</span>( <span class="st">&quot;Compression Ratio: &quot;</span>, <span class="kw">as.numeric</span>(<span class="kw">object.size</span>(x)) <span class="op">/</span><span class="st"> </span><span class="kw">file.info</span>(<span class="st">&quot;mydat.qs&quot;</span>)<span class="op">$</span>size, <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span> )</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a><span class="co"># Compression Ratio:  1.479294 </span></span></code></pre></div>
 </div>
 <div id="serializing-to-memory" class="section level2">
 <h2>Serializing to memory</h2>
 <p>You can use <code>qs</code> to directly serialize objects to memory.</p>
 <p>Example:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">library</span>(qs)</a>
-<a class="sourceLine" id="cb5-2" title="2">x &lt;-<span class="st"> </span><span class="kw">qserialize</span>(<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>))</a>
-<a class="sourceLine" id="cb5-3" title="3"><span class="kw">qdeserialize</span>(x)</a>
-<a class="sourceLine" id="cb5-4" title="4">[<span class="dv">1</span>] <span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">library</span>(qs)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>x &lt;-<span class="st"> </span><span class="kw">qserialize</span>(<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="kw">qdeserialize</span>(x)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>[<span class="dv">1</span>] <span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span></span></code></pre></div>
 </div>
 <div id="serializing-objects-to-ascii" class="section level2">
 <h2>Serializing objects to ASCII</h2>
@@ -503,8 +540,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 </ul>
 <p>These functions are similar to base64 encoding functions found in various packages, but offer greater efficiency.</p>
 <p>Example:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">enc &lt;-<span class="st"> </span><span class="kw">base91_encode</span>(<span class="kw">qserialize</span>(datasets<span class="op">::</span>mtcars, <span class="dt">preset =</span> <span class="st">&quot;custom&quot;</span>, <span class="dt">compress_level =</span> <span class="dv">22</span>))</a>
-<a class="sourceLine" id="cb6-2" title="2">dec &lt;-<span class="st"> </span><span class="kw">qdeserialize</span>(<span class="kw">base91_decode</span>(enc))</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>enc &lt;-<span class="st"> </span><span class="kw">base91_encode</span>(<span class="kw">qserialize</span>(datasets<span class="op">::</span>mtcars, <span class="dt">preset =</span> <span class="st">&quot;custom&quot;</span>, <span class="dt">compress_level =</span> <span class="dv">22</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>dec &lt;-<span class="st"> </span><span class="kw">qdeserialize</span>(<span class="kw">base91_decode</span>(enc))</span></code></pre></div>
 <p>(Note: base91 strings contain double quote characters (<code>&quot;</code>) and need to be single quoted if stored as a string.)</p>
 <p>See the help files for additional details and history behind these algorithms.</p>
 </div>
@@ -522,14 +559,14 @@ void test() {
   qs::qsave(IntegerVector::create(1,2,3), &quot;/tmp/myfile.qs&quot;, &quot;high&quot;, &quot;zstd&quot;, 1, 15, true, 1);
 }</code></pre>
 <p>R side:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">library</span>(qs)</a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="kw">library</span>(Rcpp)</a>
-<a class="sourceLine" id="cb8-3" title="3"><span class="kw">sourceCpp</span>(<span class="st">&quot;test.cpp&quot;</span>)</a>
-<a class="sourceLine" id="cb8-4" title="4"><span class="co"># save file using Rcpp interface</span></a>
-<a class="sourceLine" id="cb8-5" title="5"><span class="kw">test</span>()</a>
-<a class="sourceLine" id="cb8-6" title="6"><span class="co"># read in file created through Rcpp interface</span></a>
-<a class="sourceLine" id="cb8-7" title="7"><span class="kw">qread</span>(<span class="st">&quot;/tmp/myfile.qs&quot;</span>)</a>
-<a class="sourceLine" id="cb8-8" title="8">[<span class="dv">1</span>] <span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span></a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">library</span>(qs)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="kw">library</span>(Rcpp)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="kw">sourceCpp</span>(<span class="st">&quot;test.cpp&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a><span class="co"># save file using Rcpp interface</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a><span class="kw">test</span>()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a><span class="co"># read in file created through Rcpp interface</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a><span class="kw">qread</span>(<span class="st">&quot;/tmp/myfile.qs&quot;</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>[<span class="dv">1</span>] <span class="dv">1</span> <span class="dv">2</span> <span class="dv">3</span></span></code></pre></div>
 <p>The C++ functions do not have default parameters; all parameters must be specified.</p>
 </div>
 <div id="future-developments" class="section level2">
