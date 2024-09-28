@@ -409,7 +409,7 @@ void writeObject(T * const sobj, SEXP x) {
       return;
     } else if( altrep_registry.find(std::make_pair(classname, pkgname)) != altrep_registry.end() ) {
       Protect_Tracker pt = Protect_Tracker();
-      SEXP xserialized = PROTECT(serializeToRaw(x,Rf_ScalarInteger(3))); pt++;
+      SEXP xserialized = PROTECT(R::serializeToRaw(x,Rf_ScalarInteger(3))); pt++;
       uint64_t xs_size = Rf_xlength(xserialized);
       writeHeader_common(qstype::RSERIALIZED, xs_size, sobj);
       sobj->push_contiguous(reinterpret_cast<char*>(RAW(xserialized)), xs_size);

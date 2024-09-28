@@ -11,8 +11,8 @@ Provides functions for quickly writing and reading any R object to and from disk
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/traversc/qs}
-  \item Report bugs at \url{https://github.com/traversc/qs/issues}
+  \item \url{https://github.com/qsbase/qs}
+  \item Report bugs at \url{https://github.com/qsbase/qs/issues}
 }
 
 }
