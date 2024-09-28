@@ -7,6 +7,10 @@
 
 #include <qs_common.h>
 
+#if (R_VERSION < R_Version(3, 5, 0))
+#define STRING_PTR_RO STRING_PTR
+#endif
+
 static std::unordered_set<
   std::pair<std::string, std::string>,
   boost::hash<std::pair<std::string, std::string>>
@@ -432,7 +436,7 @@ void writeObject(T * const sobj, SEXP x) {
     if(attrs.size() > 0) writeAttributeHeader_common(attrs.size(), sobj);
     uint64_t dl = Rf_xlength(x);
     writeHeader_common(qstype::CHARACTER, dl, sobj);
-    SEXP * xptr = STRING_PTR(x);
+    const SEXP * xptr = STRING_PTR_RO(x);
     for(uint64_t i=0; i<dl; i++) {
       SEXP xi = xptr[i]; // STRING_ELT(x, i);
       if(xi == NA_STRING) {
