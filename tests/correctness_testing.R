@@ -536,7 +536,7 @@ for (q in 1:reps) {
 # some one off tests
 
 # test 1: alt rep implementation
-# https://github.com/traversc/qs/issues/9
+# https://github.com/qsbase/qs/issues/9
 
 # stringfish character vectors -- require R > 3.5.0
 if (utils::compareVersion(as.character(getRversion()), "3.5.0") != -1) {

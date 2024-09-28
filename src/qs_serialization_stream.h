@@ -15,7 +15,7 @@
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  
  You can contact the author at:
- https://github.com/traversc/qs
+ https://github.com/qsbase/qs
  */
 
 #include "qs_common.h"

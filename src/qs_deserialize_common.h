@@ -647,7 +647,7 @@ SEXP processBlock(T * const sobj) {
     // SET_OBJECT(obj, 1); // this flag seems kind of pointless
   }
   if( !trust_promises_global && (TYPEOF(obj) == PROMSXP)) {
-    Rcpp::warning("PROMSXP detected, replacing with NULL (see https://github.com/traversc/qs/issues/93)");
+    Rcpp::warning("PROMSXP detected, replacing with NULL (see https://github.com/qsbase/qs/issues/93)");
     return R_NilValue;
   } else {
     return obj;

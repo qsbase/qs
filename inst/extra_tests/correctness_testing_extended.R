@@ -124,7 +124,7 @@ for(i in 1:10) {
 rm(g1, g2, gb1, gb2)
 gc()
 
-print("github.com/traversc/qs/issues/9")
+print("github.com/qsbase/qs/issues/9")
 x <- data.table(x = 1:26, y = letters)
 qsave_rand(x, file=myfile)
 xu <- qread(myfile, use_alt_rep = T)
@@ -133,7 +133,7 @@ stopifnot(identical(c("a", "y"), colnames(xu)))
 data.table::setnames(xu, 2, "b")
 stopifnot(identical(c("a", "b"), colnames(xu)))
 
-print("github.com/traversc/qs/issues/23")
+print("github.com/qsbase/qs/issues/23")
 for(i in 1:10) {
   z <- data.table(x=nanotime(runif(1e6)*1e18))
   qsave_rand(z, file=myfile)
@@ -146,9 +146,9 @@ gc()
 
 
 # large S4 objects
-# https://github.com/traversc/qs/issues/14
+# https://github.com/qsbase/qs/issues/14
 # Data is private, so not uploaded online
-print("github.com/traversc/qs/issues/14 (this takes a long time)")
+print("github.com/qsbase/qs/issues/14 (this takes a long time)")
 if (Sys.info()[['sysname']] != "Windows") {
   system("cat /mnt/n/R_stuff/qs_extended_tests/issue_14_data.rds > /dev/null")
   r <- mcreadRDS("/mnt/n/R_stuff/qs_extended_tests/issue_14_data.rds")
@@ -172,9 +172,9 @@ gc()
 # gc()
 
 # Efficient serialization of ggplot objects
-# https://github.com/traversc/qs/issues/21
+# https://github.com/qsbase/qs/issues/21
 # Data is private, so not uploaded online
-print("github.com/traversc/qs/issues/21")
+print("github.com/qsbase/qs/issues/21")
 print("testing issue 21 no longer works because of deprecated plot object")
 # print("reading in initial data")
 # if (Sys.info()[['sysname']] != "Windows") {
@@ -204,7 +204,7 @@ print("testing issue 21 no longer works because of deprecated plot object")
 #   gc()
 # }
 
-print("https://github.com/traversc/qs/issues/6")
+print("https://github.com/qsbase/qs/issues/6")
 RiskModel <- R6Class(
   classname = "RiskModel",
   public = list(
@@ -237,7 +237,7 @@ for(i in 1:5) {
   gc()
 }
 
-print("https://github.com/traversc/qs/issues/27")
+print("https://github.com/qsbase/qs/issues/27")
 nx <- ny <- 2
 N <- nx * ny
 template <- raster(nrows = ny, ncols = nx, xmn = -nx / 2, xmx = nx / 2,
@@ -249,14 +249,14 @@ qsave(DEM, file = myfile)
 DEM2 <- qread(myfile)
 all.equal(DEM@legend@names, DEM2@legend@names)
 
-print("https://github.com/traversc/qs/issues/29")
+print("https://github.com/qsbase/qs/issues/29")
 XClass <- R6Class( "XClass", active = list(r=function() runif(1)) )
 x <- XClass$new()
 qsave(x, file=myfile)
 x2 <- qread(myfile)
 stopifnot(is.numeric(x2$r))
 
-print("https://github.com/traversc/qs/issues/43")
+print("https://github.com/qsbase/qs/issues/43")
 for(i in 1:200) {
   a <- paste0(rep(".", i), collapse = "")
   x <- list(a = a, # a= '....................................................................',
@@ -274,7 +274,7 @@ f2 <- compiler::cmpfun(function(x) { x <- x + 1.0; environment() })
 # .Internal(inspect(f3(TRUE))) # this doesn't work?
 
 
-print("https://github.com/traversc/qs/issues/50")
+print("https://github.com/qsbase/qs/issues/50")
 for(i in 1:200) {
   x2 <- qs::qdeserialize(qs::qserialize(f1(1L)))
   stopifnot(identical(x2$x, 2L))

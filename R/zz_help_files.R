@@ -15,7 +15,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 # You can contact the author at:
-#   https://github.com/traversc/qs
+#   https://github.com/qsbase/qs
 
 
 # Since roxygen2 doesn't parse the `@usage` block, it doesn't know what the usage is, and hence it doesn't find any parameters to inherit, so we can't rely on
