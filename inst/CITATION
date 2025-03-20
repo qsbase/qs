@@ -1,0 +1,21 @@
+
+if(is.null(meta$Date)) {
+  Date <- Sys.Date()
+} else {
+  Date <- meta$Date
+}
+
+year <- sub("-.*", "", Date)
+note <- paste("R package version", meta$Version)
+url  <- "https://cran.r-project.org/package=qs"
+
+bibentry(
+  bibtype = "Manual"
+  , textVersion = sprintf("Ching, T. (%s). qs: Quick Serialization of R Objects. %s. Retrieved from %s.", year, note, url)
+  , title = "{qs}: Quick Serialization of {R} Objects"
+  , author = person("Travers", "Ching")
+  , year = year
+  , note = note
+  , url  = url
+  , doi  = "10.32614/CRAN.package.qs"
+)
