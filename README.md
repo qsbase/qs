@@ -1,3 +1,7 @@
+The qs package is deprecated please use the improved `qs2` package: https://github.com/qsbase/qs2
+
+More information: https://github.com/qsbase/qs/issues/103
+
 Using qs
 ================
 
